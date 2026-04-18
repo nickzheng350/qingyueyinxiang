@@ -1,0 +1,134 @@
+{
+  "models": {
+    "image": {
+      "sdxl_1.0": {
+        "name": "SDXL 1.0",
+        "type": "text_to_image",
+        "source": "local",
+        "path": "./models/sdxl/sdxl_1.0",
+        "config": {
+          "type": "local",
+          "model_type": "text_to_image",
+          "file_size_mb": 6000,
+          "vram_required_mb": 8000,
+          "quantization": "fp16"
+        },
+        "tags": ["text_to_image", "sdxl", "local"],
+        "enabled": true
+      },
+      "sd_1.5": {
+        "name": "Stable Diffusion 1.5",
+        "type": "text_to_image",
+        "source": "local",
+        "path": "./models/sd/sd_1.5",
+        "config": {
+          "type": "local",
+          "model_type": "text_to_image",
+          "file_size_mb": 2000,
+          "vram_required_mb": 4000,
+          "quantization": "fp16"
+        },
+        "tags": ["text_to_image", "sd15", "local"],
+        "enabled": true
+      },
+      "openai_dall_e": {
+        "name": "OpenAI DALL-E 3",
+        "type": "text_to_image",
+        "source": "api",
+        "path": "https://api.openai.com/v1/images/generations",
+        "config": {
+          "type": "api",
+          "model_type": "text_to_image",
+          "api_url": "https://api.openai.com/v1/images/generations",
+          "model": "dall-e-3",
+          "cost_per_call": 0.04
+        },
+        "tags": ["text_to_image", "dall-e", "api"],
+        "enabled": true
+      },
+      "stability_ai": {
+        "name": "Stability AI",
+        "type": "text_to_image",
+        "source": "api",
+        "path": "https://api.stability.ai/v1/generation/stable-diffusion-v1-6/text-to-image",
+        "config": {
+          "type": "api",
+          "model_type": "text_to_image",
+          "api_url": "https://api.stability.ai/v1/generation/stable-diffusion-v1-6/text-to-image",
+          "model": "stable-diffusion-v1-6",
+          "cost_per_call": 0.01
+        },
+        "tags": ["text_to_image", "stability", "api"],
+        "enabled": true
+      }
+    },
+    "video": {
+      "svd": {
+        "name": "Stable Video Diffusion",
+        "type": "text_to_video",
+        "source": "local",
+        "path": "./models/video/svd",
+        "config": {
+          "type": "local",
+          "model_type": "text_to_video",
+          "file_size_mb": 4000,
+          "vram_required_mb": 6000,
+          "quantization": "fp16"
+        },
+        "tags": ["text_to_video", "svd", "local"],
+        "enabled": true
+      }
+    },
+    "audio": {
+      "tts": {
+        "name": "Text-to-Speech",
+        "type": "text_to_audio",
+        "source": "local",
+        "path": "./models/audio/tts",
+        "config": {
+          "type": "local",
+          "model_type": "text_to_audio",
+          "file_size_mb": 500,
+          "vram_required_mb": 2000,
+          "sample_rate": 24000
+        },
+        "tags": ["text_to_audio", "tts", "local"],
+        "enabled": true
+      }
+    },
+    "upscaler": {
+      "esrgan": {
+        "name": "ESRGAN Upscaler",
+        "type": "image_upscale",
+        "source": "local",
+        "path": "./models/upscaler/esrgan",
+        "config": {
+          "type": "local",
+          "model_type": "image_upscale",
+          "file_size_mb": 100,
+          "vram_required_mb": 4000,
+          "method": "esrgan"
+        },
+        "tags": ["image_upscale", "esrgan", "local"],
+        "enabled": true
+      }
+    }
+  },
+  "local_deployment": {
+    "lm_studio": {
+      "enabled": true,
+      "api_base": "http://localhost:1234/v1",
+      "api_key": "lm-studio",
+      "model": "qwen2.5-7b"
+    },
+    "ollama": {
+      "enabled": false,
+      "api_base": "http://localhost:11434/v1",
+      "model": "llama3"
+    },
+    "llama_cpp": {
+      "enabled": false,
+      "model_path": "./models/llama.cpp/llama-3.2-1b-instruct/"
+    }
+  }
+}

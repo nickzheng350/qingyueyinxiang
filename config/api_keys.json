@@ -1,0 +1,42 @@
+{
+  "openai": {
+    "api_key": "",
+    "description": "OpenAI API 密钥，用于 DALL-E、GPT 等模型",
+    "enabled": false
+  },
+  "stability": {
+    "api_key": "",
+    "description": "Stability AI API 密钥，用于 Stable Diffusion 等模型",
+    "enabled": false
+  },
+  "anthropic": {
+    "api_key": "",
+    "description": "Anthropic API 密钥，用于 Claude 模型",
+    "enabled": false
+  },
+  "huggingface": {
+    "api_key": "",
+    "description": "Hugging Face API 密钥，用于模型下载和推理",
+    "enabled": false
+  },
+  "github": {
+    "api_key": "",
+    "description": "GitHub Personal Access Token，用于 GitHub 集成",
+    "enabled": false
+  },
+  "google": {
+    "api_key": "",
+    "description": "Google API 密钥，用于 Google Workspace、Gemini 等",
+    "enabled": false
+  },
+  "notion": {
+    "api_key": "",
+    "description": "Notion API 密钥，用于 Notion 集成",
+    "enabled": false
+  },
+  "replicate": {
+    "api_key": "",
+    "description": "Replicate API 密钥，用于 Replicate 平台模型",
+    "enabled": false
+  }
+}

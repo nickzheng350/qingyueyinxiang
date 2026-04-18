@@ -1,0 +1,238 @@
+{
+  "categories": {
+    "creative": {
+      "name": "创意创作",
+      "name_en": "Creative",
+      "description": "艺术创作、设计、视频制作等创意类技能",
+      "icon": "🎨",
+      "priority": 1,
+      "subcategories": {
+        "image": {
+          "name": "图像生成",
+          "name_en": "Image Generation",
+          "description": "AI 图像生成、编辑、增强等"
+        },
+        "video": {
+          "name": "视频制作",
+          "name_en": "Video Production",
+          "description": "视频生成、编辑、动画制作等"
+        },
+        "audio": {
+          "name": "音频创作",
+          "name_en": "Audio Creation",
+          "description": "音乐生成、语音合成、音频处理等"
+        },
+        "writing": {
+          "name": "文案写作",
+          "name_en": "Content Writing",
+          "description": "创意写作、剧本创作、歌词创作等"
+        },
+        "design": {
+          "name": "UI/UX 设计",
+          "name_en": "UI/UX Design",
+          "description": "网页设计、应用设计、设计系统等"
+        }
+      }
+    },
+    "coding": {
+      "name": "编程开发",
+      "name_en": "Coding & Development",
+      "description": "代码生成、调试、重构等开发类技能",
+      "icon": "💻",
+      "priority": 2,
+      "subcategories": {
+        "code_gen": {
+          "name": "代码生成",
+          "name_en": "Code Generation",
+          "description": "根据需求生成代码"
+        },
+        "debug": {
+          "name": "调试修复",
+          "name_en": "Debug & Fix",
+          "description": "查找并修复代码问题"
+        },
+        "refactor": {
+          "name": "代码重构",
+          "name_en": "Code Refactoring",
+          "description": "优化和重构代码"
+        },
+        "review": {
+          "name": "代码审查",
+          "name_en": "Code Review",
+          "description": "审查代码质量和安全性"
+        },
+        "testing": {
+          "name": "测试开发",
+          "name_en": "Testing",
+          "description": "编写和运行测试"
+        },
+        "planning": {
+          "name": "项目规划",
+          "name_en": "Project Planning",
+          "description": "技术方案设计和项目规划"
+        }
+      }
+    },
+    "productivity": {
+      "name": "办公效率",
+      "name_en": "Productivity",
+      "description": "文档处理、日程管理、协作工具等效率类技能",
+      "icon": "📋",
+      "priority": 3,
+      "subcategories": {
+        "documents": {
+          "name": "文档处理",
+          "name_en": "Document Processing",
+          "description": "Word、PDF、PPT 等文档处理"
+        },
+        "ocr": {
+          "name": "文字识别",
+          "name_en": "OCR",
+          "description": "从图片中识别文字"
+        },
+        "email": {
+          "name": "邮件管理",
+          "name_en": "Email Management",
+          "description": "邮件撰写、分类、回复等"
+        },
+        "calendar": {
+          "name": "日程管理",
+          "name_en": "Calendar",
+          "description": "日程安排、会议管理等"
+        },
+        "spreadsheet": {
+          "name": "表格处理",
+          "name_en": "Spreadsheet",
+          "description": "Excel、Google Sheets 等处理"
+        }
+      }
+    },
+    "mlops": {
+      "name": "机器学习",
+      "name_en": "MLOps",
+      "description": "模型训练、部署、评估等机器学习技能",
+      "icon": "🤖",
+      "priority": 4,
+      "subcategories": {
+        "training": {
+          "name": "模型训练",
+          "name_en": "Model Training",
+          "description": "训练和微调各种 AI 模型"
+        },
+        "inference": {
+          "name": "模型推理",
+          "name_en": "Model Inference",
+          "description": "模型部署和推理优化"
+        },
+        "evaluation": {
+          "name": "模型评估",
+          "name_en": "Model Evaluation",
+          "description": "评估模型性能和质量"
+        },
+        "data": {
+          "name": "数据处理",
+          "name_en": "Data Processing",
+          "description": "数据清洗、标注、增强等"
+        },
+        "cloud": {
+          "name": "云平台",
+          "name_en": "Cloud Platforms",
+          "description": "AWS、GCP、Azure 等云平台集成"
+        }
+      }
+    },
+    "integration": {
+      "name": "第三方集成",
+      "name_en": "Integrations",
+      "description": "与 GitHub、Notion、Slack 等第三方服务集成",
+      "icon": "🔗",
+      "priority": 5,
+      "subcategories": {
+        "github": {
+          "name": "GitHub 集成",
+          "name_en": "GitHub Integration",
+          "description": "仓库管理、PR 处理、Issues 管理等"
+        },
+        "notion": {
+          "name": "Notion 集成",
+          "name_en": "Notion Integration",
+          "description": "页面管理、数据库操作等"
+        },
+        "slack": {
+          "name": "Slack 集成",
+          "name_en": "Slack Integration",
+          "description": "消息发送、频道管理等"
+        },
+        "discord": {
+          "name": "Discord 集成",
+          "name_en": "Discord Integration",
+          "description": "机器人开发、消息管理等"
+        },
+        "twitter": {
+          "name": "Twitter/X 集成",
+          "name_en": "Twitter/X Integration",
+          "description": "推文发布、互动管理等"
+        }
+      }
+    },
+    "media": {
+      "name": "媒体处理",
+      "name_en": "Media Processing",
+      "description": "图片、视频、音频等媒体文件处理",
+      "icon": "🎬",
+      "priority": 6,
+      "subcategories": {
+        "image_edit": {
+          "name": "图片编辑",
+          "name_en": "Image Editing",
+          "description": "图片裁剪、滤镜、修复等"
+        },
+        "video_edit": {
+          "name": "视频编辑",
+          "name_en": "Video Editing",
+          "description": "视频剪辑、转场、特效等"
+        },
+        "audio_edit": {
+          "name": "音频编辑",
+          "name_en": "Audio Editing",
+          "description": "音频剪辑、混音、降噪等"
+        },
+        "transcribe": {
+          "name": "语音转文字",
+          "name_en": "Transcription",
+          "description": "将音频/视频转为文字"
+        }
+      }
+    },
+    "core": {
+      "name": "核心功能",
+      "name_en": "Core Functions",
+      "description": "系统核心技能，提供基础功能支持",
+      "icon": "⚙️",
+      "priority": 0,
+      "subcategories": {
+        "orchestration": {
+          "name": "任务编排",
+          "name_en": "Task Orchestration",
+          "description": "复杂任务分解和执行"
+        },
+        "skill_creation": {
+          "name": "技能创建",
+          "name_en": "Skill Creation",
+          "description": "创建和打包新技能"
+        }
+      }
+    }
+  },
+  "tags": {
+    "ai_generated": "AI 生成",
+    "automation": "自动化",
+    "beginner_friendly": "适合新手",
+    "advanced": "高级",
+    "experimental": "实验性",
+    "popular": "热门",
+    "new": "新品",
+    "free": "免费",
+    "paid": "付费"
+  }
+}

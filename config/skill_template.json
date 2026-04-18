@@ -1,0 +1,21 @@
+{
+  "skill_id": "example_skill",
+  "name": "示例技能",
+  "name_en": "Example Skill",
+  "version": "1.0.0",
+  "description": "这是一个技能模板示例，用于创建新的 HydraFlow AI 技能",
+  "description_en": "This is a skill template example for creating new HydraFlow AI skills",
+  "author": "Your Name",
+  "dependencies": {},
+  "tags": ["example", "template"],
+  "icon": "📦",
+  "category": "productivity",
+  "subcategory": "documents",
+  "homepage": "https://example.com/skill",
+  "license": "MIT",
+  "requirements": [],
+  "compatibility": {
+    "hydraflow_min_version": "1.0.0",
+    "hydraflow_max_version": null
+  }
+}

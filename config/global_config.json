@@ -1,0 +1,85 @@
+{
+  "schema_version": "1.0.0",
+  "project": {
+    "name": "HydraFlow AI",
+    "version": "1.1.0",
+    "description": "九头蛇生成式工作流平台",
+    "priority_level": "production"
+  },
+  "system": {
+    "log_level": "INFO",
+    "log_dir": "./logs",
+    "data_dir": "./data",
+    "temp_dir": "./temp",
+    "max_concurrent_tasks": 5,
+    "timeout_seconds": 300,
+    "auto_reload": false,
+    "health_check_interval": 60
+  },
+  "paths": {
+    "skills_dir": "./skills",
+    "models_dir": "./models",
+    "prompts_dir": "./prompts",
+    "output_dir": "./outputs",
+    "cache_dir": "./.cache"
+  },
+  "api": {
+    "host": "0.0.0.0",
+    "port": 8000,
+    "cors_origins": ["http://localhost:3000", "http://localhost:8501"],
+    "docs_enabled": true,
+    "rate_limit": {
+      "enabled": true,
+      "requests_per_minute": 60
+    }
+  },
+  "ui": {
+    "enabled": true,
+    "host": "localhost",
+    "port": 3000,
+    "api_url": "http://localhost:8000",
+    "theme": "auto"
+  },
+  "models": {
+    "default_parser": "qwen2.5",
+    "default_style": "cyberpunk",
+    "auto_load_on_startup": true,
+    "gpu_memory_fraction": 0.8,
+    "cache_models": true
+  },
+  "skills": {
+    "auto_load": true,
+    "auto_update": false,
+    "market_url": "https://hydraflow-ai.org/market",
+    "safe_mode": true
+  },
+  "integration": {
+    "local_deployment": {
+      "lm_studio": {
+        "enabled": true,
+        "api_base": "http://localhost:1234/v1",
+        "api_key": "lm-studio",
+        "model": "qwen2.5-7b",
+        "auto_detect": true
+      },
+      "ollama": {
+        "enabled": false,
+        "api_base": "http://localhost:11434/v1",
+        "model": "llama3",
+        "auto_detect": true
+      },
+      "llama_cpp": {
+        "enabled": false,
+        "model_path": "./models/llama.cpp/llama-3.2-1b-instruct/",
+        "auto_detect": true
+      }
+    }
+  },
+  "advanced": {
+    "enable_profiling": false,
+    "enable_debug_mode": false,
+    "max_log_size_mb": 100,
+    "max_log_files": 5,
+    "backup_config": true
+  }
+}
