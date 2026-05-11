@@ -4,12 +4,12 @@ import asyncio
 import uuid
 from enum import Enum
 from datetime import datetime
-from typing import Any, Dict, Optional, List, Callable
+from typing import Any, Dict, Optional, List
 from dataclasses import dataclass, field
 import logging
-import json
 
 logger = logging.getLogger("hydraflow.task_engine")
+
 
 # 延迟导入避免循环依赖
 def _get_ws_manager():
@@ -55,11 +55,11 @@ class Task:
 
 class TaskStorage:
     """任务存储抽象层"""
-    
+
     def __init__(self):
         self._tasks: Dict[str, Task] = {}
         self._task_index: Dict[str, List[str]] = {}
-    
+
     def create_task(self, task: Task) -> None:
         """创建任务"""
         self._tasks[task.id] = task
@@ -68,44 +68,48 @@ class TaskStorage:
             self._task_index[task_type] = []
         self._task_index[task_type].append(task.id)
         logger.debug(f"创建任务: {task.id} ({task.type})")
-    
+
     def get_task(self, task_id: str) -> Optional[Task]:
         """获取任务"""
         return self._tasks.get(task_id)
-    
+
     def update_task(self, task_id: str, **kwargs) -> bool:
         """更新任务"""
         if task_id not in self._tasks:
             return False
         task = self._tasks[task_id]
-        
+
         # 记录之前的状态用于比较
         old_status = task.status
         old_progress = task.progress
-        
+
         for key, value in kwargs.items():
             if hasattr(task, key):
                 setattr(task, key, value)
-        
+
         # 如果状态或进度发生变化，发送WebSocket通知
         new_status = task.status
         new_progress = task.progress
-        
+
         if old_status != new_status or old_progress != new_progress:
-            asyncio.create_task(self._notify_task_update(task_id, new_status, new_progress))
-        
+            asyncio.create_task(
+                self._notify_task_update(task_id, new_status, new_progress)
+            )
+
         return True
-    
-    async def _notify_task_update(self, task_id: str, status: TaskStatus, progress: float) -> None:
+
+    async def _notify_task_update(
+        self, task_id: str, status: TaskStatus, progress: float
+    ) -> None:
         """通知任务更新到WebSocket订阅者"""
         try:
             ws_manager = _get_ws_manager()
             await ws_manager.send_task_update(task_id, status.value, progress)
         except Exception as e:
             logger.error(f"发送任务更新通知失败: {e}")
-    
+
     def list_tasks(
-        self, 
+        self,
         status: Optional[TaskStatus] = None,
         task_type: Optional[TaskType] = None,
         limit: int = 50,
@@ -119,7 +123,7 @@ class TaskStorage:
             tasks = [t for t in tasks if t.type == task_type]
         tasks.sort(key=lambda t: t.created_at, reverse=True)
         return tasks[offset:offset + limit]
-    
+
     def delete_task(self, task_id: str) -> bool:
         """删除任务"""
         if task_id not in self._tasks:
@@ -130,7 +134,7 @@ class TaskStorage:
             self._task_index[task_type].remove(task_id)
         del self._tasks[task_id]
         return True
-    
+
     def get_task_count(self, status: Optional[TaskStatus] = None) -> int:
         """获取任务数量"""
         if status:
@@ -140,12 +144,12 @@ class TaskStorage:
 
 class TaskExecutor:
     """任务执行器基类"""
-    
+
     def __init__(self):
         self._storage = TaskStorage()
         self._executor_lock = asyncio.Lock()
         self._running_tasks: Dict[str, asyncio.Task] = {}
-    
+
     async def submit_task(
         self,
         task_type: TaskType,
@@ -167,7 +171,7 @@ class TaskExecutor:
         self._storage.create_task(task)
         await self._schedule_task(task_id)
         return task_id
-    
+
     async def _schedule_task(self, task_id: str) -> None:
         """调度任务执行"""
         async with self._executor_lock:
@@ -176,33 +180,37 @@ class TaskExecutor:
             task = self._storage.get_task(task_id)
             if not task or task.status != TaskStatus.PENDING:
                 return
-            
+
             # 标记为运行中
-            self._storage.update_task(task_id, status=TaskStatus.RUNNING, started_at=datetime.now())
-            
+            self._storage.update_task(
+                task_id,
+                status=TaskStatus.RUNNING,
+                started_at=datetime.now()
+            )
+
             # 创建异步任务
             self._running_tasks[task_id] = asyncio.create_task(
                 self._execute_task(task_id)
             )
-    
+
     async def _execute_task(self, task_id: str) -> None:
         """执行任务（模板方法）"""
         try:
             task = self._storage.get_task(task_id)
             if not task:
                 return
-            
+
             logger.info(f"开始执行任务: {task_id}")
-            
+
             # 模拟执行过程（实际实现中会调用模型）
             for i in range(10):
                 progress = (i + 1) * 10
                 await asyncio.sleep(0.2)  # 模拟处理时间
                 self._storage.update_task(task_id, progress=progress)
-            
+
             # 生成模拟结果
             result = await self._generate_result(task)
-            
+
             self._storage.update_task(
                 task_id,
                 status=TaskStatus.COMPLETED,
@@ -211,7 +219,7 @@ class TaskExecutor:
                 completed_at=datetime.now()
             )
             logger.info(f"任务完成: {task_id}")
-            
+
         except Exception as e:
             logger.error(f"任务失败 {task_id}: {e}")
             self._storage.update_task(
@@ -223,7 +231,7 @@ class TaskExecutor:
         finally:
             if task_id in self._running_tasks:
                 del self._running_tasks[task_id]
-    
+
     async def _generate_result(self, task: Task) -> Dict[str, Any]:
         """生成模拟结果"""
         result_types = {
@@ -248,7 +256,10 @@ class TaskExecutor:
             },
             TaskType.TEXT_GENERATION: {
                 "type": "text",
-                "content": f"根据您的提示 '{task.prompt}'，这是生成的文本响应。实际实现中将包含真实的LLM输出。",
+                "content": (
+                    f"根据您的提示 '{task.prompt}'，这是生成的文本响应。"
+                    "实际实现中将包含真实的LLM输出。"
+                ),
                 "tokens": 128,
             },
             TaskType.CODE_GENERATION: {
@@ -259,24 +270,24 @@ class TaskExecutor:
             },
         }
         return result_types.get(task.type, {"type": "unknown"})
-    
+
     async def cancel_task(self, task_id: str) -> bool:
         """取消任务"""
         task = self._storage.get_task(task_id)
         if not task:
             return False
-        
+
         if task_id in self._running_tasks:
             self._running_tasks[task_id].cancel()
             del self._running_tasks[task_id]
-        
+
         self._storage.update_task(
             task_id,
             status=TaskStatus.CANCELLED,
             completed_at=datetime.now()
         )
         return True
-    
+
     def get_task_info(self, task_id: str) -> Optional[Dict[str, Any]]:
         """获取任务信息"""
         task = self._storage.get_task(task_id)
@@ -293,11 +304,19 @@ class TaskExecutor:
             "result": task.result,
             "error": task.error,
             "created_at": task.created_at.isoformat(),
-            "started_at": task.started_at.isoformat() if task.started_at else None,
-            "completed_at": task.completed_at.isoformat() if task.completed_at else None,
+            "started_at": (
+                task.started_at.isoformat()
+                if task.started_at
+                else None
+            ),
+            "completed_at": (
+                task.completed_at.isoformat()
+                if task.completed_at
+                else None
+            ),
             "metadata": task.metadata,
         }
-    
+
     def list_tasks(
         self,
         status: Optional[str] = None,
@@ -308,10 +327,14 @@ class TaskExecutor:
         """列出任务"""
         status_enum = TaskStatus(status) if status else None
         type_enum = TaskType(task_type) if task_type else None
-        
+
         tasks = self._storage.list_tasks(status_enum, type_enum, limit, offset)
-        return [self.get_task_info(t.id) for t in tasks if self.get_task_info(t.id)]
-    
+        return [
+            self.get_task_info(t.id)
+            for t in tasks
+            if self.get_task_info(t.id)
+        ]
+
     def get_task_statistics(self) -> Dict[str, Any]:
         """获取任务统计"""
         return {
@@ -327,6 +350,7 @@ class TaskExecutor:
 
 # 全局单例
 _task_executor = None
+
 
 def get_task_executor() -> TaskExecutor:
     """获取任务执行器实例"""
