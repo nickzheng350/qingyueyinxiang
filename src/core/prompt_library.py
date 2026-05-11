@@ -59,7 +59,7 @@ class FineStyle(str, Enum):
     CHINESE_INK = "chinese_ink"  # 国画
     PIXEL_ART = "pixel_art"  # 像素艺术
     VECTOR = "vector"  # 矢量
-    3D_RENDER = "3d_render"  # 3D渲染
+    THREED_RENDER = "3d_render"  # 3D渲染
 
 
 class FineContent(str, Enum):

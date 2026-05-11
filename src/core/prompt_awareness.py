@@ -1,14 +1,13 @@
 """提示词敏锐性引擎 - 提示词感知、分析、增强"""
 import logging
 import re
-import hashlib
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any, List, Tuple, Set
+from typing import Optional, Dict, Any, List
 from enum import Enum
 from collections import defaultdict
 
 from src.model_dispatcher.type_system import ModelFunctionType
-from src.core.prompt_engine import RichPrompt, PromptElement, PromptRole
+from src.core.prompt_engine import RichPrompt, PromptRole
 
 logger = logging.getLogger("hydraflow.core.prompt_awareness")
 
@@ -315,12 +314,6 @@ class PromptAnalyzer:
         """质量评估"""
         primary_content = prompt.get_primary_content() or ""
         text = primary_content
-        
-        word_count = len(text.split())
-        has_style_elements = any(
-            elem.role in [PromptRole.STYLE, PromptRole.CONSTRAINT]
-            for elem in prompt.elements
-        )
         
         clarity_score = self._assess_clarity(text)
         specificity_score = self._assess_specificity(text)

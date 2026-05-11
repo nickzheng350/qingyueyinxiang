@@ -3,7 +3,7 @@ import logging
 import time
 import threading
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any, List, Callable, Union
+from typing import Optional, Dict, Any, List, Tuple
 from enum import Enum
 from collections import deque
 import uuid
@@ -13,23 +13,18 @@ from src.model_dispatcher.type_system import (
 )
 from src.core.unified_engine import (
     UnifiedIntelligentEngine, get_unified_engine,
-    EngineMode, TaskPriority, TaskStatus, Task, EngineResult
+    TaskPriority, EngineResult
 )
 from src.core.prompt_engine import (
-    DiversifiedPromptEngine, RichPrompt, PromptBuilder,
+    DiversifiedPromptEngine, RichPrompt,
     PromptType, QualityLevel
 )
 from src.core.prompt_awareness import (
     PromptAwarenessEngine, AwarenessResult
 )
 from src.core.performance import (
-    UnifiedPerformanceManager, OptimizationStrategy
+    UnifiedPerformanceManager
 )
-from src.multimodal.workflow_integration import (
-    UnifiedProjectManager, ProjectType
-)
-from src.multimodal.enhanced_audio_engine import EnhancedAudioEngine
-from src.multimodal.av_multimodal_fusion import AVMultimodalFusionEngine
 
 logger = logging.getLogger("hydraflow.core.workflow_orchestrator")
 

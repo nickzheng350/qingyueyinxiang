@@ -2,7 +2,7 @@
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any, List, Union, Callable
+from typing import Optional, Dict, Any, List
 from enum import Enum
 from abc import ABC, abstractmethod
 
@@ -11,13 +11,11 @@ from src.model_dispatcher.type_system import (
     get_consistency_validator,
     TouchPoint,
 )
-from src.multimodal.audio_prompt_engine import AudioPromptEngine, AudioStyleParams, MusicalGenre
+from src.multimodal.audio_prompt_engine import AudioPromptEngine, MusicalGenre
 from src.multimodal.enhanced_audio_engine import (
     EnhancedAudioEngine,
     ProjectStyleGuide,
     ScriptParseResult,
-    Scene,
-    CharacterProfile,
 )
 from src.multimodal.image_to_video import ImageToVideoGenerator
 from src.multimodal.style_transfer import StyleTransferEngine
@@ -416,7 +414,7 @@ class WorkflowEngine:
                     result = self._execute_task(task, project)
                     self.task_results[task_id] = result
                     tasks_executed += 1
-                except Exception as e:
+                except Exception:
                     # 继续累加错误信息，不再继续执行后续任务
                     break
             
@@ -517,7 +515,7 @@ class AVMultimodalFusionEngine:
     ) -> AudioAsset:
         """独立生成音频"""
         engine = AudioPromptEngine()
-        result = engine.optimize_prompt(prompt, genre)
+        engine.optimize_prompt(prompt, genre)
         
         asset = AudioAsset(
             asset_id=f"aud_gen_{len(project.assets)}",
@@ -565,7 +563,7 @@ class AVMultimodalFusionEngine:
         self.workflow_engine.build_workflow(project)
         result = self.workflow_engine.execute(project)
         
-        final_fusion = self.fusion_component.process(project)
+        self.fusion_component.process(project)
         result.output_path = project.settings.output_path
         
         return result

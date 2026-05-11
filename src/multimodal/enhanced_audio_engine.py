@@ -452,7 +452,7 @@ class EnhancedAudioEngine:
             character, line_type, emotion
         )
         
-        optimized = self.audio_engine.optimize_prompt(
+        self.audio_engine.optimize_prompt(
             text, target_genre=style_params.genre
         )
         

@@ -4,7 +4,7 @@ import threading
 import time
 import heapq
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any, List, Union, Callable, TypeVar
+from typing import Optional, Dict, Any, List
 from enum import Enum
 from abc import ABC, abstractmethod
 import uuid
@@ -17,13 +17,10 @@ from src.model_dispatcher.type_system import (
 from src.multimodal.audio_prompt_engine import AudioPromptEngine
 from src.multimodal.enhanced_audio_engine import EnhancedAudioEngine
 from src.multimodal.av_multimodal_fusion import AVMultimodalFusionEngine
-from src.multimodal.workflow_integration import UnifiedProjectManager
 from src.cache.priority_queue import MultiLevelCache
 from src.core.concurrency import UnifiedExecutor
 
 logger = logging.getLogger("hydraflow.core.unified_engine")
-
-T = TypeVar('T')
 
 
 class EngineMode(str, Enum):
@@ -454,7 +451,6 @@ class ResourceOptimizer:
         """检查是否可以接受任务"""
         with self.lock:
             max_cpu = self.profile.cpu_cores
-            max_gpu = self.profile.gpu_memory_gb
             max_ram = self.profile.ram_gb
             
             cpu_available = (max_cpu * (1 - self.current_load["cpu"])) > estimated_cost * 0.1
