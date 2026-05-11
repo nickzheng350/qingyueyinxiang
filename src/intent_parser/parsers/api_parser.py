@@ -143,7 +143,7 @@ class OpenAIParser(IntentParserBase):
                 resp.raise_for_status()
                 content = resp.json()["choices"][0]["message"]["content"]
                 return _parse_llm_response(content, text, self.name, "api")
-        except Exception as e:
+        except (httpx.HTTPError, json.JSONDecodeError, KeyError, ValueError) as e:
             logger.warning(f"OpenAI LLM 调用失败，回退关键词解析: {e}")
             get_stability_manager().record_error(e, ErrorSeverity.MEDIUM, "openai_parser")
             return None
@@ -232,7 +232,7 @@ class ClaudeParser(IntentParserBase):
                 resp.raise_for_status()
                 content = resp.json()["content"][0]["text"]
                 return _parse_llm_response(content, text, self.name, "api")
-        except Exception as e:
+        except (httpx.HTTPError, json.JSONDecodeError, KeyError, ValueError) as e:
             logger.warning(f"Claude LLM 调用失败，回退关键词解析: {e}")
             get_stability_manager().record_error(e, ErrorSeverity.MEDIUM, "claude_parser")
             return None

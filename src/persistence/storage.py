@@ -1,402 +1,477 @@
-"""数据持久化框架 - SQLite后端"""
+"""HydraFlow AI 文件存储模块 - 支持本地存储、MinIO 和 S3"""
 
-import sqlite3
-import json
-from datetime import datetime
-from typing import Any, Dict, Optional, List, Tuple
-import logging
+import io
 import os
+import uuid
+import mimetypes
+from abc import ABC, abstractmethod
+from pathlib import Path
+from typing import BinaryIO, Optional
+from datetime import datetime, timedelta
 
-logger = logging.getLogger("hydraflow.persistence")
+from src.core.config import get_settings, StorageType
+
+settings = get_settings()
+
+
+class StorageBackend(ABC):
+    """存储后端抽象基类"""
+
+    @abstractmethod
+    async def save(self, file_data: bytes | BinaryIO, file_path: str) -> str:
+        """保存文件，返回文件路径或 URL"""
+        pass
+
+    @abstractmethod
+    async def load(self, file_path: str) -> bytes:
+        """加载文件，返回文件内容"""
+        pass
+
+    @abstractmethod
+    async def exists(self, file_path: str) -> bool:
+        """检查文件是否存在"""
+        pass
+
+    @abstractmethod
+    async def delete(self, file_path: str) -> bool:
+        """删除文件"""
+        pass
+
+    @abstractmethod
+    async def get_url(self, file_path: str, expires_in: int = 3600) -> str:
+        """获取文件访问 URL"""
+        pass
+
+    @abstractmethod
+    async def get_file_info(self, file_path: str) -> dict:
+        """获取文件信息"""
+        pass
+
+
+class LocalStorageBackend(StorageBackend):
+    """本地文件系统存储"""
+
+    def __init__(self, base_path: Optional[Path] = None):
+        self.base_path = base_path or settings.storage.local_path
+        self.base_path = Path(self.base_path).resolve()
+        self.base_path.mkdir(parents=True, exist_ok=True)
+
+    def _get_full_path(self, file_path: str) -> Path:
+        """获取完整文件路径"""
+        full_path = (self.base_path / file_path).resolve()
+        if not full_path.is_relative_to(self.base_path):
+            raise ValueError(f"非法文件路径: {file_path}")
+        return full_path
+
+    async def save(self, file_data: bytes | BinaryIO, file_path: str) -> str:
+        full_path = self._get_full_path(file_path)
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if isinstance(file_data, bytes):
+            full_path.write_bytes(file_data)
+        else:
+            with open(full_path, "wb") as f:
+                f.write(file_data.read())
+
+        return file_path
+
+    async def load(self, file_path: str) -> bytes:
+        full_path = self._get_full_path(file_path)
+        if not full_path.exists():
+            raise FileNotFoundError(f"文件不存在: {file_path}")
+        return full_path.read_bytes()
+
+    async def exists(self, file_path: str) -> bool:
+        full_path = self._get_full_path(file_path)
+        return full_path.exists()
+
+    async def delete(self, file_path: str) -> bool:
+        full_path = self._get_full_path(file_path)
+        if full_path.exists():
+            full_path.unlink()
+            return True
+        return False
+
+    async def get_url(self, file_path: str, expires_in: int = 3600) -> str:
+        return f"/api/v1/files/{file_path}"
+
+    async def get_file_info(self, file_path: str) -> dict:
+        full_path = self._get_full_path(file_path)
+        if not full_path.exists():
+            raise FileNotFoundError(f"文件不存在: {file_path}")
+
+        stat = full_path.stat()
+        mime_type, _ = mimetypes.guess_type(full_path.name)
+
+        return {
+            "path": file_path,
+            "size": stat.st_size,
+            "created_at": datetime.fromtimestamp(stat.st_ctime),
+            "modified_at": datetime.fromtimestamp(stat.st_mtime),
+            "mime_type": mime_type or "application/octet-stream",
+        }
+
+
+class MinIOStorageBackend(StorageBackend):
+    """MinIO 对象存储"""
+
+    def __init__(self):
+        try:
+            from minio import Minio
+            from minio.error import S3Error
+        except ImportError:
+            raise ImportError("请安装 minio: pip install minio")
+
+        if not settings.storage.minio_endpoint:
+            raise ValueError("MinIO 端点未配置")
+        if not settings.storage.minio_access_key:
+            raise ValueError("MinIO 访问密钥未配置")
+        if not settings.storage.minio_secret_key:
+            raise ValueError("MinIO 秘密密钥未配置")
+
+        self.client = Minio(
+            settings.storage.minio_endpoint,
+            access_key=settings.storage.minio_access_key,
+            secret_key=settings.storage.minio_secret_key,
+            secure=settings.storage.minio_secure,
+        )
+        self.bucket = settings.storage.minio_bucket
+
+        self._ensure_bucket()
+
+    def _ensure_bucket(self):
+        """确保 bucket 存在"""
+        if not self.client.bucket_exists(self.bucket):
+            self.client.make_bucket(self.bucket)
+
+    async def save(self, file_data: bytes | BinaryIO, file_path: str) -> str:
+        from minio.error import S3Error
+
+        if isinstance(file_data, bytes):
+            file_data = io.BytesIO(file_data)
+            length = len(file_data.getvalue())
+        else:
+            file_data.seek(0, os.SEEK_END)
+            length = file_data.tell()
+            file_data.seek(0)
+
+        mime_type, _ = mimetypes.guess_type(file_path)
+        content_type = mime_type or "application/octet-stream"
+
+        self.client.put_object(
+            self.bucket,
+            file_path,
+            file_data,
+            length=length,
+            content_type=content_type,
+        )
+
+        return file_path
+
+    async def load(self, file_path: str) -> bytes:
+        from minio.error import S3Error
+
+        try:
+            response = self.client.get_object(self.bucket, file_path)
+            return response.read()
+        except S3Error as e:
+            if e.code == "NoSuchKey":
+                raise FileNotFoundError(f"文件不存在: {file_path}") from e
+            raise
+
+    async def exists(self, file_path: str) -> bool:
+        from minio.error import S3Error
+
+        try:
+            self.client.stat_object(self.bucket, file_path)
+            return True
+        except S3Error as e:
+            if e.code == "NoSuchKey":
+                return False
+            raise
+
+    async def delete(self, file_path: str) -> bool:
+        from minio.error import S3Error
+
+        try:
+            self.client.remove_object(self.bucket, file_path)
+            return True
+        except S3Error as e:
+            if e.code == "NoSuchKey":
+                return False
+            raise
+
+    async def get_url(self, file_path: str, expires_in: int = 3600) -> str:
+        return self.client.presigned_get_object(
+            self.bucket,
+            file_path,
+            expires=timedelta(seconds=expires_in),
+        )
+
+    async def get_file_info(self, file_path: str) -> dict:
+        from minio.error import S3Error
+
+        try:
+            stat = self.client.stat_object(self.bucket, file_path)
+            return {
+                "path": file_path,
+                "size": stat.size,
+                "created_at": stat.last_modified,
+                "mime_type": stat.content_type,
+                "etag": stat.etag,
+            }
+        except S3Error as e:
+            if e.code == "NoSuchKey":
+                raise FileNotFoundError(f"文件不存在: {file_path}") from e
+            raise
+
+
+class S3StorageBackend(StorageBackend):
+    """AWS S3 存储"""
+
+    def __init__(self):
+        try:
+            import boto3
+            from botocore.exceptions import ClientError
+        except ImportError:
+            raise ImportError("请安装 boto3: pip install boto3")
+
+        if not settings.storage.s3_access_key_id:
+            raise ValueError("S3 访问密钥 ID 未配置")
+        if not settings.storage.s3_secret_access_key:
+            raise ValueError("S3 秘密访问密钥未配置")
+
+        self.client = boto3.client(
+            "s3",
+            aws_access_key_id=settings.storage.s3_access_key_id,
+            aws_secret_access_key=settings.storage.s3_secret_access_key,
+            region_name=settings.storage.s3_region,
+        )
+        self.bucket = settings.storage.s3_bucket
+
+    async def save(self, file_data: bytes | BinaryIO, file_path: str) -> str:
+        from botocore.exceptions import ClientError
+
+        if isinstance(file_data, bytes):
+            body = file_data
+        else:
+            body = file_data
+
+        mime_type, _ = mimetypes.guess_type(file_path)
+        content_type = mime_type or "application/octet-stream"
+
+        self.client.put_object(
+            Bucket=self.bucket,
+            Key=file_path,
+            Body=body,
+            ContentType=content_type,
+        )
+
+        return file_path
+
+    async def load(self, file_path: str) -> bytes:
+        from botocore.exceptions import ClientError
+
+        try:
+            response = self.client.get_object(Bucket=self.bucket, Key=file_path)
+            return response["Body"].read()
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "NoSuchKey":
+                raise FileNotFoundError(f"文件不存在: {file_path}") from e
+            raise
+
+    async def exists(self, file_path: str) -> bool:
+        from botocore.exceptions import ClientError
+
+        try:
+            self.client.head_object(Bucket=self.bucket, Key=file_path)
+            return True
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "404":
+                return False
+            raise
+
+    async def delete(self, file_path: str) -> bool:
+        from botocore.exceptions import ClientError
+
+        try:
+            self.client.delete_object(Bucket=self.bucket, Key=file_path)
+            return True
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "NoSuchKey":
+                return False
+            raise
+
+    async def get_url(self, file_path: str, expires_in: int = 3600) -> str:
+        from botocore.exceptions import ClientError
+
+        return self.client.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": self.bucket, "Key": file_path},
+            ExpiresIn=expires_in,
+        )
+
+    async def get_file_info(self, file_path: str) -> dict:
+        from botocore.exceptions import ClientError
+
+        try:
+            response = self.client.head_object(Bucket=self.bucket, Key=file_path)
+            return {
+                "path": file_path,
+                "size": response["ContentLength"],
+                "created_at": response["LastModified"],
+                "mime_type": response["ContentType"],
+                "etag": response["ETag"],
+            }
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "404":
+                raise FileNotFoundError(f"文件不存在: {file_path}") from e
+            raise
+
+
+class StorageManager:
+    """存储管理器 - 统一接口"""
+
+    _instance: Optional["StorageManager"] = None
+
+    def __new__(cls) -> "StorageManager":
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
+    def __init__(self):
+        if self._initialized:
+            return
+        self._initialized = True
+        self.backend = self._create_backend()
+
+    def _create_backend(self) -> StorageBackend:
+        """创建存储后端"""
+        if settings.storage.type == StorageType.LOCAL:
+            return LocalStorageBackend()
+        elif settings.storage.type == StorageType.MINIO:
+            return MinIOStorageBackend()
+        elif settings.storage.type == StorageType.S3:
+            return S3StorageBackend()
+        else:
+            raise ValueError(f"不支持的存储类型: {settings.storage.type}")
+
+    def generate_path(self, prefix: str = "", extension: str = "") -> str:
+        """生成唯一文件路径"""
+        unique_id = str(uuid.uuid4())
+        date_path = datetime.utcnow().strftime("%Y/%m/%d")
+
+        if prefix:
+            prefix = prefix.strip("/")
+            path_parts = [prefix, date_path, unique_id]
+        else:
+            path_parts = [date_path, unique_id]
+
+        if extension:
+            if not extension.startswith("."):
+                extension = f".{extension}"
+            path_parts[-1] += extension
+
+        return "/".join(path_parts)
+
+    async def save_file(
+        self,
+        file_data: bytes | BinaryIO,
+        prefix: str = "",
+        extension: str = "",
+        file_path: Optional[str] = None,
+    ) -> str:
+        """保存文件，返回文件路径"""
+        if not file_path:
+            file_path = self.generate_path(prefix, extension)
+        return await self.backend.save(file_data, file_path)
+
+    async def load_file(self, file_path: str) -> bytes:
+        """加载文件"""
+        return await self.backend.load(file_path)
+
+    async def file_exists(self, file_path: str) -> bool:
+        """检查文件是否存在"""
+        return await self.backend.exists(file_path)
+
+    async def delete_file(self, file_path: str) -> bool:
+        """删除文件"""
+        return await self.backend.delete(file_path)
+
+    async def get_file_url(self, file_path: str, expires_in: int = 3600) -> str:
+        """获取文件访问 URL"""
+        return await self.backend.get_url(file_path, expires_in)
+
+    async def get_file_info(self, file_path: str) -> dict:
+        """获取文件信息"""
+        return await self.backend.get_file_info(file_path)
+
+
+def get_storage_manager() -> StorageManager:
+    """获取存储管理器单例"""
+    return StorageManager()
 
 
 class SQLiteStorage:
-    """SQLite 持久化存储"""
-    
-    def __init__(self, db_path: str = "data/hydraflow.db"):
-        self._db_path = db_path
-        self._ensure_db_directory()
-        self._init_tables()
-    
-    def _ensure_db_directory(self) -> None:
-        """确保数据库目录存在"""
-        dir_path = os.path.dirname(self._db_path)
-        if dir_path and not os.path.exists(dir_path):
-            os.makedirs(dir_path, exist_ok=True)
-    
-    def _init_tables(self) -> None:
-        """初始化数据库表"""
-        with sqlite3.connect(self._db_path) as conn:
-            cursor = conn.cursor()
-            
-            # 任务表
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS tasks (
-                    id TEXT PRIMARY KEY,
-                    type TEXT NOT NULL,
-                    prompt TEXT NOT NULL,
-                    parameters TEXT NOT NULL,
-                    model_id TEXT NOT NULL,
-                    status TEXT NOT NULL DEFAULT 'pending',
-                    progress REAL DEFAULT 0.0,
-                    result TEXT,
-                    error TEXT,
-                    created_at TEXT NOT NULL,
-                    started_at TEXT,
-                    completed_at TEXT,
-                    metadata TEXT
-                )
-            """)
-            
-            # 任务索引
-            cursor.execute("""
-                CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)
-            """)
-            cursor.execute("""
-                CREATE INDEX IF NOT EXISTS idx_tasks_type ON tasks(type)
-            """)
-            cursor.execute("""
-                CREATE INDEX IF NOT EXISTS idx_tasks_created ON tasks(created_at)
-            """)
-            
-            # 模型使用统计
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS model_stats (
-                    model_id TEXT PRIMARY KEY,
-                    total_calls INTEGER DEFAULT 0,
-                    success_calls INTEGER DEFAULT 0,
-                    fail_calls INTEGER DEFAULT 0,
-                    total_duration REAL DEFAULT 0.0,
-                    last_call_at TEXT,
-                    avg_latency REAL DEFAULT 0.0
-                )
-            """)
-            
-            # 技能表
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS skills (
-                    skill_id TEXT PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    version TEXT DEFAULT '1.0.0',
-                    description TEXT,
-                    type TEXT NOT NULL DEFAULT 'local',
-                    path TEXT NOT NULL,
-                    config TEXT,
-                    enabled BOOLEAN DEFAULT 1,
-                    installed_at TEXT NOT NULL,
-                    last_used_at TEXT
-                )
-            """)
-            
-            # 配置表
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS config (
-                    key TEXT PRIMARY KEY,
-                    value TEXT NOT NULL,
-                    updated_at TEXT NOT NULL
-                )
-            """)
-            
-            conn.commit()
-            logger.debug("数据库表初始化完成")
-    
-    def _serialize(self, data: Any) -> str:
-        """序列化数据"""
-        return json.dumps(data)
-    
-    def _deserialize(self, data: str) -> Any:
-        """反序列化数据"""
-        if not data:
-            return None
-        try:
-            return json.loads(data)
-        except json.JSONDecodeError:
-            return data
-    
-    def _now(self) -> str:
-        """获取当前时间字符串"""
-        return datetime.now().isoformat()
-    
-    # === 任务操作 ===
-    
-    def save_task(self, task_data: Dict[str, Any]) -> None:
-        """保存任务"""
-        with sqlite3.connect(self._db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                INSERT OR REPLACE INTO tasks (
-                    id, type, prompt, parameters, model_id, status,
-                    progress, result, error, created_at, started_at,
-                    completed_at, metadata
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                task_data["id"],
-                task_data["type"],
-                task_data["prompt"],
-                self._serialize(task_data["parameters"]),
-                task_data["model_id"],
-                task_data.get("status", "pending"),
-                task_data.get("progress", 0.0),
-                self._serialize(task_data.get("result")),
-                task_data.get("error"),
-                task_data.get("created_at", self._now()),
-                task_data.get("started_at"),
-                task_data.get("completed_at"),
-                self._serialize(task_data.get("metadata", {})),
-            ))
-            conn.commit()
-    
-    def get_task(self, task_id: str) -> Optional[Dict[str, Any]]:
-        """获取任务"""
-        with sqlite3.connect(self._db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM tasks WHERE id = ?", (task_id,))
-            row = cursor.fetchone()
-            if not row:
-                return None
-            return self._row_to_task(row)
-    
-    def _row_to_task(self, row: Tuple) -> Dict[str, Any]:
-        """将数据库行转换为任务字典"""
-        return {
-            "id": row[0],
-            "type": row[1],
-            "prompt": row[2],
-            "parameters": self._deserialize(row[3]),
-            "model_id": row[4],
-            "status": row[5],
-            "progress": row[6],
-            "result": self._deserialize(row[7]),
-            "error": row[8],
-            "created_at": row[9],
-            "started_at": row[10],
-            "completed_at": row[11],
-            "metadata": self._deserialize(row[12]),
-        }
-    
+    """SQLite 兼容层 - 保留旧接口"""
+
+    def __init__(self):
+        from src.core.config import get_settings
+        self.settings = get_settings()
+        self._tasks: dict[str, dict] = {}
+
+    def save_task(self, task_info: dict) -> None:
+        """保存任务信息（兼容旧接口）"""
+        task_id = task_info.get("id") or task_info.get("task_id")
+        if task_id:
+            self._tasks[task_id] = task_info
+
+    def get_task(self, task_id: str) -> Optional[dict]:
+        """获取任务信息（兼容旧接口）"""
+        return self._tasks.get(task_id)
+
+    def save_result(self, task_id: str, result: dict) -> None:
+        """保存任务结果（兼容旧接口）"""
+        if task_id in self._tasks:
+            self._tasks[task_id]["result"] = result
+
+    def get_result(self, task_id: str) -> Optional[dict]:
+        """获取任务结果（兼容旧接口）"""
+        task = self._tasks.get(task_id)
+        return task.get("result") if task else None
+
+    def delete_task(self, task_id: str) -> bool:
+        """删除任务（兼容旧接口）"""
+        if task_id in self._tasks:
+            del self._tasks[task_id]
+            return True
+        return False
+
     def list_tasks(
         self,
         status: Optional[str] = None,
         task_type: Optional[str] = None,
-        limit: int = 50,
+        limit: int = 100,
         offset: int = 0
-    ) -> List[Dict[str, Any]]:
-        """列出任务"""
-        query = "SELECT * FROM tasks"
-        params = []
-        
-        conditions = []
+    ) -> list[dict]:
+        """列出任务（兼容旧接口）"""
+        tasks = list(self._tasks.values())
+
         if status:
-            conditions.append("status = ?")
-            params.append(status)
+            tasks = [t for t in tasks if t.get("status") == status]
         if task_type:
-            conditions.append("type = ?")
-            params.append(task_type)
-        
-        if conditions:
-            query += " WHERE " + " AND ".join(conditions)
-        
-        query += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
-        params.extend([limit, offset])
-        
-        with sqlite3.connect(self._db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute(query, params)
-            rows = cursor.fetchall()
-            return [self._row_to_task(row) for row in rows]
-    
-    def delete_task(self, task_id: str) -> bool:
-        """删除任务"""
-        with sqlite3.connect(self._db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
-            conn.commit()
-            return cursor.rowcount > 0
-    
-    def get_task_count(self, status: Optional[str] = None) -> int:
-        """获取任务数量"""
-        query = "SELECT COUNT(*) FROM tasks"
-        params = []
-        
-        if status:
-            query += " WHERE status = ?"
-            params.append(status)
-        
-        with sqlite3.connect(self._db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute(query, params)
-            row = cursor.fetchone()
-            return row[0] if row else 0
-    
-    # === 模型统计 ===
-    
-    def update_model_stats(self, model_id: str, success: bool, duration: float) -> None:
-        """更新模型统计"""
-        with sqlite3.connect(self._db_path) as conn:
-            cursor = conn.cursor()
-            
-            cursor.execute("""
-                SELECT total_calls, success_calls, fail_calls, total_duration
-                FROM model_stats WHERE model_id = ?
-            """, (model_id,))
-            row = cursor.fetchone()
-            
-            if row:
-                total_calls = row[0] + 1
-                success_calls = row[1] + (1 if success else 0)
-                fail_calls = row[2] + (0 if success else 1)
-                total_duration = row[3] + duration
-                avg_latency = total_duration / total_calls
-                
-                cursor.execute("""
-                    UPDATE model_stats SET
-                        total_calls = ?, success_calls = ?, fail_calls = ?,
-                        total_duration = ?, avg_latency = ?, last_call_at = ?
-                    WHERE model_id = ?
-                """, (total_calls, success_calls, fail_calls, total_duration, avg_latency, self._now(), model_id))
-            else:
-                cursor.execute("""
-                    INSERT INTO model_stats (
-                        model_id, total_calls, success_calls, fail_calls,
-                        total_duration, avg_latency, last_call_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
-                """, (model_id, 1, 1 if success else 0, 0 if success else 1, duration, duration, self._now()))
-            
-            conn.commit()
-    
-    def get_model_stats(self, model_id: Optional[str] = None) -> List[Dict[str, Any]]:
-        """获取模型统计"""
-        query = "SELECT * FROM model_stats"
-        params = []
-        
-        if model_id:
-            query += " WHERE model_id = ?"
-            params.append(model_id)
-        
-        with sqlite3.connect(self._db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute(query, params)
-            rows = cursor.fetchall()
-            return [{
-                "model_id": row[0],
-                "total_calls": row[1],
-                "success_calls": row[2],
-                "fail_calls": row[3],
-                "total_duration": row[4],
-                "last_call_at": row[5],
-                "avg_latency": row[6],
-                "success_rate": row[2] / row[1] if row[1] > 0 else 0.0,
-            } for row in rows]
-    
-    # === 技能操作 ===
-    
-    def save_skill(self, skill_data: Dict[str, Any]) -> None:
-        """保存技能"""
-        with sqlite3.connect(self._db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                INSERT OR REPLACE INTO skills (
-                    skill_id, name, version, description, type, path,
-                    config, enabled, installed_at, last_used_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                skill_data["skill_id"],
-                skill_data["name"],
-                skill_data.get("version", "1.0.0"),
-                skill_data.get("description"),
-                skill_data.get("type", "local"),
-                skill_data["path"],
-                self._serialize(skill_data.get("config", {})),
-                skill_data.get("enabled", True),
-                skill_data.get("installed_at", self._now()),
-                skill_data.get("last_used_at"),
-            ))
-            conn.commit()
-    
-    def get_skill(self, skill_id: str) -> Optional[Dict[str, Any]]:
-        """获取技能"""
-        with sqlite3.connect(self._db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM skills WHERE skill_id = ?", (skill_id,))
-            row = cursor.fetchone()
-            if not row:
-                return None
-            return {
-                "skill_id": row[0],
-                "name": row[1],
-                "version": row[2],
-                "description": row[3],
-                "type": row[4],
-                "path": row[5],
-                "config": self._deserialize(row[6]),
-                "enabled": bool(row[7]),
-                "installed_at": row[8],
-                "last_used_at": row[9],
-            }
-    
-    def list_skills(self, skill_type: Optional[str] = None) -> List[Dict[str, Any]]:
-        """列出技能"""
-        query = "SELECT * FROM skills"
-        params = []
-        
-        if skill_type:
-            query += " WHERE type = ?"
-            params.append(skill_type)
-        
-        with sqlite3.connect(self._db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute(query, params)
-            rows = cursor.fetchall()
-            return [{
-                "skill_id": row[0],
-                "name": row[1],
-                "version": row[2],
-                "description": row[3],
-                "type": row[4],
-                "path": row[5],
-                "config": self._deserialize(row[6]),
-                "enabled": bool(row[7]),
-                "installed_at": row[8],
-                "last_used_at": row[9],
-            } for row in rows]
-    
-    def delete_skill(self, skill_id: str) -> bool:
-        """删除技能"""
-        with sqlite3.connect(self._db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM skills WHERE skill_id = ?", (skill_id,))
-            conn.commit()
-            return cursor.rowcount > 0
-    
-    # === 配置操作 ===
-    
-    def set_config(self, key: str, value: Any) -> None:
-        """设置配置"""
-        with sqlite3.connect(self._db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                INSERT OR REPLACE INTO config (key, value, updated_at)
-                VALUES (?, ?, ?)
-            """, (key, self._serialize(value), self._now()))
-            conn.commit()
-    
-    def get_config(self, key: str) -> Optional[Any]:
-        """获取配置"""
-        with sqlite3.connect(self._db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT value FROM config WHERE key = ?", (key,))
-            row = cursor.fetchone()
-            if not row:
-                return None
-            return self._deserialize(row[0])
+            tasks = [t for t in tasks if t.get("type") == task_type]
+
+        return tasks[offset:offset + limit]
 
 
-# 全局单例
-_storage = None
+_storage_instance: Optional[SQLiteStorage] = None
+
 
 def get_storage() -> SQLiteStorage:
-    """获取存储实例"""
-    global _storage
-    if _storage is None:
-        _storage = SQLiteStorage()
-    return _storage
+    """获取存储实例（兼容旧接口）"""
+    global _storage_instance
+    if _storage_instance is None:
+        _storage_instance = SQLiteStorage()
+    return _storage_instance

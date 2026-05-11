@@ -81,7 +81,7 @@ class QwenParser(IntentParserBase):
                 resp.raise_for_status()
                 content = resp.json()["choices"][0]["message"]["content"]
                 return _parse_llm_response(content, text, self.name, "local")
-        except Exception as e:
+        except (httpx.HTTPError, json.JSONDecodeError, KeyError, ValueError) as e:
             logger.debug(f"Qwen 本地 LLM 不可用，使用关键词解析: {e}")
             return None
 
@@ -193,7 +193,7 @@ class LlamaParser(IntentParserBase):
                 resp.raise_for_status()
                 content = resp.json()["choices"][0]["message"]["content"]
                 return _parse_llm_response(content, text, self.name, "local")
-        except Exception as e:
+        except (httpx.HTTPError, json.JSONDecodeError, KeyError, ValueError) as e:
             logger.debug(f"Llama 本地 LLM 不可用，使用关键词解析: {e}")
             return None
 

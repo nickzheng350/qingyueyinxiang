@@ -85,8 +85,8 @@ class DynamicSkillExecutor(SkillExecutor):
                 return
             
             raise ImportError("未找到 SkillExecutor 子类或 execute 函数")
-            
-        except Exception as e:
+
+        except (ImportError, FileNotFoundError) as e:
             logger.error(f"加载技能模块失败：{e}")
             raise
     
@@ -128,7 +128,7 @@ class DynamicSkillExecutor(SkillExecutor):
             result.execution_time = time.time() - start_time
             return result
             
-        except Exception as e:
+        except (RuntimeError, AttributeError) as e:
             execution_time = time.time() - start_time
             logger.error(f"技能执行失败：{e}")
             return SkillExecutionResult(
@@ -138,7 +138,7 @@ class DynamicSkillExecutor(SkillExecutor):
                 execution_time=execution_time,
                 metadata={"executor": "dynamic"}
             )
-    
+
     def execute_sync(self, **kwargs) -> SkillExecutionResult:
         """同步执行技能"""
         import time
@@ -152,8 +152,8 @@ class DynamicSkillExecutor(SkillExecutor):
             result = executor.execute_sync(**kwargs)
             result.execution_time = time.time() - start_time
             return result
-            
-        except Exception as e:
+
+        except (RuntimeError, AttributeError) as e:
             execution_time = time.time() - start_time
             logger.error(f"技能执行失败：{e}")
             return SkillExecutionResult(
@@ -184,7 +184,7 @@ class ConfigBasedSkillExecutor(SkillExecutor):
                     return yaml.safe_load(f)
                 else:
                     raise ValueError(f"不支持的配置文件格式：{self.config_path}")
-        except Exception as e:
+        except (FileNotFoundError, json.JSONDecodeError, ValueError) as e:
             logger.error(f"加载技能配置失败：{e}")
             raise
     
@@ -254,7 +254,7 @@ class ConfigBasedSkillExecutor(SkillExecutor):
         method = params.get('method', 'GET')
         headers = params.get('headers', {})
         body = params.get('body')
-        
+
         try:
             async with httpx.AsyncClient() as client:
                 if method == 'GET':
@@ -267,10 +267,10 @@ class ConfigBasedSkillExecutor(SkillExecutor):
                     resp = await client.delete(url, headers=headers)
                 else:
                     raise ValueError(f"不支持的 HTTP 方法：{method}")
-                
+
                 resp.raise_for_status()
                 return resp.json()
-        except Exception as e:
+        except (httpx.HTTPError, asyncio.TimeoutError, ValueError) as e:
             logger.error(f"HTTP 请求失败：{e}")
             raise
     

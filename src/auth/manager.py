@@ -1,225 +1,224 @@
-"""用户认证模块 - JWT认证和用户管理"""
+"""HydraFlow AI 认证模块 - OAuth2 + JWT"""
 
-import jwt
+import secrets
 import hashlib
-import time
-import logging
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
-from dataclasses import dataclass, field
+from typing import Optional
+from functools import lru_cache
 
-logger = logging.getLogger("hydraflow.auth")
+from jose import JWTError, jwt
+from passlib.context import CryptContext
+from sqlalchemy import select, and_
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.core.config import get_settings
+from src.persistence.database import User, get_db_session
+from src.core.exceptions import AuthenticationError, AuthorizationError
+
+settings = get_settings()
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-@dataclass
-class User:
-    """用户信息"""
-    id: str
-    username: str
-    email: Optional[str] = None
-    role: str = "user"
-    enabled: bool = True
-    created_at: datetime = field(default_factory=datetime.now)
-    last_login: Optional[datetime] = None
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """验证密码"""
+    return pwd_context.verify(plain_password, hashed_password)
 
 
-class AuthManager:
-    """认证管理器"""
-    
-    def __init__(self, secret_key: str = "hydraflow-secret-key"):
-        self._secret_key = secret_key
-        self._users: Dict[str, User] = {}
-        self._token_store: Dict[str, Dict[str, Any]] = {}
-        
-        # 创建默认管理员用户
-        self._create_default_admin()
-    
-    def _create_default_admin(self) -> None:
-        """创建默认管理员用户"""
-        admin_user = User(
-            id="admin",
-            username="admin",
-            email="admin@hydraflow.local",
-            role="admin",
-            enabled=True
+def get_password_hash(password: str) -> str:
+    """密码哈希"""
+    return pwd_context.hash(password)
+
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    """创建访问令牌"""
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(
+            minutes=settings.auth.jwt_access_token_expire_minutes
         )
-        self._users["admin"] = admin_user
-        logger.info("已创建默认管理员用户")
-    
-    def _hash_password(self, password: str, salt: Optional[str] = None) -> str:
-        """哈希密码"""
-        if salt is None:
-            salt = hashlib.sha256(str(time.time()).encode()).hexdigest()[:16]
-        return f"{salt}${hashlib.sha256((salt + password).encode()).hexdigest()}"
-    
-    def _verify_password(self, password: str, hashed: str) -> bool:
-        """验证密码"""
-        if "$" not in hashed:
-            return False
-        salt, hash_value = hashed.split("$", 1)
-        computed_hash = hashlib.sha256((salt + password).encode()).hexdigest()
-        return computed_hash == hash_value
-    
-    def create_user(
-        self,
-        username: str,
-        password: str,
-        email: Optional[str] = None,
-        role: str = "user"
-    ) -> Optional[User]:
-        """创建用户"""
-        if username in self._users:
-            logger.warning(f"用户已存在: {username}")
-            return None
-        
-        user = User(
-            id=username,
-            username=username,
-            email=email,
-            role=role,
-            enabled=True
+    to_encode.update({"exp": expire, "type": "access"})
+    encoded_jwt = jwt.encode(
+        to_encode,
+        settings.auth.jwt_secret_key,
+        algorithm=settings.auth.jwt_algorithm,
+    )
+    return encoded_jwt
+
+
+def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    """创建刷新令牌"""
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(
+            days=settings.auth.jwt_refresh_token_expire_days
         )
-        self._users[username] = user
-        
-        # 存储密码哈希（简单实现，实际应存储在数据库）
-        self._token_store[f"user:{username}:password"] = self._hash_password(password)
-        
-        logger.info(f"创建用户: {username}")
-        return user
-    
-    def authenticate(self, username: str, password: str) -> Optional[str]:
-        """认证用户并生成JWT令牌"""
-        user = self._users.get(username)
-        if not user or not user.enabled:
-            return None
-        
-        # 获取存储的密码哈希
-        stored_hash = self._token_store.get(f"user:{username}:password")
-        if not stored_hash:
-            return None
-        
-        # 验证密码
-        if not self._verify_password(password, stored_hash):
-            logger.warning(f"认证失败: {username}")
-            return None
-        
-        # 更新最后登录时间
-        user.last_login = datetime.now()
-        
-        # 生成JWT令牌
-        token = self._generate_token(username)
-        self._token_store[f"token:{token}"] = {
-            "username": username,
-            "expires_at": datetime.now() + timedelta(hours=24)
-        }
-        
-        logger.info(f"用户登录成功: {username}")
-        return token
-    
-    def _generate_token(self, username: str) -> str:
-        """生成JWT令牌"""
-        payload = {
-            "sub": username,
-            "exp": datetime.now(tz=None) + timedelta(hours=24),
-            "iat": datetime.now(tz=None),
-            "iss": "hydraflow"
-        }
-        return jwt.encode(payload, self._secret_key, algorithm="HS256")
-    
-    def verify_token(self, token: str) -> Optional[str]:
-        """验证JWT令牌"""
-        try:
-            # 禁用iat验证以避免时间同步问题
-            payload = jwt.decode(
-                token, 
-                self._secret_key, 
-                algorithms=["HS256"],
-                options={"verify_iat": False}
-            )
-            username = payload.get("sub")
-            
-            # 检查本地存储（用于注销）
-            stored = self._token_store.get(f"token:{token}")
-            if not stored:
-                return None
-            
-            # 检查过期
-            if stored["expires_at"] < datetime.now():
-                self._revoke_token(token)
-                return None
-            
-            return username
-        except jwt.ExpiredSignatureError:
-            logger.warning("令牌已过期")
-            self._revoke_token(token)
-            return None
-        except jwt.InvalidTokenError as e:
-            logger.warning(f"无效令牌: {e}")
-            return None
-    
-    def _revoke_token(self, token: str) -> None:
-        """吊销令牌"""
-        if f"token:{token}" in self._token_store:
-            del self._token_store[f"token:{token}"]
-            logger.debug(f"令牌已吊销: {token[:20]}...")
-    
-    def logout(self, token: str) -> bool:
-        """登出用户"""
-        username = self.verify_token(token)
-        if username:
-            self._revoke_token(token)
-            logger.info(f"用户登出: {username}")
-            return True
-        return False
-    
-    def get_user(self, username: str) -> Optional[User]:
-        """获取用户信息"""
-        return self._users.get(username)
-    
-    def update_user(
-        self,
-        username: str,
-        **kwargs
-    ) -> bool:
-        """更新用户信息"""
-        user = self._users.get(username)
-        if not user:
-            return False
-        
-        for key, value in kwargs.items():
-            if hasattr(user, key):
-                setattr(user, key, value)
-        
-        logger.info(f"更新用户信息: {username}")
-        return True
-    
-    def delete_user(self, username: str) -> bool:
-        """删除用户"""
-        if username == "admin":
-            logger.warning("禁止删除管理员用户")
-            return False
-        
-        if username in self._users:
-            del self._users[username]
-            # 清理相关数据
-            keys_to_delete = [k for k in self._token_store.keys() if k.startswith(f"user:{username}:")]
-            for key in keys_to_delete:
-                del self._token_store[key]
-            logger.info(f"删除用户: {username}")
-            return True
-        return False
-    
-    def list_users(self) -> list[User]:
-        """列出所有用户"""
-        return list(self._users.values())
+    to_encode.update({"exp": expire, "type": "refresh"})
+    encoded_jwt = jwt.encode(
+        to_encode,
+        settings.auth.jwt_secret_key,
+        algorithm=settings.auth.jwt_algorithm,
+    )
+    return encoded_jwt
 
 
-# 全局单例
-_auth_manager = None
+def decode_token(token: str) -> dict:
+    """解码令牌"""
+    try:
+        payload = jwt.decode(
+            token,
+            settings.auth.jwt_secret_key,
+            algorithms=[settings.auth.jwt_algorithm],
+        )
+        return payload
+    except JWTError:
+        raise AuthenticationError("无效的令牌")
 
-def get_auth_manager() -> AuthManager:
-    """获取认证管理器实例"""
-    global _auth_manager
-    if _auth_manager is None:
-        _auth_manager = AuthManager()
-    return _auth_manager
+
+async def get_user(db: AsyncSession, user_id: int) -> Optional[User]:
+    """根据 ID 获取用户"""
+    result = await db.execute(select(User).where(User.id == user_id))
+    return result.scalar_one_or_none()
+
+
+async def get_user_by_email(db: AsyncSession, email: str) -> Optional[User]:
+    """根据邮箱获取用户"""
+    result = await db.execute(select(User).where(User.email == email))
+    return result.scalar_one_or_none()
+
+
+async def get_user_by_username(db: AsyncSession, username: str) -> Optional[User]:
+    """根据用户名获取用户"""
+    result = await db.execute(select(User).where(User.username == username))
+    return result.scalar_one_or_none()
+
+
+async def get_user_by_provider(
+    db: AsyncSession, provider: str, provider_id: str
+) -> Optional[User]:
+    """根据 OAuth 提供商获取用户"""
+    result = await db.execute(
+        select(User).where(and_(User.provider == provider, User.provider_id == provider_id))
+    )
+    return result.scalar_one_or_none()
+
+
+async def authenticate_user(db: AsyncSession, username: str, password: str) -> Optional[User]:
+    """认证用户"""
+    user = await get_user_by_username(db, username)
+    if not user:
+        user = await get_user_by_email(db, username)
+    if not user:
+        return None
+    if not verify_password(password, user.hashed_password or ""):
+        return None
+    if not user.is_active:
+        raise AuthenticationError("用户已被禁用")
+    return user
+
+
+async def create_user(
+    db: AsyncSession,
+    username: str,
+    email: str,
+    password: Optional[str] = None,
+    provider: Optional[str] = None,
+    provider_id: Optional[str] = None,
+    avatar_url: Optional[str] = None,
+) -> User:
+    """创建用户"""
+    existing_user = await get_user_by_username(db, username)
+    if existing_user:
+        raise AuthorizationError("用户名已存在")
+
+    existing_email = await get_user_by_email(db, email)
+    if existing_email:
+        raise AuthorizationError("邮箱已被注册")
+
+    hashed_password = get_password_hash(password) if password else None
+
+    user = User(
+        username=username,
+        email=email,
+        hashed_password=hashed_password,
+        provider=provider,
+        provider_id=provider_id,
+        avatar_url=avatar_url,
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+async def get_current_user(db: AsyncSession, token: str) -> User:
+    """获取当前用户"""
+    payload = decode_token(token)
+
+    if payload.get("type") != "access":
+        raise AuthenticationError("无效的令牌类型")
+
+    user_id: Optional[int] = payload.get("sub")
+    if user_id is None:
+        raise AuthenticationError("无效的令牌")
+
+    user = await get_user(db, user_id)
+    if user is None:
+        raise AuthenticationError("用户不存在")
+
+    if not user.is_active:
+        raise AuthenticationError("用户已被禁用")
+
+    return user
+
+
+class ApiKeyManager:
+    """API 密钥管理器"""
+
+    _instance: Optional["ApiKeyManager"] = None
+
+    def __new__(cls) -> "ApiKeyManager":
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def generate_api_key(self) -> tuple[str, str, str]:
+        """生成 API 密钥，返回 (完整密钥, 密钥前缀, 密钥哈希)"""
+        raw_key = f"hf_{secrets.token_urlsafe(32)}"
+        prefix = raw_key[:16]
+        key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
+        return raw_key, prefix, key_hash
+
+    def hash_key(self, key: str) -> str:
+        """哈希密钥"""
+        return hashlib.sha256(key.encode()).hexdigest()
+
+    def verify_key(self, key: str, key_hash: str) -> bool:
+        """验证密钥"""
+        return self.hash_key(key) == key_hash
+
+
+def get_api_key_manager() -> ApiKeyManager:
+    """获取 API 密钥管理器"""
+    return ApiKeyManager()
+
+
+class OAuthService:
+    """OAuth 服务"""
+
+    async def authenticate_google(self, code: str) -> tuple[str, str]:
+        """Google OAuth 认证 - 占位实现"""
+        raise NotImplementedError("Google OAuth 未实现")
+
+    async def authenticate_github(self, code: str) -> tuple[str, str]:
+        """GitHub OAuth 认证 - 占位实现"""
+        raise NotImplementedError("GitHub OAuth 未实现")
+
+
+def get_oauth_service() -> OAuthService:
+    """获取 OAuth 服务"""
+    return OAuthService()

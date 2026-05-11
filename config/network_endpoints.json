@@ -1,0 +1,104 @@
+{
+  "api_endpoints": {
+    "openai": {
+      "base_url": "https://api.openai.com/v1",
+      "description": "OpenAI API",
+      "endpoints": {
+        "chat_completions": "/chat/completions",
+        "images_generations": "/images/generations",
+        "embeddings": "/embeddings"
+      }
+    },
+    "anthropic": {
+      "base_url": "https://api.anthropic.com/v1",
+      "description": "Anthropic Claude API",
+      "endpoints": {
+        "messages": "/messages"
+      }
+    },
+    "stability_ai": {
+      "base_url": "https://api.stability.ai/v1",
+      "description": "Stability AI API",
+      "endpoints": {
+        "text_to_image": "/generation/stable-diffusion-v1-6/text-to-image",
+        "image_to_image": "/generation/stable-diffusion-v1-6/image-to-image"
+      }
+    },
+    "lm_studio": {
+      "base_url": "http://localhost:1234/v1",
+      "description": "LM Studio 本地 API",
+      "endpoints": {
+        "chat_completions": "/chat/completions",
+        "completions": "/completions",
+        "embeddings": "/embeddings"
+      }
+    },
+    "ollama": {
+      "base_url": "http://localhost:11434/v1",
+      "description": "Ollama 本地 API",
+      "endpoints": {
+        "chat_completions": "/chat/completions",
+        "completions": "/completions"
+      }
+    },
+    "huggingface": {
+      "base_url": "https://huggingface.co",
+      "description": "Hugging Face 模型托管",
+      "endpoints": {
+        "model_download": "/{model_id}/resolve/main/{filename}",
+        "model_info": "/api/models/{model_id}"
+      }
+    },
+    "modelscope": {
+      "base_url": "https://www.modelscope.cn",
+      "description": "ModelScope 魔搭社区",
+      "endpoints": {
+        "model_download": "/{model_id}/resolve/master/{filename}",
+        "model_info": "/api/v1/models/{model_id}"
+      }
+    },
+    "skill_market": {
+      "base_url": "https://hydraflow-ai.org/market/api/v1",
+      "description": "HydraFlow 技能市场",
+      "endpoints": {
+        "list_skills": "/skills",
+        "skill_detail": "/skills/{skill_id}",
+        "skill_download": "/skills/{skill_id}/versions/{version}/download",
+        "categories": "/categories"
+      }
+    },
+    "pytorch": {
+      "base_url": "https://download.pytorch.org/whl",
+      "description": "PyTorch 预编译包",
+      "endpoints": {
+        "cpu": "/cpu/torch",
+        "cuda": "/cu118/torch"
+      }
+    }
+  },
+  "default_headers": {
+    "User-Agent": "HydraFlow-AI/1.1.0",
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Encoding": "gzip, deflate, br"
+  },
+  "timeouts": {
+    "default": 30,
+    "download": 300,
+    "model_download": 3600,
+    "api_call": 60
+  },
+  "retry_policy": {
+    "max_retries": 3,
+    "retry_delay": 1.0,
+    "backoff_multiplier": 2.0,
+    "max_retry_delay": 30.0
+  },
+  "download_settings": {
+    "chunk_size": 8192,
+    "max_chunk_size": 1048576,
+    "resume_support": true,
+    "verify_ssl": true,
+    "follow_redirects": true,
+    "max_redirects": 5
+  }
+}

@@ -86,7 +86,7 @@ async def generate(request: GenerateRequest):
         try:
             model_info = dispatcher.get_model(request.model)
             selected_model = {"id": request.model, **model_info}
-        except Exception:
+        except (ValueError, KeyError):
             selected_model = dispatcher.select_model(
                 parse_result.intent.value,
                 parse_result.model_suggestions,
@@ -134,7 +134,7 @@ async def get_model(model_id: str):
     try:
         model = dispatcher.get_model(model_id)
         return {"id": model_id, **model}
-    except Exception as e:
+    except (ValueError, KeyError) as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
@@ -177,7 +177,7 @@ async def uninstall_skill(skill_id: str):
     try:
         result = manager.uninstall_skill(skill_id)
         return result
-    except Exception as e:
+    except (ValueError, FileNotFoundError) as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
@@ -232,7 +232,7 @@ async def validate_intent_model(request: dict):
             "model_category": model.get("category"),
             "model_function": model.get("function_type"),
         }
-    except Exception as e:
+    except (ValueError, KeyError) as e:
         return {
             "valid": False,
             "intent": intent,
@@ -376,7 +376,7 @@ async def get_skill(skill_id: str):
     try:
         skill = skill_manager.get_skill(skill_id)
         return skill
-    except Exception as e:
+    except (ValueError, FileNotFoundError, KeyError) as e:
         raise HTTPException(status_code=404, detail=f"技能未找到：{skill_id}")
 
 
