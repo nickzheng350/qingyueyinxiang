@@ -1,0 +1,22 @@
+{
+  "skill_id": "openai-image-gen",
+  "name": "OpenAI 图像生成",
+  "name_en": "OpenAI Image Generation",
+  "version": "1.0.0",
+  "description": "使用 OpenAI DALL-E API 生成图像",
+  "description_en": "Generate images using OpenAI DALL-E API",
+  "author": "HydraFlow AI",
+  "type": "core",
+  "dependencies": {
+    "openai": ">=1.0.0"
+  },
+  "tags": ["image", "openai", "dall-e", "generation"],
+  "icon": "🎨",
+  "category": "creative",
+  "subcategory": "image",
+  "license": "MIT",
+  "requirements": ["openai>=1.0.0"],
+  "compatibility": {
+    "hydraflow_min_version": "1.0.0"
+  }
+}

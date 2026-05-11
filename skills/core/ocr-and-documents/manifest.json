@@ -1,0 +1,23 @@
+{
+  "skill_id": "ocr-and-documents",
+  "name": "OCR 与文档处理",
+  "name_en": "OCR & Document Processing",
+  "version": "1.0.0",
+  "description": "文字识别与文档处理",
+  "description_en": "OCR and document processing",
+  "author": "HydraFlow AI",
+  "type": "core",
+  "dependencies": {
+    "pytesseract": ">=0.3.10",
+    "Pillow": ">=10.0.0"
+  },
+  "tags": ["ocr", "document", "productivity"],
+  "icon": "📋",
+  "category": "productivity",
+  "subcategory": "ocr",
+  "license": "MIT",
+  "requirements": ["pytesseract>=0.3.10", "Pillow>=10.0.0"],
+  "compatibility": {
+    "hydraflow_min_version": "1.0.0"
+  }
+}

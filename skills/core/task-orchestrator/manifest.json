@@ -1,0 +1,20 @@
+{
+  "skill_id": "task-orchestrator",
+  "name": "任务编排器",
+  "name_en": "Task Orchestrator",
+  "version": "1.0.0",
+  "description": "复杂任务分解和执行编排",
+  "description_en": "Complex task decomposition and execution orchestration",
+  "author": "HydraFlow AI",
+  "type": "core",
+  "dependencies": {},
+  "tags": ["orchestration", "workflow", "task"],
+  "icon": "⚙️",
+  "category": "core",
+  "subcategory": "orchestration",
+  "license": "MIT",
+  "requirements": [],
+  "compatibility": {
+    "hydraflow_min_version": "1.0.0"
+  }
+}

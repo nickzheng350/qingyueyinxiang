@@ -1,0 +1,20 @@
+{
+  "skill_id": "skill-creator",
+  "name": "技能创建器",
+  "name_en": "Skill Creator",
+  "version": "1.0.0",
+  "description": "创建和打包新的 HydraFlow AI 技能",
+  "description_en": "Create and package new HydraFlow AI skills",
+  "author": "HydraFlow AI",
+  "type": "core",
+  "dependencies": {},
+  "tags": ["skill", "creator", "development"],
+  "icon": "📦",
+  "category": "core",
+  "subcategory": "skill_creation",
+  "license": "MIT",
+  "requirements": [],
+  "compatibility": {
+    "hydraflow_min_version": "1.0.0"
+  }
+}
