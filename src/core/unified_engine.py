@@ -2,6 +2,7 @@
 import logging
 import threading
 import time
+import heapq
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Any, List, Union, Callable, TypeVar
 from enum import Enum
@@ -351,34 +352,67 @@ class FusionSubEngine(BaseSubEngine):
 
 
 class SmartScheduler:
-    """智能调度器"""
+    """智能调度器 - 使用优先队列优化性能"""
     
     def __init__(self):
-        self.task_queue: List[Task] = []
+        # 使用优先队列（最小堆）存储任务，按优先级排序
+        self.task_heap: List[tuple] = []
+        # 跟踪队列中的任务，以便快速查找和更新
+        self.queued_tasks: Dict[str, Task] = {}
         self.active_tasks: Dict[str, Task] = {}
         self.lock = threading.RLock()
+        self.task_counter = 0  # 用于打破优先级相等时的平局
     
     def add_task(self, task: Task):
-        """添加任务"""
+        """添加任务 - O(log n)"""
         with self.lock:
-            self.task_queue.append(task)
-            self.task_queue.sort(key=lambda t: t.priority.value)
+            self.task_counter += 1
+            # 堆元素: (优先级值, 插入计数器, 任务ID)
+            heapq.heappush(
+                self.task_heap,
+                (task.priority.value, self.task_counter, task.task_id)
+            )
+            self.queued_tasks[task.task_id] = task
             task.status = TaskStatus.QUEUED
             logger.info(f"Task {task.task_id} queued at priority {task.priority}")
     
     def get_next_task(self, max_concurrent: int) -> Optional[Task]:
-        """获取下一个任务"""
+        """获取下一个任务 - 优化的实现"""
         with self.lock:
             if len(self.active_tasks) >= max_concurrent:
                 return None
             
-            for task in self.task_queue:
-                if task.status == TaskStatus.QUEUED:
-                    if all(dep not in self.active_tasks for dep in task.dependencies):
-                        self.task_queue.remove(task)
-                        self.active_tasks[task.task_id] = task
-                        task.status = TaskStatus.RUNNING
-                        return task
+            # 清理失效的堆元素（已完成或不在队列中的）
+            while self.task_heap:
+                _, _, task_id = self.task_heap[0]
+                
+                # 检查任务是否仍在队列中
+                if task_id not in self.queued_tasks:
+                    heapq.heappop(self.task_heap)
+                    continue
+                
+                task = self.queued_tasks[task_id]
+                
+                # 检查依赖是否都不在活跃状态
+                if all(dep not in self.active_tasks for dep in task.dependencies):
+                    # 弹出这个任务
+                    heapq.heappop(self.task_heap)
+                    # 从队列中移除
+                    self.queued_tasks.pop(task_id)
+                    # 加入活跃任务
+                    self.active_tasks[task_id] = task
+                    task.status = TaskStatus.RUNNING
+                    return task
+                else:
+                    # 这个任务的依赖还在运行，需要推迟
+                    # 先弹出再重新推入，以便处理其他可能就绪的任务
+                    _, counter, _ = heapq.heappop(self.task_heap)
+                    heapq.heappush(
+                        self.task_heap,
+                        (task.priority.value, counter, task_id)
+                    )
+                    break
+            
             return None
     
     def complete_task(self, task_id: str, result: EngineResult):
@@ -399,7 +433,7 @@ class SmartScheduler:
         """获取队列统计"""
         with self.lock:
             return {
-                "queued": len(self.task_queue),
+                "queued": len(self.queued_tasks),
                 "active": len(self.active_tasks),
             }
 

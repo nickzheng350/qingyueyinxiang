@@ -6,6 +6,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
@@ -55,7 +56,7 @@ def create_app() -> FastAPI:
 
     cors_origins = api_config.get("cors_origins", ["http://localhost:3000"])
     app.add_middleware(
-        __import__("fastapi.middleware.cors", fromlist=["CORSMiddleware"]).CORSMiddleware,
+        CORSMiddleware,
         allow_origins=cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
