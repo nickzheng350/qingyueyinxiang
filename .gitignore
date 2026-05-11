@@ -1,22 +1,46 @@
-node_modules/
+# Python
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-.env
+*.pyc
+*.pyo
+*.pyd
+.Python
 .venv/
-venv/
-env/
-.cache/
-logs/
-temp/
-outputs/
+.env
+
+# 模型文件
 models/
-data/
-*.egg-info/
-dist/
-build/
-.market_cache/
+*.bin
+*.safetensors
+*.ckpt
+
+# 日志
+*.log
+logs/
+
+# 缓存
+.cache/
+*.pkl
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 系统
 .DS_Store
 Thumbs.db
-*.log
+
+# 构建
+dist/
+build/
+*.egg-info/
+
+# 测试
+test_*.py
+.pytest_cache/
+
+# Node.js
+node_modules/
+package-lock.json

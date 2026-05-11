@@ -162,3 +162,102 @@ class SkillManager:
             "total_skills": len(self._skills),
             "by_type": by_type,
         }
+    
+    def execute_skill(self, skill_id: str, **kwargs) -> dict[str, Any]:
+        """执行技能"""
+        from src.skills.skill_engine import get_skill_engine
+        
+        if skill_id not in self._skills:
+            return {
+                "status": "error",
+                "message": f"技能未找到：{skill_id}",
+            }
+        
+        skill = self._skills[skill_id]
+        engine = get_skill_engine()
+        
+        # 如果技能未注册到引擎，先注册
+        if skill_id not in engine.list_skills():
+            self._register_skill_to_engine(engine, skill)
+        
+        # 执行技能
+        result = engine.execute_skill_sync(skill_id, **kwargs)
+        
+        return {
+            "status": "success" if result.success else "error",
+            "skill_id": skill_id,
+            "data": result.data,
+            "error": result.error,
+            "execution_time": result.execution_time,
+            "metadata": result.metadata,
+        }
+    
+    def _register_skill_to_engine(self, engine, skill: dict) -> None:
+        """将技能注册到引擎"""
+        skill_id = skill.get("skill_id")
+        skill_name = skill.get("name", skill_id)
+        skill_version = skill.get("version", "1.0.0")
+        skill_path = skill.get("path")
+        skill_config = skill.get("config", {})
+        
+        if not skill_path:
+            logger.warning(f"技能 {skill_id} 缺少路径信息，无法注册到引擎")
+            return
+        
+        # 查找执行器入口
+        skill_dir = Path(skill_path)
+        
+        # 优先查找 executor.py
+        executor_py = skill_dir / "executor.py"
+        if executor_py.exists():
+            engine.register_skill(
+                skill_id=skill_id,
+                skill_name=skill_name,
+                skill_version=skill_version,
+                executor_type="dynamic",
+                module_path=str(executor_py),
+                config=skill_config,
+            )
+            logger.info(f"技能 {skill_id} 已注册到引擎（动态执行器）")
+            return
+        
+        # 查找 config.yaml 或 config.json
+        config_yaml = skill_dir / "config.yaml"
+        config_yml = skill_dir / "config.yml"
+        config_json = skill_dir / "config.json"
+        
+        if config_yaml.exists():
+            engine.register_skill(
+                skill_id=skill_id,
+                skill_name=skill_name,
+                skill_version=skill_version,
+                executor_type="config_based",
+                config_path=str(config_yaml),
+                config=skill_config,
+            )
+            logger.info(f"技能 {skill_id} 已注册到引擎（配置执行器）")
+            return
+        elif config_yml.exists():
+            engine.register_skill(
+                skill_id=skill_id,
+                skill_name=skill_name,
+                skill_version=skill_version,
+                executor_type="config_based",
+                config_path=str(config_yml),
+                config=skill_config,
+            )
+            logger.info(f"技能 {skill_id} 已注册到引擎（配置执行器）")
+            return
+        elif config_json.exists():
+            engine.register_skill(
+                skill_id=skill_id,
+                skill_name=skill_name,
+                skill_version=skill_version,
+                executor_type="config_based",
+                config_path=str(config_json),
+                config=skill_config,
+            )
+            logger.info(f"技能 {skill_id} 已注册到引擎（配置执行器）")
+            return
+        
+        logger.warning(f"技能 {skill_id} 未找到执行器入口，跳过注册")

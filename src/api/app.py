@@ -10,6 +10,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.core.config import get_config
 from src.core.stability import get_stability_manager
 from src.api.routes import api_router
+from src.ws.manager import get_ws_manager
+from src.ws.routes import WebSocketRoutes
 
 logger = logging.getLogger("hydraflow.api")
 
@@ -45,6 +47,11 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(api_router, prefix="/api/v1")
+
+    # 注册 WebSocket 路由
+    ws_manager = get_ws_manager()
+    ws_routes = WebSocketRoutes(ws_manager)
+    ws_routes.register_routes(app)
 
     @app.get("/health")
     async def health_check():

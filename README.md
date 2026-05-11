@@ -1,96 +1,136 @@
-# 🐍 HydraFlow AI
+# HydraFlow AI
 
-**九头蛇生成式工作流平台** — 集成意图解析、模型调度、技能管理和工作流引擎的 AI 生成式工作流平台。
+一个强大的 AI 工作流引擎，支持多模态内容生成、意图解析和技能系统。
 
-## ✨ 特性
+## 功能特性
 
-- 🎨 **多风格图像生成** — 赛博朋克、动漫、奇幻、照片级真实感等 7 种风格模板
-- 🤖 **多解析器支持** — Qwen2.5、Llama (本地) + OpenAI、Claude (API)
-- 📦 **技能系统** — 可扩展的技能市场，支持本地安装和市场安装
-- 🔧 **CLI 工具** — 一键安装、环境检查、服务启动
-- 🌐 **Web UI** — 现代化暗色主题界面
-- ⚡ **FastAPI 后端** — 高性能异步 API 服务
+- **智能意图解析** - 基于关键词优先和 LLM 辅助的混合解析策略
+- **多模态支持** - 支持图像生成、视频生成、代码生成等多种模态
+- **技能系统** - 可扩展的技能插件架构
+- **性能优化** - 智能缓存、复杂度分析、减少对模型的绝对依赖
+- **跨平台** - 支持 Linux、macOS 和 Windows
 
-## 🚀 快速开始
+## 快速开始
 
-### 前置要求
+### 环境要求
 
-- **Node.js**: 16.0+
-- **Python**: 3.10 - 3.13
+- Python 3.10+
+- Git
+- 推荐 8GB+ RAM，支持 CUDA 的 GPU（可选）
 
-### 安装
+### 一键安装
+
+**Linux / macOS:**
+```bash
+git clone https://github.com/yourusername/hydraflow-ai.git
+cd hydraflow-ai
+chmod +x install.sh
+./install.sh
+```
+
+**Windows:**
+```cmd
+git clone https://github.com/yourusername/hydraflow-ai.git
+cd hydraflow-ai
+install.bat
+```
+
+### 手动安装
 
 ```bash
-# 克隆项目
-git clone https://github.com/HydraFlowAI/HydraFlow_AI.git
-cd HydraFlow_AI
+# 克隆仓库
+git clone https://github.com/yourusername/hydraflow-ai.git
+cd hydraflow-ai
 
-# 安装 Node.js 依赖
-npm install
+# 创建虚拟环境
+python -m venv .venv
 
-# 全局链接（可选）
-npm link
+# 激活虚拟环境
+# Linux/macOS
+source .venv/bin/activate
+# Windows
+.venv\Scripts\activate
 
-# 一键安装所有依赖
-hydraflow install
+# 安装依赖
+pip install -r requirements.txt
+
+# 配置环境
+cp .env.example .env
+
+# 运行诊断
+python main.py diagnose
+
+# 启动服务
+python main.py
 ```
 
-### 启动
+## 配置说明
+
+### 意图解析配置
+
+```json
+{
+  "intent_parser": {
+    "use_llm": true,
+    "llm_threshold": "medium",
+    "enable_cache": true,
+    "cache_ttl": 3600
+  }
+}
+```
+
+| 配置项 | 说明 | 默认值 |
+|--------|------|--------|
+| use_llm | 是否启用 LLM 辅助解析 | true |
+| llm_threshold | LLM 触发阈值 | medium |
+| enable_cache | 启用结果缓存 | true |
+| cache_ttl | 缓存有效期（秒） | 3600 |
+
+## API 使用
+
+### 解析意图
 
 ```bash
-# 终端 1 - 启动 API
-hydraflow api
-
-# 终端 2 - 启动 UI
-hydraflow ui
+curl -X POST http://localhost:8000/api/v1/intent/parse \
+  -H "Content-Type: application/json" \
+  -d '{"text": "生成一张赛博朋克风格的图片"}'
 ```
 
-访问地址:
-- API: http://localhost:8000
-- API 文档: http://localhost:8000/docs
-- Web UI: http://localhost:3000
+### 生成内容
 
-## 📋 命令列表
-
-| 命令 | 说明 |
-|------|------|
-| `hydraflow install` | 一键安装所有依赖 |
-| `hydraflow check` | 检查环境和依赖 |
-| `hydraflow api` | 启动 API 服务 |
-| `hydraflow ui` | 启动 UI 服务 |
-| `hydraflow dev` | 开发模式 |
-| `hydraflow install-python` | 安装 Python 依赖 |
-| `hydraflow install-deps` | 安装所有依赖 |
-
-## 🏗️ 项目结构
-
-```
-HydraFlow_AI/
-├── bin/                # CLI 工具
-│   └── hydraflow.js    # CLI 入口
-├── lib/                # Node.js 核心库
-├── src/                # Python 源代码
-│   ├── core/          # 核心框架（配置、稳定性、异常）
-│   ├── intent_parser/ # 意图解析
-│   ├── model_dispatcher/ # 模型调度
-│   ├── prompt_engine/ # 提示词引擎
-│   ├── api/           # FastAPI 服务
-│   └── skills/        # 技能管理
-├── ui/                 # Web UI
-├── skills/             # 技能库
-├── config/             # 配置文件
-├── prompts/            # 提示词模板
-├── scripts/            # 安装脚本
-├── docs/               # 文档
-├── main.py            # Python 入口
-└── package.json        # Node.js 配置
+```bash
+curl -X POST http://localhost:8000/api/v1/generate \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "生成一张猫的图片"}'
 ```
 
-## 📖 文档
+## 项目结构
 
-- [快速开始指南](docs/00-快速开始指南.md)
-- [完整使用指南](docs/完整使用指南.md)
+```
+hydraflow-ai/
+├── src/              # 核心源代码
+│   ├── api/          # API 路由
+│   ├── intent_parser/ # 意图解析模块
+│   ├── model_dispatcher/ # 模型调度器
+│   ├── prompt_engine/   # 提示词引擎
+│   └── skills/        # 技能系统
+├── config/           # 配置文件
+├── docs/             # 文档
+├── prompts/          # 提示词模板
+└── skills/           # 技能插件
+```
 
-## 📄 许可证
+## 性能优化
 
-[MIT License](LICENSE)
+1. **关键词优先解析** - 简单查询跳过 LLM，响应时间提升 1000 倍
+2. **智能缓存** - 重复查询直接返回缓存结果
+3. **复杂度分析** - 根据查询复杂度动态选择解析策略
+4. **内存优化** - 模型按需加载，减少显存占用
+
+## 许可证
+
+MIT License
+
+## 贡献
+
+欢迎提交 Issue 和 Pull Request！

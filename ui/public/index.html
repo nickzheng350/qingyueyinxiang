@@ -9,19 +9,22 @@
             --bg-primary: #0a0a0f;
             --bg-secondary: #12121a;
             --bg-card: #1a1a2e;
+            --bg-input: #0d0d15;
             --border: #2a2a3e;
+            --border-focus: #6c5ce7;
             --text-primary: #e0e0e0;
             --text-secondary: #888;
+            --text-muted: #555;
             --accent: #6c5ce7;
             --accent-hover: #7d6ff0;
             --neon-cyan: #00f5ff;
             --neon-magenta: #ff00ff;
             --success: #00d68f;
+            --warning: #ffaa00;
             --error: #ff3d71;
+            --info: #0095ff;
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: var(--bg-primary);
@@ -32,268 +35,212 @@
         .header {
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border);
-            padding: 16px 24px;
+            padding: 14px 24px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
-
+        .header-left { display: flex; align-items: center; gap: 16px; }
         .header h1 {
-            font-size: 20px;
+            font-size: 18px;
             background: linear-gradient(135deg, var(--neon-cyan), var(--neon-magenta));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-
         .header .status {
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 13px;
-            color: var(--text-secondary);
-        }
-
-        .header .status .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--success);
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 24px;
-        }
-
-        .main-panel {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
-        }
-
-        .main-panel h2 {
-            font-size: 16px;
-            margin-bottom: 16px;
-            color: var(--text-primary);
-        }
-
-        .input-group {
-            margin-bottom: 16px;
-        }
-
-        .input-group label {
-            display: block;
-            font-size: 13px;
-            color: var(--text-secondary);
-            margin-bottom: 6px;
-        }
-
-        .input-group textarea {
-            width: 100%;
-            min-height: 100px;
-            background: var(--bg-primary);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 12px;
-            color: var(--text-primary);
-            font-size: 14px;
-            resize: vertical;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .input-group textarea:focus {
-            border-color: var(--accent);
-        }
-
-        .select-row {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-
-        .select-row .input-group {
-            flex: 1;
-        }
-
-        .input-group select {
-            width: 100%;
-            background: var(--bg-primary);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 10px 12px;
-            color: var(--text-primary);
-            font-size: 14px;
-            outline: none;
-            cursor: pointer;
-        }
-
-        .input-group select:focus {
-            border-color: var(--accent);
-        }
-
-        .btn-generate {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, var(--accent), var(--neon-magenta));
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-
-        .btn-generate:hover { opacity: 0.9; }
-        .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        .result-panel {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 24px;
-            display: none;
-        }
-
-        .result-panel.visible { display: block; }
-
-        .result-panel h2 {
-            font-size: 16px;
-            margin-bottom: 16px;
-        }
-
-        .result-item {
-            margin-bottom: 12px;
-        }
-
-        .result-item .label {
             font-size: 12px;
             color: var(--text-secondary);
-            margin-bottom: 4px;
         }
-
-        .result-item .value {
-            background: var(--bg-primary);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 10px;
-            font-size: 13px;
-            word-break: break-all;
+        .header .dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--text-muted);
+            transition: background 0.3s;
         }
+        .header .dot.ok { background: var(--success); }
+        .header .dot.err { background: var(--error); }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-top: 24px;
-        }
-
-        .stat-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .stat-card .stat-value {
-            font-size: 28px;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--neon-cyan), var(--accent));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .stat-card .stat-label {
-            font-size: 13px;
-            color: var(--text-secondary);
-            margin-top: 4px;
-        }
-
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .loading.visible { display: block; }
-
-        .spinner {
-            width: 32px;
-            height: 32px;
-            border: 3px solid var(--border);
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto 12px;
-        }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
 
         .nav-tabs {
-            display: flex;
-            gap: 4px;
-            margin-bottom: 24px;
-            background: var(--bg-secondary);
-            border-radius: 8px;
-            padding: 4px;
+            display: flex; gap: 4px; margin-bottom: 20px;
+            background: var(--bg-secondary); border-radius: 10px; padding: 4px;
         }
-
         .nav-tab {
-            flex: 1;
-            padding: 10px;
-            text-align: center;
-            border: none;
-            background: transparent;
-            color: var(--text-secondary);
-            font-size: 14px;
-            cursor: pointer;
-            border-radius: 6px;
-            transition: all 0.2s;
+            flex: 1; padding: 10px; text-align: center;
+            border: none; background: transparent; color: var(--text-secondary);
+            font-size: 14px; cursor: pointer; border-radius: 8px; transition: all 0.2s;
         }
-
-        .nav-tab.active {
-            background: var(--accent);
-            color: white;
-        }
-
-        .nav-tab:hover:not(.active) {
-            color: var(--text-primary);
-        }
+        .nav-tab.active { background: var(--accent); color: white; }
+        .nav-tab:hover:not(.active) { color: var(--text-primary); background: rgba(255,255,255,0.03); }
 
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+
+        .card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 20px; margin-bottom: 16px;
+        }
+        .card h2 { font-size: 15px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+
+        .input-group { margin-bottom: 14px; }
+        .input-group label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 5px; }
+        .input-group textarea, .input-group input, .input-group select {
+            width: 100%; background: var(--bg-input); border: 1px solid var(--border);
+            border-radius: 8px; padding: 10px 12px; color: var(--text-primary);
+            font-size: 14px; outline: none; transition: border-color 0.2s;
+        }
+        .input-group textarea { min-height: 90px; resize: vertical; font-family: inherit; }
+        .input-group textarea:focus, .input-group input:focus, .input-group select:focus { border-color: var(--border-focus); }
+        .input-group select { cursor: pointer; }
+
+        .row { display: flex; gap: 12px; }
+        .row .input-group { flex: 1; }
+
+        .btn {
+            padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px;
+            font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex;
+            align-items: center; gap: 6px;
+        }
+        .btn-primary {
+            width: 100%; padding: 14px;
+            background: linear-gradient(135deg, var(--accent), var(--neon-magenta));
+            color: white;
+        }
+        .btn-primary:hover { opacity: 0.9; }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-sm { padding: 6px 14px; font-size: 12px; }
+        .btn-outline {
+            background: transparent; border: 1px solid var(--border); color: var(--text-primary);
+        }
+        .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+        .btn-danger { background: var(--error); color: white; }
+        .btn-success { background: var(--success); color: white; }
+
+        .loading { display: none; text-align: center; padding: 24px; }
+        .loading.visible { display: block; }
+        .spinner {
+            width: 28px; height: 28px; border: 3px solid var(--border);
+            border-top-color: var(--accent); border-radius: 50%;
+            animation: spin 0.8s linear infinite; margin: 0 auto 10px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .result-item { }
+        .result-item .label { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .result-item .value {
+            background: var(--bg-input); border: 1px solid var(--border);
+            border-radius: 6px; padding: 8px 10px; font-size: 13px;
+            word-break: break-all; line-height: 1.5;
+        }
+        .result-item.full { grid-column: 1 / -1; }
+
+        .badge {
+            display: inline-block; padding: 2px 8px; border-radius: 4px;
+            font-size: 11px; font-weight: 600;
+        }
+        .badge-image { background: rgba(108,92,231,0.2); color: var(--accent); }
+        .badge-video { background: rgba(255,0,255,0.15); color: var(--neon-magenta); }
+        .badge-audio { background: rgba(0,245,255,0.15); color: var(--neon-cyan); }
+        .badge-code { background: rgba(0,214,143,0.15); color: var(--success); }
+        .badge-edit { background: rgba(255,170,0,0.15); color: var(--warning); }
+        .badge-upscale { background: rgba(0,149,255,0.15); color: var(--info); }
+        .badge-general { background: rgba(136,136,136,0.15); color: var(--text-secondary); }
+        .badge-local { background: rgba(0,214,143,0.15); color: var(--success); }
+        .badge-api { background: rgba(0,149,255,0.15); color: var(--info); }
+
+        .model-card, .skill-card {
+            background: var(--bg-input); border: 1px solid var(--border);
+            border-radius: 8px; padding: 14px; margin-bottom: 8px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .model-card .model-name, .skill-card .skill-name { font-weight: 600; font-size: 14px; }
+        .model-card .model-meta, .skill-card .skill-meta { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+        }
+        .stat-card {
+            background: var(--bg-input); border: 1px solid var(--border);
+            border-radius: 10px; padding: 16px; text-align: center;
+        }
+        .stat-value {
+            font-size: 24px; font-weight: 700;
+            background: linear-gradient(135deg, var(--neon-cyan), var(--accent));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .stat-label { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-secondary); }
+        .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+
+        .toast {
+            position: fixed; bottom: 20px; right: 20px; padding: 12px 20px;
+            border-radius: 8px; font-size: 13px; z-index: 1000;
+            transform: translateY(100px); opacity: 0; transition: all 0.3s;
+        }
+        .toast.visible { transform: translateY(0); opacity: 1; }
+        .toast-success { background: var(--success); color: white; }
+        .toast-error { background: var(--error); color: white; }
+        .toast-info { background: var(--info); color: white; }
+
+        .history-item {
+            background: var(--bg-input); border: 1px solid var(--border);
+            border-radius: 8px; padding: 12px; margin-bottom: 8px; cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .history-item:hover { border-color: var(--accent); }
+        .history-item .hi-prompt { font-size: 13px; margin-bottom: 4px; }
+        .history-item .hi-meta { font-size: 11px; color: var(--text-secondary); display: flex; gap: 10px; }
+
+        .install-form { display: flex; gap: 8px; margin-bottom: 14px; }
+        .install-form input { flex: 1; }
+
+        .error-log { max-height: 200px; overflow-y: auto; }
+        .error-entry { padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+        .error-entry:last-child { border-bottom: none; }
+        .error-time { color: var(--text-muted); margin-right: 8px; }
+        .error-sev-low { color: var(--success); }
+        .error-sev-medium { color: var(--warning); }
+        .error-sev-high { color: var(--error); }
+        .error-sev-critical { color: var(--neon-magenta); }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>🐍 HydraFlow AI</h1>
-        <div class="status">
-            <div class="dot" id="statusDot"></div>
-            <span id="statusText">连接中...</span>
+        <div class="header-left">
+            <h1>🐍 HydraFlow AI</h1>
+            <div class="status">
+                <div class="dot" id="statusDot"></div>
+                <span id="statusText">连接中...</span>
+            </div>
         </div>
     </div>
 
     <div class="container">
         <div class="nav-tabs">
-            <button class="nav-tab active" onclick="switchTab('generate')">🎨 生成</button>
-            <button class="nav-tab" onclick="switchTab('models')">🤖 模型</button>
-            <button class="nav-tab" onclick="switchTab('skills')">📦 技能</button>
-            <button class="nav-tab" onclick="switchTab('system')">⚙️ 系统</button>
+            <button class="nav-tab active" data-tab="generate">🎨 生成</button>
+            <button class="nav-tab" data-tab="models">🤖 模型</button>
+            <button class="nav-tab" data-tab="skills">📦 技能</button>
+            <button class="nav-tab" data-tab="system">⚙️ 系统</button>
         </div>
 
+        <!-- 生成面板 -->
         <div id="tab-generate" class="tab-content active">
-            <div class="main-panel">
+            <div class="card">
                 <h2>✨ AI 生成</h2>
                 <div class="input-group">
                     <label>输入提示词</label>
-                    <textarea id="promptInput" placeholder="例如：生成一张赛博朋克风格的猫咪图片"></textarea>
+                    <textarea id="promptInput" placeholder="例如：生成一张赛博朋克风格的猫咪图片&#10;支持模糊输入：一只可爱的猫咪&#10;支持参数：生成2张 1024x768 的动漫少女"></textarea>
                 </div>
-                <div class="select-row">
+                <div class="row">
                     <div class="input-group">
                         <label>解析器</label>
                         <select id="parserSelect">
@@ -311,148 +258,295 @@
                             <option value="anime">动漫</option>
                             <option value="fantasy">奇幻</option>
                             <option value="photorealistic">照片级真实感</option>
-                            <option value="cinematic">电影制作</option>
+                            <option value="cinematic">电影感</option>
                             <option value="scifi">科幻</option>
                             <option value="steampunk">蒸汽朋克</option>
                         </select>
                     </div>
+                    <div class="input-group">
+                        <label>指定模型</label>
+                        <select id="modelSelect">
+                            <option value="">自动选择</option>
+                        </select>
+                    </div>
                 </div>
-                <button class="btn-generate" id="generateBtn" onclick="generate()">🚀 生成</button>
+                <button class="btn btn-primary" id="generateBtn" onclick="generate()">🚀 生成</button>
             </div>
 
             <div class="loading" id="loading">
                 <div class="spinner"></div>
-                <div>正在生成中...</div>
+                <div>正在解析意图并生成...</div>
             </div>
 
-            <div class="result-panel" id="resultPanel">
+            <div class="card" id="resultPanel" style="display:none">
                 <h2>📊 生成结果</h2>
-                <div class="result-item">
-                    <div class="label">意图</div>
-                    <div class="value" id="resultIntent"></div>
+                <div class="result-grid">
+                    <div class="result-item">
+                        <div class="label">意图</div>
+                        <div class="value" id="resultIntent"></div>
+                    </div>
+                    <div class="result-item">
+                        <div class="label">风格</div>
+                        <div class="value" id="resultStyle"></div>
+                    </div>
+                    <div class="result-item full">
+                        <div class="label">优化后提示词</div>
+                        <div class="value" id="resultPrompt"></div>
+                    </div>
+                    <div class="result-item full">
+                        <div class="label">负面提示词</div>
+                        <div class="value" id="resultNegative"></div>
+                    </div>
+                    <div class="result-item">
+                        <div class="label">推荐模型</div>
+                        <div class="value" id="resultModel"></div>
+                    </div>
+                    <div class="result-item">
+                        <div class="label">置信度</div>
+                        <div class="value" id="resultConfidence"></div>
+                    </div>
+                    <div class="result-item">
+                        <div class="label">解析方式</div>
+                        <div class="value" id="resultParser"></div>
+                    </div>
+                    <div class="result-item">
+                        <div class="label">参数</div>
+                        <div class="value" id="resultParams"></div>
+                    </div>
                 </div>
-                <div class="result-item">
-                    <div class="label">风格</div>
-                    <div class="value" id="resultStyle"></div>
-                </div>
-                <div class="result-item">
-                    <div class="label">优化后提示词</div>
-                    <div class="value" id="resultPrompt"></div>
-                </div>
-                <div class="result-item">
-                    <div class="label">负面提示词</div>
-                    <div class="value" id="resultNegative"></div>
-                </div>
-                <div class="result-item">
-                    <div class="label">推荐模型</div>
-                    <div class="value" id="resultModel"></div>
-                </div>
+            </div>
+
+            <div class="card" id="historyPanel" style="display:none">
+                <h2>📝 生成历史</h2>
+                <div id="historyList"></div>
             </div>
         </div>
 
+        <!-- 模型面板 -->
         <div id="tab-models" class="tab-content">
-            <div class="main-panel">
-                <h2>🤖 模型管理</h2>
-                <div id="modelsList">加载中...</div>
+            <div class="card">
+                <h2>🤖 已注册模型</h2>
+                <div id="modelsList"></div>
             </div>
         </div>
 
+        <!-- 技能面板 -->
         <div id="tab-skills" class="tab-content">
-            <div class="main-panel">
-                <h2>📦 技能管理</h2>
-                <div id="skillsList">加载中...</div>
+            <div class="card">
+                <h2>📦 已安装技能</h2>
+                <div class="install-form">
+                    <input type="text" id="skillPathInput" placeholder="输入技能路径 (如: /path/to/skill 或 skill-name)">
+                    <select id="skillTypeSelect" style="width:120px">
+                        <option value="local">本地</option>
+                        <option value="market">市场</option>
+                    </select>
+                    <button class="btn btn-sm btn-success" onclick="installSkill()">安装</button>
+                </div>
+                <div id="skillsList"></div>
             </div>
         </div>
 
+        <!-- 系统面板 -->
         <div id="tab-system" class="tab-content">
-            <div class="main-panel">
-                <h2>⚙️ 系统信息</h2>
-                <div class="stats-grid" id="systemStats">加载中...</div>
+            <div class="card">
+                <h2>⚙️ 系统状态</h2>
+                <div class="stats-grid" id="systemStats"></div>
+            </div>
+            <div class="card">
+                <h2>📋 解析器</h2>
+                <div id="parsersList"></div>
+            </div>
+            <div class="card">
+                <h2>🎨 可用风格</h2>
+                <div id="stylesList"></div>
             </div>
         </div>
     </div>
 
+    <div class="toast" id="toast"></div>
+
     <script>
         const API_BASE = window.location.origin + '/api/v1';
+        let generateHistory = [];
 
-        function switchTab(name) {
-            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
-            document.getElementById('tab-' + name).classList.add('active');
+        function $(id) { return document.getElementById(id); }
 
-            if (name === 'models') loadModels();
-            if (name === 'skills') loadSkills();
-            if (name === 'system') loadSystem();
+        function showToast(msg, type = 'info') {
+            const t = $('toast');
+            t.textContent = msg;
+            t.className = 'toast toast-' + type + ' visible';
+            setTimeout(() => t.classList.remove('visible'), 3000);
         }
+
+        function intentBadge(intent) {
+            const map = {
+                image_generation: ['图片生成', 'badge-image'],
+                video_generation: ['视频生成', 'badge-video'],
+                audio_generation: ['音频生成', 'badge-audio'],
+                code_generation: ['代码生成', 'badge-code'],
+                image_edit: ['图片编辑', 'badge-edit'],
+                image_upscale: ['图片超分', 'badge-upscale'],
+                text_generation: ['文本生成', 'badge-general'],
+                general: ['通用', 'badge-general'],
+            };
+            const [label, cls] = map[intent] || ['未知', 'badge-general'];
+            return '<span class="badge ' + cls + '">' + label + '</span>';
+        }
+
+        function sourceBadge(source) {
+            if (source === 'local') return '<span class="badge badge-local">本地</span>';
+            return '<span class="badge badge-api">API</span>';
+        }
+
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                $('tab-' + tab.dataset.tab).classList.add('active');
+                const name = tab.dataset.tab;
+                if (name === 'models') loadModels();
+                if (name === 'skills') loadSkills();
+                if (name === 'system') loadSystem();
+            });
+        });
 
         async function checkHealth() {
             try {
-                const res = await fetch('/health');
+                const res = await fetch(window.location.origin + '/health');
                 const data = await res.json();
-                document.getElementById('statusDot').style.background = '#00d68f';
-                document.getElementById('statusText').textContent = '已连接 v' + data.version;
+                $('statusDot').className = 'dot ok';
+                $('statusText').textContent = '已连接 v' + data.version + ' | 健康 ' + data.health_score.toFixed(0);
             } catch {
-                document.getElementById('statusDot').style.background = '#ff3d71';
-                document.getElementById('statusText').textContent = '未连接';
+                $('statusDot').className = 'dot err';
+                $('statusText').textContent = '未连接';
             }
         }
 
+        async function loadModelOptions() {
+            try {
+                const res = await fetch(API_BASE + '/models');
+                const data = await res.json();
+                const sel = $('modelSelect');
+                sel.innerHTML = '<option value="">自动选择</option>';
+                data.models.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.id;
+                    opt.textContent = m.name + ' (' + m.source + ')';
+                    sel.appendChild(opt);
+                });
+            } catch {}
+        }
+
         async function generate() {
-            const prompt = document.getElementById('promptInput').value.trim();
-            if (!prompt) return;
+            const prompt = $('promptInput').value.trim();
+            if (!prompt) { showToast('请输入提示词', 'error'); return; }
 
-            const btn = document.getElementById('generateBtn');
-            const loading = document.getElementById('loading');
-            const result = document.getElementById('resultPanel');
-
+            const btn = $('generateBtn');
             btn.disabled = true;
-            loading.classList.add('visible');
-            result.classList.remove('visible');
+            $('loading').classList.add('visible');
+            $('resultPanel').style.display = 'none';
 
             try {
+                const body = {
+                    prompt,
+                    parser: $('parserSelect').value,
+                    style: $('styleSelect').value,
+                };
+                const modelVal = $('modelSelect').value;
+                if (modelVal) body.model = modelVal;
+
                 const res = await fetch(API_BASE + '/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        prompt,
-                        parser: document.getElementById('parserSelect').value,
-                        style: document.getElementById('styleSelect').value,
-                    }),
+                    body: JSON.stringify(body),
                 });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || '生成失败');
+                }
+
                 const data = await res.json();
 
-                document.getElementById('resultIntent').textContent = data.intent || '-';
-                document.getElementById('resultStyle').textContent = data.style || '-';
-                document.getElementById('resultPrompt').textContent = data.prompt || '-';
-                document.getElementById('resultNegative').textContent = data.negative_prompt || '-';
-                document.getElementById('resultModel').textContent = data.model ? data.model.id + ' (' + (data.model.name || '') + ')' : '-';
-                result.classList.add('visible');
+                $('resultIntent').innerHTML = intentBadge(data.intent);
+                $('resultStyle').textContent = data.style || '自动';
+                $('resultPrompt').textContent = data.prompt || '-';
+                $('resultNegative').textContent = data.negative_prompt || '-';
+                $('resultModel').textContent = data.model ? data.model.id + ' (' + (data.model.name || '') + ')' : '-';
+                $('resultConfidence').textContent = (data.confidence * 100).toFixed(0) + '%';
+                $('resultParser').textContent = data.model ? (data.model.source === 'local' ? '关键词+模糊匹配' : 'LLM API') : '关键词';
+                $('resultParams').textContent = data.parameters && Object.keys(data.parameters).length > 0
+                    ? JSON.stringify(data.parameters) : '默认';
+
+                $('resultPanel').style.display = '';
+
+                generateHistory.unshift({
+                    prompt: prompt,
+                    intent: data.intent,
+                    style: data.style,
+                    model: data.model ? data.model.id : '-',
+                    time: new Date().toLocaleTimeString(),
+                });
+                if (generateHistory.length > 20) generateHistory.pop();
+                renderHistory();
+
+                showToast('生成成功！', 'success');
             } catch (e) {
-                alert('生成失败: ' + e.message);
+                showToast('生成失败: ' + e.message, 'error');
             } finally {
                 btn.disabled = false;
-                loading.classList.remove('visible');
+                $('loading').classList.remove('visible');
             }
+        }
+
+        function renderHistory() {
+            if (generateHistory.length === 0) {
+                $('historyPanel').style.display = 'none';
+                return;
+            }
+            $('historyPanel').style.display = '';
+            $('historyList').innerHTML = generateHistory.map((h, i) =>
+                '<div class="history-item" onclick="reuseHistory(' + i + ')">' +
+                '<div class="hi-prompt">' + escapeHtml(h.prompt) + '</div>' +
+                '<div class="hi-meta">' +
+                intentBadge(h.intent) +
+                '<span>风格: ' + (h.style || '自动') + '</span>' +
+                '<span>模型: ' + h.model + '</span>' +
+                '<span>' + h.time + '</span>' +
+                '</div></div>'
+            ).join('');
+        }
+
+        function reuseHistory(idx) {
+            const h = generateHistory[idx];
+            $('promptInput').value = h.prompt;
+            if (h.style) $('styleSelect').value = h.style;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function escapeHtml(s) {
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
         }
 
         async function loadModels() {
             try {
                 const res = await fetch(API_BASE + '/models');
                 const data = await res.json();
-                const el = document.getElementById('modelsList');
                 if (data.models.length === 0) {
-                    el.innerHTML = '<p style="color:var(--text-secondary)">暂无模型</p>';
+                    $('modelsList').innerHTML = '<div class="empty-state"><div class="icon">🤖</div><p>暂无模型</p></div>';
                     return;
                 }
-                el.innerHTML = data.models.map(m =>
-                    '<div style="padding:12px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px">' +
-                    '<strong>' + (m.name || m.id) + '</strong>' +
-                    '<span style="color:var(--text-secondary);margin-left:8px">' + m.category + ' / ' + (m.source || '') + '</span>' +
-                    '</div>'
+                $('modelsList').innerHTML = data.models.map(m =>
+                    '<div class="model-card">' +
+                    '<div><div class="model-name">' + escapeHtml(m.name || m.id) + '</div>' +
+                    '<div class="model-meta">ID: ' + m.id + ' | 类型: ' + (m.type || '-') + '</div></div>' +
+                    '<div>' + sourceBadge(m.source) + '</div></div>'
                 ).join('');
             } catch {
-                document.getElementById('modelsList').innerHTML = '<p style="color:var(--error)">加载失败</p>';
+                $('modelsList').innerHTML = '<div class="empty-state"><p style="color:var(--error)">加载失败</p></div>';
             }
         }
 
@@ -460,37 +554,98 @@
             try {
                 const res = await fetch(API_BASE + '/skills');
                 const data = await res.json();
-                const el = document.getElementById('skillsList');
                 if (data.skills.length === 0) {
-                    el.innerHTML = '<p style="color:var(--text-secondary)">暂无已安装技能。使用 <code>python scripts/skill_installer.py install-path /path/to/skill</code> 安装技能。</p>';
+                    $('skillsList').innerHTML = '<div class="empty-state"><div class="icon">📦</div><p>暂无已安装技能</p><p style="font-size:12px;margin-top:8px">在上方输入技能路径安装，或使用 CLI: hydraflow install</p></div>';
                     return;
                 }
-                el.innerHTML = data.skills.map(s =>
-                    '<div style="padding:12px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px">' +
-                    '<strong>' + (s.name || s.skill_id) + '</strong> v' + (s.version || '1.0.0') +
-                    '<span style="color:var(--text-secondary);margin-left:8px">' + (s.type || '') + '</span>' +
-                    '</div>'
+                $('skillsList').innerHTML = data.skills.map(s =>
+                    '<div class="skill-card">' +
+                    '<div><div class="skill-name">' + escapeHtml(s.name || s.skill_id) + ' v' + (s.version || '1.0.0') + '</div>' +
+                    '<div class="skill-meta">' + (s.description || '') + '</div></div>' +
+                    '<div style="display:flex;gap:6px;align-items:center">' +
+                    sourceBadge(s.type) +
+                    '<button class="btn btn-sm btn-danger" onclick="uninstallSkill(\'' + s.skill_id + '\')">卸载</button></div></div>'
                 ).join('');
             } catch {
-                document.getElementById('skillsList').innerHTML = '<p style="color:var(--error)">加载失败</p>';
+                $('skillsList').innerHTML = '<div class="empty-state"><p style="color:var(--error)">加载失败</p></div>';
+            }
+        }
+
+        async function installSkill() {
+            const path = $('skillPathInput').value.trim();
+            const type = $('skillTypeSelect').value;
+            if (!path) { showToast('请输入技能路径', 'error'); return; }
+            try {
+                const res = await fetch(API_BASE + '/skills/install', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path, skill_type: type }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || '安装失败');
+                showToast('技能安装成功: ' + (data.name || data.skill_id), 'success');
+                $('skillPathInput').value = '';
+                loadSkills();
+            } catch (e) {
+                showToast('安装失败: ' + e.message, 'error');
+            }
+        }
+
+        async function uninstallSkill(skillId) {
+            if (!confirm('确定卸载技能 ' + skillId + '？')) return;
+            try {
+                const res = await fetch(API_BASE + '/skills/' + skillId, { method: 'DELETE' });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || '卸载失败');
+                showToast('技能已卸载: ' + skillId, 'success');
+                loadSkills();
+            } catch (e) {
+                showToast('卸载失败: ' + e.message, 'error');
             }
         }
 
         async function loadSystem() {
             try {
-                const res = await fetch(API_BASE + '/system/info');
-                const data = await res.json();
-                document.getElementById('systemStats').innerHTML =
-                    '<div class="stat-card"><div class="stat-value">' + (data.health_score || 0).toFixed(0) + '</div><div class="stat-label">健康分数</div></div>' +
-                    '<div class="stat-card"><div class="stat-value">' + (data.models?.total_models || 0) + '</div><div class="stat-label">注册模型</div></div>' +
-                    '<div class="stat-card"><div class="stat-value">' + (data.skills?.total_skills || 0) + '</div><div class="stat-label">已安装技能</div></div>' +
-                    '<div class="stat-card"><div class="stat-value">' + (data.version || '-') + '</div><div class="stat-label">版本</div></div>';
+                const [infoRes, parsersRes, stylesRes] = await Promise.all([
+                    fetch(API_BASE + '/system/info'),
+                    fetch(API_BASE + '/parsers'),
+                    fetch(API_BASE + '/styles'),
+                ]);
+                const info = await infoRes.json();
+                const parsers = await parsersRes.json();
+                const styles = await stylesRes.json();
+
+                $('systemStats').innerHTML =
+                    '<div class="stat-card"><div class="stat-value">' + (info.health_score || 0).toFixed(0) + '</div><div class="stat-label">健康分数</div></div>' +
+                    '<div class="stat-card"><div class="stat-value">' + (info.models?.total_models || 0) + '</div><div class="stat-label">注册模型</div></div>' +
+                    '<div class="stat-card"><div class="stat-value">' + (info.skills?.total_skills || 0) + '</div><div class="stat-label">已安装技能</div></div>' +
+                    '<div class="stat-card"><div class="stat-value">' + parsers.total + '</div><div class="stat-label">解析器</div></div>' +
+                    '<div class="stat-card"><div class="stat-value">' + styles.total + '</div><div class="stat-label">风格模板</div></div>' +
+                    '<div class="stat-card"><div class="stat-value">' + (info.version || '-') + '</div><div class="stat-label">版本</div></div>';
+
+                $('parsersList').innerHTML = parsers.parsers.map(p =>
+                    '<div class="model-card">' +
+                    '<div><div class="model-name">' + p.name + '</div>' +
+                    '<div class="skill-meta">' + (p.model_info.description || '') + '</div></div>' +
+                    '<div>' + sourceBadge(p.model_info.type) + '</div></div>'
+                ).join('');
+
+                $('stylesList').innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
+                    styles.styles.map(s => '<span class="badge badge-image" style="font-size:13px;padding:4px 12px">' + s + '</span>').join('') +
+                    '</div>';
+
             } catch {
-                document.getElementById('systemStats').innerHTML = '<p style="color:var(--error)">加载失败</p>';
+                $('systemStats').innerHTML = '<div class="empty-state"><p style="color:var(--error)">加载失败</p></div>';
             }
         }
 
+        $('promptInput').addEventListener('keydown', e => {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) generate();
+        });
+
         checkHealth();
+        loadModelOptions();
+        setInterval(checkHealth, 30000);
     </script>
 </body>
 </html>

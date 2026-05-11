@@ -1,0 +1,14 @@
+{
+  "skill_id": "example_http_fetcher",
+  "name": "HTTP 数据获取技能",
+  "version": "1.0.0",
+  "description": "基于配置的 HTTP 数据获取技能，演示配置执行器的用法",
+  "author": "HydraFlow AI",
+  "type": "local",
+  "category": "example",
+  "tags": ["示例", "http", "api", "测试"],
+  "config": {
+    "timeout": 30,
+    "retry_count": 3
+  }
+}

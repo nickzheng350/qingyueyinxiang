@@ -95,6 +95,30 @@ def main() -> None:
         print(f"已安装技能: {skill_stats['total_skills']}")
         print()
 
+        from src.task_engine import get_task_executor
+        executor = get_task_executor()
+        task_stats = executor.get_task_statistics()
+        print(f"任务执行器: 运行中")
+        print(f"  - 任务总数: {task_stats['total']}")
+        print(f"  - 运行中: {task_stats['running']}")
+        print(f"  - 已完成: {task_stats['completed']}")
+        print()
+
+        from src.cache import get_cache_manager
+        cache_mgr = get_cache_manager()
+        cache_stats = cache_mgr.get_all_stats()
+        print(f"缓存管理器: 运行中")
+        print(f"  - 命名空间数: {len(cache_stats)}")
+        print()
+
+        from src.monitoring import get_monitor
+        monitor = get_monitor()
+        health = monitor.get_health()
+        print(f"监控系统: {health['status']}")
+        print(f"  - 健康分数: {health['health_score']}/100")
+        print(f"  - 运行时间: {health['uptime_formatted']}")
+        print()
+
         from src.core.stability import get_stability_manager
         stability = get_stability_manager()
         print(f"系统健康分数: {stability.get_health_score()}/100")
@@ -115,6 +139,7 @@ def main() -> None:
 
         required_dirs = ["src", "src/core", "src/intent_parser", "src/prompt_engine",
                          "src/model_dispatcher", "src/skills", "src/api",
+                         "src/task_engine", "src/persistence", "src/cache", "src/monitoring",
                          "config", "prompts", "skills", "skills/core", "skills/local"]
         for d in required_dirs:
             dir_path = project_root / d
@@ -128,7 +153,9 @@ def main() -> None:
             "src/__init__.py", "src/core/__init__.py",
             "src/intent_parser/__init__.py", "src/prompt_engine/__init__.py",
             "src/model_dispatcher/__init__.py", "src/skills/__init__.py",
-            "src/api/__init__.py",
+            "src/api/__init__.py", "src/task_engine/__init__.py",
+            "src/persistence/__init__.py", "src/cache/__init__.py",
+            "src/monitoring/__init__.py",
         ]
         for f in required_init_files:
             file_path = project_root / f
