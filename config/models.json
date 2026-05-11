@@ -112,6 +112,68 @@
         "tags": ["image_upscale", "esrgan", "local"],
         "enabled": true
       }
+    },
+    "text": {
+      "qwen2.5-1.8b": {
+        "name": "Qwen2.5 1.8B",
+        "type": "text_generation",
+        "source": "local",
+        "path": "http://localhost:1234/v1",
+        "config": {
+          "type": "local",
+          "model_type": "text_generation",
+          "api_base": "http://localhost:1234/v1",
+          "model": "qwen2.5-1.8b"
+        },
+        "tags": ["text_generation", "qwen", "local", "small", "lightweight"],
+        "enabled": true
+      },
+      "openai_gpt4": {
+        "name": "OpenAI GPT-4",
+        "type": "text_generation",
+        "source": "api",
+        "path": "https://api.openai.com/v1/chat/completions",
+        "config": {
+          "type": "api",
+          "model_type": "text_generation",
+          "api_url": "https://api.openai.com/v1/chat/completions",
+          "model": "gpt-4",
+          "cost_per_call": 0.03
+        },
+        "tags": ["text_generation", "gpt4", "api"],
+        "enabled": true
+      }
+    },
+    "code": {
+      "qwen2.5-coder-1.8b": {
+        "name": "Qwen2.5 Coder 1.8B",
+        "type": "code_generation",
+        "source": "local",
+        "path": "http://localhost:1234/v1",
+        "config": {
+          "type": "local",
+          "model_type": "code_generation",
+          "api_base": "http://localhost:1234/v1",
+          "model": "qwen2.5-coder-1.8b"
+        },
+        "tags": ["code_generation", "qwen", "local", "small", "lightweight"],
+        "enabled": true
+      },
+      "claude_3": {
+        "name": "Claude 3 Sonnet",
+        "type": "code_generation",
+        "source": "api",
+        "path": "https://api.anthropic.com/v1/messages",
+        "config": {
+          "type": "api",
+          "model_type": "code_generation",
+          "api_url": "https://api.anthropic.com/v1/messages",
+          "model": "claude-3-sonnet-20240229",
+          "cost_per_call": 0.015
+        },
+        "tags": ["code_generation", "claude", "api"],
+        "enabled": true
+      }
     }
   },
   "local_deployment": {

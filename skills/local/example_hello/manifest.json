@@ -1,0 +1,14 @@
+{
+  "skill_id": "example_hello",
+  "name": "Hello World 示例技能",
+  "version": "1.0.0",
+  "description": "一个简单的 Hello World 示例技能，演示技能引擎的基本用法",
+  "author": "HydraFlow AI",
+  "type": "local",
+  "category": "example",
+  "tags": ["示例", "hello", "测试"],
+  "config": {
+    "default_greeting": "Hello",
+    "enable_logging": true
+  }
+}

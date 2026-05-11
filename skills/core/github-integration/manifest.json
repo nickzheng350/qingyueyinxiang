@@ -1,0 +1,22 @@
+{
+  "skill_id": "github-integration",
+  "name": "GitHub 集成",
+  "name_en": "GitHub Integration",
+  "version": "1.0.0",
+  "description": "GitHub 仓库管理、PR 处理、Issues 管理",
+  "description_en": "GitHub repository management, PR processing, Issues management",
+  "author": "HydraFlow AI",
+  "type": "core",
+  "dependencies": {
+    "PyGithub": ">=2.0.0"
+  },
+  "tags": ["github", "integration", "git"],
+  "icon": "🔗",
+  "category": "integration",
+  "subcategory": "github",
+  "license": "MIT",
+  "requirements": ["PyGithub>=2.0.0"],
+  "compatibility": {
+    "hydraflow_min_version": "1.0.0"
+  }
+}

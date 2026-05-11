@@ -1,0 +1,25 @@
+# HTTP 数据获取技能配置
+
+# 定义技能执行的动作列表
+actions:
+  # 动作 1: 获取 JSON 数据
+  - type: http_request
+    params:
+      url: https://jsonplaceholder.typicode.com/posts/1
+      method: GET
+      headers:
+        Content-Type: application/json
+  
+  # 动作 2: 数据转换 - 提取标题
+  - type: data_transform
+    params:
+      type: map
+      expression: "item.get('title', 'Unknown')"
+      # 注意：这里的 data 会从前一个动作的结果获取
+  
+  # 动作 3: 保存结果到文件
+  - type: file_operation
+    params:
+      operation: write
+      path: /tmp/skill_result.txt
+      # 注意：content 会从前一个动作的结果获取

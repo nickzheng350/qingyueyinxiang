@@ -1,0 +1,38 @@
+{
+  "name": "hydraflow-ai",
+  "version": "1.1.0",
+  "description": "九头蛇生成式工作流平台 - HydraFlow AI",
+  "main": "lib/index.js",
+  "bin": {
+    "hydraflow": "bin/hydraflow.js"
+  },
+  "scripts": {
+    "postinstall": "node scripts/postinstall.js",
+    "start": "hydraflow api",
+    "dev": "hydraflow dev",
+    "check": "hydraflow check"
+  },
+  "keywords": [
+    "ai",
+    "workflow",
+    "image-generation",
+    "stable-diffusion",
+    "llm",
+    "hydraflow"
+  ],
+  "author": "HydraFlow AI",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "commander": "^11.1.0",
+    "cross-spawn": "^7.0.3",
+    "dotenv": "^16.3.1",
+    "fs-extra": "^11.2.0",
+    "inquirer": "^8.2.6",
+    "ora": "^5.4.1",
+    "which": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

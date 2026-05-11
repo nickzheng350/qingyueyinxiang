@@ -47,6 +47,14 @@
     "gpu_memory_fraction": 0.8,
     "cache_models": true
   },
+  "intent_parser": {
+    "use_llm": true,
+    "llm_threshold": "medium",
+    "enable_cache": true,
+    "cache_ttl": 3600,
+    "fallback_to_keyword": true,
+    "description": "意图解析配置: use_llm=true启用LLM辅助解析; llm_threshold控制触发LLM的复杂度阈值(high/medium/simple); enable_cache启用结果缓存; fallback_to_keyword在LLM失败时回退到关键词解析"
+  },
   "skills": {
     "auto_load": true,
     "auto_update": false,
@@ -59,7 +67,7 @@
         "enabled": true,
         "api_base": "http://localhost:1234/v1",
         "api_key": "lm-studio",
-        "model": "qwen2.5-7b",
+        "model": "qwen2.5-1.8b",
         "auto_detect": true
       },
       "ollama": {

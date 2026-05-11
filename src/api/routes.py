@@ -1,0 +1,588 @@
+"""API 路由定义"""
+
+from typing import Optional
+
+from fastapi import APIRouter, HTTPException, Header
+from pydantic import BaseModel, Field
+
+from src.intent_parser.factory import IntentParserFactory
+from src.prompt_engine.engine import PromptEngine
+from src.model_dispatcher.dispatcher import ModelDispatcher
+from src.skills.skill_manager import SkillManager
+from src.core.config import get_config
+from src.core.stability import get_stability_manager
+from src.task_engine import get_task_executor, TaskType
+from src.persistence import get_storage
+from src.auth import get_auth_manager
+
+api_router = APIRouter()
+
+
+class ParseRequest(BaseModel):
+    text: str = Field(..., description="用户输入文本")
+    parser: str = Field(default="qwen2.5", description="解析器名称")
+
+
+class GenerateRequest(BaseModel):
+    prompt: str = Field(..., description="生成提示词")
+    parser: str = Field(default="qwen2.5", description="解析器名称")
+    style: str = Field(default="", description="风格名称")
+    negative_prompt: str = Field(default="", description="负面提示词")
+    model: str = Field(default="", description="指定模型ID")
+    parameters: dict = Field(default_factory=dict, description="生成参数")
+
+
+class SkillInstallRequest(BaseModel):
+    path: str = Field(..., description="技能路径")
+    skill_type: str = Field(default="local", description="技能类型")
+
+
+@api_router.post("/intent/parse")
+async def parse_intent(request: ParseRequest):
+    config = get_config()
+    intent_config = config.get("intent_parser", {})
+
+    factory = IntentParserFactory()
+    factory.enable_cache(intent_config.get("enable_cache", True))
+
+    result = factory.parse(request.text, parser_name=request.parser, use_cache=intent_config.get("enable_cache", True))
+
+    return {
+        "intent": result.intent.value,
+        "style": result.style,
+        "prompt": result.prompt,
+        "negative_prompt": result.negative_prompt,
+        "parameters": result.parameters,
+        "model_suggestions": result.model_suggestions,
+        "confidence": result.confidence,
+        "metadata": result.metadata,
+        "parsing_info": {
+            "llm_used": result.metadata.get("llm_parsed", False),
+            "skip_llm_reason": result.metadata.get("skip_llm_reason", None),
+            "fallback": result.metadata.get("fallback", False),
+        },
+        "cache_stats": factory.get_cache_stats() if intent_config.get("enable_cache", True) else None,
+    }
+
+
+@api_router.post("/generate")
+async def generate(request: GenerateRequest):
+    factory = IntentParserFactory()
+    parse_result = factory.parse(request.prompt, parser_name=request.parser)
+
+    style = request.style or parse_result.style
+    prompt = parse_result.prompt or request.prompt
+    negative = request.negative_prompt or parse_result.negative_prompt
+
+    engine = PromptEngine()
+    enhanced = engine.build_prompt(
+        text=prompt,
+        style=style,
+        negative_prompt=negative,
+    )
+
+    dispatcher = ModelDispatcher()
+    if request.model:
+        try:
+            model_info = dispatcher.get_model(request.model)
+            selected_model = {"id": request.model, **model_info}
+        except Exception:
+            selected_model = dispatcher.select_model(
+                parse_result.intent.value,
+                parse_result.model_suggestions,
+            )
+    else:
+        selected_model = dispatcher.select_model(
+            parse_result.intent.value,
+            parse_result.model_suggestions,
+        )
+
+    return {
+        "status": "ready",
+        "intent": parse_result.intent.value,
+        "style": style,
+        "prompt": enhanced["prompt"],
+        "negative_prompt": enhanced["negative_prompt"],
+        "model": selected_model,
+        "parameters": {**parse_result.parameters, **request.parameters},
+        "confidence": parse_result.confidence,
+    }
+
+
+@api_router.get("/models")
+async def list_models(category: str = "", source: str = "", function_type: str = "", by_intent: str = ""):
+    dispatcher = ModelDispatcher()
+    models = dispatcher.list_models(
+        category=category or None,
+        source=source or None,
+        function_type=function_type or None,
+        by_intent=by_intent or None,
+    )
+    return {"models": models, "total": len(models)}
+
+
+@api_router.get("/models/validate")
+async def validate_all_models():
+    """验证所有模型配置完整性"""
+    dispatcher = ModelDispatcher()
+    return dispatcher.validate_models()
+
+
+@api_router.get("/models/{model_id}")
+async def get_model(model_id: str):
+    dispatcher = ModelDispatcher()
+    try:
+        model = dispatcher.get_model(model_id)
+        return {"id": model_id, **model}
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@api_router.get("/styles")
+async def list_styles():
+    engine = PromptEngine()
+    styles = engine.list_styles()
+    return {"styles": styles, "total": len(styles)}
+
+
+@api_router.get("/parsers")
+async def list_parsers():
+    factory = IntentParserFactory()
+    parsers = factory.list_parsers()
+    return {"parsers": parsers, "total": len(parsers)}
+
+
+@api_router.get("/skills")
+async def list_skills(skill_type: str = ""):
+    manager = SkillManager()
+    if skill_type:
+        skills = manager.list_skills_by_type(skill_type)
+    else:
+        skills = manager.list_skills()
+    return {"skills": skills, "total": len(skills)}
+
+
+@api_router.post("/skills/install")
+async def install_skill(request: SkillInstallRequest):
+    manager = SkillManager()
+    result = manager.install_skill_from_path(request.path, request.skill_type)
+    if result["status"] == "error":
+        raise HTTPException(status_code=400, detail=result["message"])
+    return result
+
+
+@api_router.delete("/skills/{skill_id}")
+async def uninstall_skill(skill_id: str):
+    manager = SkillManager()
+    try:
+        result = manager.uninstall_skill(skill_id)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@api_router.get("/system/info")
+async def system_info():
+    config = get_config()
+    stability = get_stability_manager()
+    dispatcher = ModelDispatcher()
+    skill_manager = SkillManager()
+    return {
+        "version": "1.1.0",
+        "name": "HydraFlow AI",
+        "health_score": stability.get_health_score(),
+        "error_statistics": stability.get_error_statistics(),
+        "models": dispatcher.get_statistics(),
+        "skills": skill_manager.get_statistics(),
+    }
+
+
+@api_router.get("/system/health")
+async def system_health():
+    stability = get_stability_manager()
+    return {
+        "health_score": stability.get_health_score(),
+        "error_statistics": stability.get_error_statistics(),
+    }
+
+
+@api_router.get("/types")
+async def get_type_hierarchy():
+    """获取类型系统层次结构"""
+    dispatcher = ModelDispatcher()
+    return dispatcher.get_type_info()
+
+
+@api_router.post("/types/validate")
+async def validate_intent_model(request: dict):
+    """验证意图与模型的兼容性"""
+    intent = request.get("intent")
+    model_id = request.get("model_id")
+    
+    if not intent or not model_id:
+        raise HTTPException(status_code=400, detail="缺少参数: intent 和 model_id")
+    
+    dispatcher = ModelDispatcher()
+    try:
+        model = dispatcher.get_model(model_id)
+        return {
+            "valid": True,
+            "intent": intent,
+            "model_id": model_id,
+            "model_category": model.get("category"),
+            "model_function": model.get("function_type"),
+        }
+    except Exception as e:
+        return {
+            "valid": False,
+            "intent": intent,
+            "model_id": model_id,
+            "error": str(e),
+        }
+
+
+# ============ 任务相关端点 ============
+
+class TaskSubmitRequest(BaseModel):
+    prompt: str = Field(..., description="生成提示词")
+    task_type: str = Field(..., description="任务类型")
+    model_id: str = Field(..., description="模型ID")
+    parameters: dict = Field(default_factory=dict, description="生成参数")
+
+
+@api_router.post("/tasks")
+async def submit_task(request: TaskSubmitRequest):
+    """提交生成任务"""
+    try:
+        task_type = TaskType(request.task_type)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"无效的任务类型: {request.task_type}")
+    
+    executor = get_task_executor()
+    task_id = await executor.submit_task(
+        task_type=task_type,
+        prompt=request.prompt,
+        parameters=request.parameters,
+        model_id=request.model_id,
+    )
+    
+    # 保存到持久化存储
+    storage = get_storage()
+    task_info = executor.get_task_info(task_id)
+    if task_info:
+        storage.save_task(task_info)
+    
+    return {"task_id": task_id, "status": "pending"}
+
+
+@api_router.get("/tasks")
+async def list_tasks(
+    status: str = "",
+    task_type: str = "",
+    limit: int = 50,
+    offset: int = 0
+):
+    """列出任务"""
+    executor = get_task_executor()
+    tasks = executor.list_tasks(status=status or None, task_type=task_type or None, limit=limit, offset=offset)
+    return {"tasks": tasks, "total": len(tasks)}
+
+
+@api_router.get("/tasks/statistics")
+async def get_task_statistics():
+    """获取任务统计"""
+    executor = get_task_executor()
+    return executor.get_task_statistics()
+
+
+@api_router.get("/tasks/{task_id}")
+async def get_task(task_id: str):
+    """获取任务状态"""
+    executor = get_task_executor()
+    task_info = executor.get_task_info(task_id)
+    
+    if not task_info:
+        # 尝试从持久化存储恢复
+        storage = get_storage()
+        task_info = storage.get_task(task_id)
+    
+    if not task_info:
+        raise HTTPException(status_code=404, detail="任务未找到")
+    
+    return task_info
+
+
+@api_router.delete("/tasks/{task_id}")
+async def cancel_task(task_id: str):
+    """取消或删除任务"""
+    executor = get_task_executor()
+    storage = get_storage()
+    
+    # 先尝试取消运行中的任务
+    cancelled = await executor.cancel_task(task_id)
+    
+    # 删除任务记录
+    deleted = storage.delete_task(task_id)
+    
+    if not cancelled and not deleted:
+        raise HTTPException(status_code=404, detail="任务未找到")
+    
+    return {"success": True, "cancelled": cancelled, "deleted": deleted}
+
+
+# ============ 模型统计端点 ============
+
+@api_router.get("/models/stats")
+async def get_model_statistics(model_id: str = ""):
+    """获取模型使用统计"""
+    storage = get_storage()
+    stats = storage.get_model_stats(model_id if model_id else None)
+    return {"stats": stats, "total": len(stats)}
+
+
+# ============ 技能执行端点 ============
+
+class SkillExecuteRequest(BaseModel):
+    skill_id: str = Field(..., description="技能 ID")
+    parameters: dict = Field(default_factory=dict, description="执行参数")
+
+
+@api_router.post("/skills/execute")
+async def execute_skill(request: SkillExecuteRequest):
+    """执行技能"""
+    skill_manager = SkillManager()
+    result = skill_manager.execute_skill(
+        request.skill_id,
+        **request.parameters
+    )
+    return result
+
+
+@api_router.get("/skills")
+async def list_skills(skill_type: str = ""):
+    """列出所有技能"""
+    skill_manager = SkillManager()
+    if skill_type:
+        skills = skill_manager.list_skills_by_type(skill_type)
+    else:
+        skills = skill_manager.list_skills()
+    return {"skills": skills, "total": len(skills)}
+
+
+@api_router.get("/skills/{skill_id}")
+async def get_skill(skill_id: str):
+    """获取技能详情"""
+    skill_manager = SkillManager()
+    try:
+        skill = skill_manager.get_skill(skill_id)
+        return skill
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"技能未找到：{skill_id}")
+
+
+# ============ 用户认证端点 ============
+
+class LoginRequest(BaseModel):
+    username: str = Field(..., description="用户名")
+    password: str = Field(..., description="密码")
+
+
+class RegisterRequest(BaseModel):
+    username: str = Field(..., description="用户名")
+    password: str = Field(..., description="密码")
+    email: Optional[str] = Field(None, description="邮箱")
+    role: str = Field(default="user", description="角色")
+
+
+class UpdateUserRequest(BaseModel):
+    email: Optional[str] = Field(None, description="邮箱")
+    role: Optional[str] = Field(None, description="角色")
+    enabled: Optional[bool] = Field(None, description="是否启用")
+
+
+@api_router.post("/auth/login")
+async def login(request: LoginRequest):
+    """用户登录"""
+    auth_manager = get_auth_manager()
+    token = auth_manager.authenticate(request.username, request.password)
+    
+    if not token:
+        raise HTTPException(status_code=401, detail="用户名或密码错误")
+    
+    user = auth_manager.get_user(request.username)
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "role": user.role,
+            "created_at": user.created_at.isoformat(),
+            "last_login": user.last_login.isoformat() if user.last_login else None
+        }
+    }
+
+
+@api_router.post("/auth/logout")
+async def logout(token: str = Header(None, alias="Authorization")):
+    """用户登出"""
+    if not token or not token.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未提供认证令牌")
+    
+    token = token[7:]  # 移除 "Bearer " 前缀
+    auth_manager = get_auth_manager()
+    
+    if auth_manager.logout(token):
+        return {"success": True, "message": "登出成功"}
+    else:
+        raise HTTPException(status_code=401, detail="无效的令牌")
+
+
+@api_router.post("/auth/register")
+async def register(request: RegisterRequest):
+    """注册新用户"""
+    auth_manager = get_auth_manager()
+    
+    # 检查用户是否已存在
+    if auth_manager.get_user(request.username):
+        raise HTTPException(status_code=400, detail="用户名已存在")
+    
+    user = auth_manager.create_user(
+        username=request.username,
+        password=request.password,
+        email=request.email,
+        role=request.role
+    )
+    
+    if user:
+        return {
+            "success": True,
+            "message": "用户注册成功",
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "role": user.role
+            }
+        }
+    else:
+        raise HTTPException(status_code=500, detail="用户注册失败")
+
+
+@api_router.get("/auth/me")
+async def get_current_user(token: str = Header(None, alias="Authorization")):
+    """获取当前用户信息"""
+    if not token or not token.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未提供认证令牌")
+    
+    token = token[7:]
+    auth_manager = get_auth_manager()
+    username = auth_manager.verify_token(token)
+    
+    if not username:
+        raise HTTPException(status_code=401, detail="无效的令牌")
+    
+    user = auth_manager.get_user(username)
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "role": user.role,
+        "enabled": user.enabled,
+        "created_at": user.created_at.isoformat(),
+        "last_login": user.last_login.isoformat() if user.last_login else None
+    }
+
+
+@api_router.get("/auth/users")
+async def list_users(token: str = Header(None, alias="Authorization")):
+    """列出所有用户（管理员）"""
+    if not token or not token.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未提供认证令牌")
+    
+    token = token[7:]
+    auth_manager = get_auth_manager()
+    username = auth_manager.verify_token(token)
+    
+    if not username:
+        raise HTTPException(status_code=401, detail="无效的令牌")
+    
+    user = auth_manager.get_user(username)
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="权限不足")
+    
+    users = auth_manager.list_users()
+    return {
+        "users": [{
+            "id": u.id,
+            "username": u.username,
+            "email": u.email,
+            "role": u.role,
+            "enabled": u.enabled,
+            "created_at": u.created_at.isoformat(),
+            "last_login": u.last_login.isoformat() if u.last_login else None
+        } for u in users],
+        "total": len(users)
+    }
+
+
+@api_router.put("/auth/users/{username}")
+async def update_user(
+    username: str,
+    request: UpdateUserRequest,
+    token: str = Header(None, alias="Authorization")
+):
+    """更新用户信息（管理员）"""
+    if not token or not token.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未提供认证令牌")
+    
+    token = token[7:]
+    auth_manager = get_auth_manager()
+    current_username = auth_manager.verify_token(token)
+    
+    if not current_username:
+        raise HTTPException(status_code=401, detail="无效的令牌")
+    
+    current_user = auth_manager.get_user(current_username)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="权限不足")
+    
+    update_data = {}
+    if request.email is not None:
+        update_data["email"] = request.email
+    if request.role is not None:
+        update_data["role"] = request.role
+    if request.enabled is not None:
+        update_data["enabled"] = request.enabled
+    
+    if auth_manager.update_user(username, **update_data):
+        return {"success": True, "message": "用户信息更新成功"}
+    else:
+        raise HTTPException(status_code=404, detail="用户未找到")
+
+
+@api_router.delete("/auth/users/{username}")
+async def delete_user(
+    username: str,
+    token: str = Header(None, alias="Authorization")
+):
+    """删除用户（管理员）"""
+    if not token or not token.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未提供认证令牌")
+    
+    token = token[7:]
+    auth_manager = get_auth_manager()
+    current_username = auth_manager.verify_token(token)
+    
+    if not current_username:
+        raise HTTPException(status_code=401, detail="无效的令牌")
+    
+    current_user = auth_manager.get_user(current_username)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="权限不足")
+    
+    if auth_manager.delete_user(username):
+        return {"success": True, "message": "用户已删除"}
+    else:
+        raise HTTPException(status_code=404, detail="用户未找到")
