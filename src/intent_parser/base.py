@@ -136,15 +136,17 @@ def _levenshtein_distance(s1: str, s2: str) -> int:
 def _fuzzy_match(text: str, keyword: str, threshold: float = 0.7) -> bool:
     if keyword in text:
         return True
-    if len(keyword) < 2:
-        return False
     text_lower = text.lower()
     kw_lower = keyword.lower()
-    window = len(kw_lower)
-    for i in range(len(text_lower) - window + 1):
-        segment = text_lower[i:i + window]
+    n_kw = len(kw_lower)
+    if n_kw < 2:
+        return False
+    n_text = len(text_lower)
+    for i in range(n_text - n_kw + 1):
+        segment = text_lower[i:i + n_kw]
         dist = _levenshtein_distance(segment, kw_lower)
-        similarity = 1.0 - dist / max(len(segment), len(kw_lower))
+        max_len = max(len(segment), n_kw)
+        similarity = 1.0 - dist / max_len if max_len > 0 else 0.0
         if similarity >= threshold:
             return True
     return False
