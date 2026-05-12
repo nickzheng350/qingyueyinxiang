@@ -157,16 +157,15 @@ class LRUTokenStore:
             del self._timestamps[key]
 
     def _evict_oldest(self) -> None:
-        if self._store:
-            oldest_key = next(iter(self._store))
-            self._remove_key(oldest_key)
+        """驱逐最老的条目（LRU策略）"""
+        oldest_key, _ = self._store.popitem(last=False)
+        del self._timestamps[oldest_key]
 
     def _cleanup_expired(self) -> None:
-        current_time = time.time()
-        expired_keys = [
-            key for key, timestamp in self._timestamps.items()
-            if current_time - timestamp > self.ttl_seconds
-        ]
+        """清理过期的令牌"""
+        now = time.time()
+        expired_keys = [key for key, timestamp in self._timestamps.items()
+                       if now - timestamp > self.ttl_seconds]
         for key in expired_keys:
             self._remove_key(key)
 
