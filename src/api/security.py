@@ -2,7 +2,10 @@
 
 import re
 import secrets
+import time
 from typing import Optional
+from collections import OrderedDict
+from threading import Lock
 from fastapi import Request, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from slowapi import Limiter
@@ -28,7 +31,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
-        
+
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
@@ -44,7 +47,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "connect-src 'self'; "
             "frame-ancestors 'none';"
         )
-        
+
         return response
 
 
@@ -87,19 +90,19 @@ class InputValidationMiddleware(BaseHTTPMiddleware):
                 body = await request.body()
                 if body:
                     body_str = body.decode("utf-8", errors="ignore")
-                    
+
                     if self.sql_regex.search(body_str):
                         raise HTTPException(
                             status_code=status.HTTP_400_BAD_REQUEST,
                             detail="检测到潜在的SQL注入攻击"
                         )
-                    
+
                     if self.xss_regex.search(body_str):
                         raise HTTPException(
                             status_code=status.HTTP_400_BAD_REQUEST,
                             detail="检测到潜在的XSS攻击"
                         )
-                    
+
                     if self.path_regex.search(body_str):
                         raise HTTPException(
                             status_code=status.HTTP_400_BAD_REQUEST,
@@ -109,47 +112,108 @@ class InputValidationMiddleware(BaseHTTPMiddleware):
                 if isinstance(e, HTTPException):
                     raise
                 pass
-        
+
         return await call_next(request)
 
 
-class CSRFProtectionMiddleware(BaseHTTPMiddleware):
-    """CSRF保护中间件"""
+class LRUTokenStore:
+    """LRU令牌存储 - 自动清理过期令牌并限制大小"""
 
-    def __init__(self, app):
+    def __init__(self, max_size: int = 1000, ttl_seconds: int = 3600):
+        self.max_size = max_size
+        self.ttl_seconds = ttl_seconds
+        self._store = OrderedDict()
+        self._timestamps = {}
+        self._lock = Lock()
+
+    def get(self, key: str) -> Optional[str]:
+        with self._lock:
+            if key not in self._store:
+                return None
+
+            if time.time() - self._timestamps.get(key, 0) > self.ttl_seconds:
+                self._remove_key(key)
+                return None
+
+            self._store.move_to_end(key)
+            return self._store[key]
+
+    def set(self, key: str, value: str) -> None:
+        with self._lock:
+            if key in self._store:
+                self._store.move_to_end(key)
+            else:
+                self._cleanup_expired()
+                if len(self._store) >= self.max_size:
+                    self._evict_oldest()
+
+            self._store[key] = value
+            self._timestamps[key] = time.time()
+
+    def _remove_key(self, key: str) -> None:
+        if key in self._store:
+            del self._store[key]
+        if key in self._timestamps:
+            del self._timestamps[key]
+
+    def _evict_oldest(self) -> None:
+        if self._store:
+            oldest_key = next(iter(self._store))
+            self._remove_key(oldest_key)
+
+    def _cleanup_expired(self) -> None:
+        current_time = time.time()
+        expired_keys = [
+            key for key, timestamp in self._timestamps.items()
+            if current_time - timestamp > self.ttl_seconds
+        ]
+        for key in expired_keys:
+            self._remove_key(key)
+
+    def clear(self) -> None:
+        with self._lock:
+            self._store.clear()
+            self._timestamps.clear()
+
+
+class CSRFProtectionMiddleware(BaseHTTPMiddleware):
+    """CSRF保护中间件 - 使用LRU存储防止内存泄漏"""
+
+    def __init__(self, app, max_tokens: int = 1000, token_ttl: int = 3600):
         super().__init__(app)
-        self.csrf_tokens = {}
+        self.token_store = LRUTokenStore(max_size=max_tokens, ttl_seconds=token_ttl)
 
     async def dispatch(self, request: Request, call_next):
         if request.method in ["POST", "PUT", "DELETE", "PATCH"]:
             csrf_token = request.headers.get("X-CSRF-Token")
-            
+
             if not csrf_token:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="缺少CSRF令牌"
                 )
-            
+
             session_id = request.cookies.get("session_id")
             if not session_id:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="无效的会话"
                 )
-            
-            if self.csrf_tokens.get(session_id) != csrf_token:
+
+            stored_token = self.token_store.get(session_id)
+            if stored_token != csrf_token:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="无效的CSRF令牌"
                 )
-        
+
         response = await call_next(request)
-        
+
         if request.method == "GET":
             session_id = request.cookies.get("session_id") or secrets.token_hex(16)
             csrf_token = secrets.token_hex(32)
-            self.csrf_tokens[session_id] = csrf_token
-            
+            self.token_store.set(session_id, csrf_token)
+
             response.set_cookie(
                 key="session_id",
                 value=session_id,
@@ -159,7 +223,7 @@ class CSRFProtectionMiddleware(BaseHTTPMiddleware):
                 max_age=3600
             )
             response.headers["X-CSRF-Token"] = csrf_token
-        
+
         return response
 
 
@@ -167,14 +231,14 @@ async def verify_token(credentials: Optional[HTTPAuthorizationCredentials]) -> O
     """验证JWT令牌"""
     if not credentials:
         return None
-    
+
     try:
         from src.auth.manager import decode_token
         payload = decode_token(credentials.credentials)
-        
+
         if payload.get("type") != "access":
             return None
-        
+
         return payload.get("sub")
     except Exception:
         return None
