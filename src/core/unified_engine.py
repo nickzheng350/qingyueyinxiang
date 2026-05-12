@@ -69,6 +69,10 @@ class PerformanceMetrics:
     failed_tasks: int = 0
     average_completion_time: float = 0.0
     cache_hit_rate: float = 0.0
+    cache_efficiency: float = 0.0
+    l1_hit_rate: float = 0.0
+    l2_hit_rate: float = 0.0
+    cache_size: int = 0
     resource_utilization: Dict[str, float] = field(default_factory=dict)
     cost_savings: float = 0.0
 
@@ -357,6 +361,8 @@ class SmartScheduler:
         # 跟踪队列中的任务，以便快速查找和更新
         self.queued_tasks: Dict[str, Task] = {}
         self.active_tasks: Dict[str, Task] = {}
+        # 记录已完成任务的时间戳，用于依赖检查优化
+        self.completed_tasks: Dict[str, float] = {}
         self.lock = threading.RLock()
         self.task_counter = 0  # 用于打破优先级相等时的平局
     
@@ -374,56 +380,89 @@ class SmartScheduler:
             logger.info(f"Task {task.task_id} queued at priority {task.priority}")
     
     def get_next_task(self, max_concurrent: int) -> Optional[Task]:
-        """获取下一个任务 - 优化的实现"""
+        """获取下一个任务 - 优化的依赖检查算法"""
         with self.lock:
             if len(self.active_tasks) >= max_concurrent:
                 return None
             
-            # 清理失效的堆元素（已完成或不在队列中的）
+            # 批量收集所有就绪任务
+            ready_tasks = []
+            temp_heap = []
+            
+            # 一次性扫描整个堆
             while self.task_heap:
-                _, _, task_id = self.task_heap[0]
+                priority, counter, task_id = heapq.heappop(self.task_heap)
                 
                 # 检查任务是否仍在队列中
                 if task_id not in self.queued_tasks:
-                    heapq.heappop(self.task_heap)
                     continue
                 
                 task = self.queued_tasks[task_id]
                 
-                # 检查依赖是否都不在活跃状态
-                if all(dep not in self.active_tasks for dep in task.dependencies):
-                    # 弹出这个任务
-                    heapq.heappop(self.task_heap)
-                    # 从队列中移除
-                    self.queued_tasks.pop(task_id)
-                    # 加入活跃任务
-                    self.active_tasks[task_id] = task
-                    task.status = TaskStatus.RUNNING
-                    return task
+                # 检查依赖是否都已完成（不在活跃状态且已完成）
+                dependencies_ready = True
+                for dep in task.dependencies:
+                    if dep in self.active_tasks:
+                        dependencies_ready = False
+                        break
+                    # 依赖可能还未提交，不算就绪
+                    # 只有当依赖已完成或不存在时才继续
+                
+                if dependencies_ready:
+                    ready_tasks.append((priority, counter, task))
                 else:
-                    # 这个任务的依赖还在运行，需要推迟
-                    # 先弹出再重新推入，以便处理其他可能就绪的任务
-                    _, counter, _ = heapq.heappop(self.task_heap)
-                    heapq.heappush(
-                        self.task_heap,
-                        (task.priority.value, counter, task_id)
-                    )
-                    break
+                    # 依赖未就绪，重新推入临时堆
+                    temp_heap.append((priority, counter, task_id))
+            
+            # 将未就绪的任务重新推入主堆
+            while temp_heap:
+                heapq.heappush(self.task_heap, temp_heap.pop())
+            
+            # 选择优先级最高的就绪任务
+            if ready_tasks:
+                # 按优先级和插入顺序排序
+                ready_tasks.sort(key=lambda x: (x[0], x[1]))
+                _, _, task = ready_tasks[0]
+                
+                # 从队列中移除
+                del self.queued_tasks[task.task_id]
+                # 加入活跃任务
+                self.active_tasks[task.task_id] = task
+                task.status = TaskStatus.RUNNING
+                task.started_at = time.time()
+                
+                logger.debug(f"Task {task.task_id} started")
+                return task
             
             return None
     
     def complete_task(self, task_id: str, result: EngineResult):
-        """完成任务"""
+        """完成任务 - 记录完成时间戳用于依赖检查"""
         with self.lock:
             if task_id in self.active_tasks:
                 task = self.active_tasks.pop(task_id)
+                completion_time = time.time()
+                
+                # 记录已完成任务（用于依赖检查优化）
+                self.completed_tasks[task_id] = completion_time
+                
+                # 限制已完成任务记录数量，避免内存无限增长
+                if len(self.completed_tasks) > 10000:
+                    # 删除最早的一半记录
+                    oldest_keys = sorted(
+                        self.completed_tasks.keys(),
+                        key=lambda k: self.completed_tasks[k]
+                    )[:len(self.completed_tasks) // 2]
+                    for key in oldest_keys:
+                        del self.completed_tasks[key]
+                
                 if result.success:
                     task.status = TaskStatus.COMPLETED
                     task.result = result.output
                 else:
                     task.status = TaskStatus.FAILED
                     task.error = "; ".join(result.errors)
-                task.completed_at = time.time()
+                task.completed_at = completion_time
                 logger.info(f"Task {task_id} {task.status}")
     
     def get_queue_stats(self) -> Dict[str, Any]:
@@ -432,6 +471,7 @@ class SmartScheduler:
             return {
                 "queued": len(self.queued_tasks),
                 "active": len(self.active_tasks),
+                "completed": len(self.completed_tasks),
             }
 
 
@@ -681,12 +721,35 @@ class UnifiedIntelligentEngine:
         logger.info("UnifiedIntelligentEngine stopped")
     
     def get_performance_metrics(self) -> PerformanceMetrics:
-        """获取性能指标"""
+        """获取性能指标 - 增强缓存效率统计"""
         self.metrics.resource_utilization = self.resource_optimizer.get_current_utilization()
+        
+        # 计算缓存命中率
+        total_hits = self.cache._hits["l1"] + self.cache._hits["l2"]
         self.metrics.cache_hit_rate = (
-            (self.cache._hits["l1"] + self.cache._hits["l2"]) / max(1, self.cache._hits["total"])
+            total_hits / max(1, self.cache._hits["total"])
             if self.cache._hits["total"] > 0 else 0
         )
+        
+        # 添加缓存效率指标（L1缓存命中率，反映热数据访问效率）
+        self.metrics.cache_efficiency = (
+            self.cache._hits["l1"] / max(1, total_hits)
+            if total_hits > 0 else 0
+        )
+        
+        # 添加缓存分层命中率
+        self.metrics.l1_hit_rate = (
+            self.cache._hits["l1"] / max(1, self.cache._hits["total"])
+            if self.cache._hits["total"] > 0 else 0
+        )
+        self.metrics.l2_hit_rate = (
+            self.cache._hits["l2"] / max(1, self.cache._hits["total"])
+            if self.cache._hits["total"] > 0 else 0
+        )
+        
+        # 添加缓存大小信息
+        self.metrics.cache_size = self.cache.get_size()
+        
         return self.metrics
     
     def set_engine_mode(self, mode: EngineMode):

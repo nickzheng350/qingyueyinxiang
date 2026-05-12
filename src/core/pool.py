@@ -77,8 +77,10 @@ class HTTPConnectionPool(ConnectionPool):
             return await self._create_client()
 
     async def release(self, connection: httpx.AsyncClient) -> None:
-        """释放客户端（不关闭，保持复用）"""
-        pass
+        """释放客户端（实现真正的连接计数）"""
+        async with self._lock:
+            self._size = max(0, self._size - 1)
+            logger.debug(f"HTTP connection released, current pool size: {self._size}")
 
     async def close(self) -> None:
         """关闭连接池"""
