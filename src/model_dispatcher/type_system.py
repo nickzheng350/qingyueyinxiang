@@ -1,7 +1,7 @@
 """模型类型系统 - 提供统一的类型定义和兼容性处理"""
 
 from enum import Enum
-from typing import Any, TypeVar, Generic, Optional, Union, Dict, List
+from typing import Any, Optional, Union, Dict, List
 from pydantic import BaseModel, field_validator, ValidationError
 import logging
 

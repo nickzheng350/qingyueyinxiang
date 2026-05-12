@@ -1,0 +1,129 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hydraflow-ai"
+version = "1.1.0"
+description = "九头蛇生成式工作流平台 - 多模态AI工作流编排引擎"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [
+    {name = "HydraFlow AI Team", email = "dev@hydraflow.ai"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
+keywords = ["AI", "workflow", "multimodal", "prompt-engineering", "LLM"]
+
+[project.scripts]
+hydraflow = "main:main"
+
+[project.urls]
+"Homepage" = "https://github.com/hydraflow-ai/hydraflow"
+"Documentation" = "https://docs.hydraflow.ai"
+"Issues" = "https://github.com/hydraflow-ai/hydraflow/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.12.0",
+    "flake8>=6.1.0",
+    "mypy>=1.7.1",
+    "isort>=5.13.0",
+    "pre-commit>=3.6.0",
+]
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.5.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"" = ["*.json", "*.md"]
+
+[tool.black]
+line-length = 88
+target-version = ["py310"]
+include = '\.pyi?$'
+exclude = '''
+(
+  /(\.eggs|\.git|\.hg|\.mypy_cache|\.nox|\.tox|\.venv|_build|buck-out|build|dist)/
+)
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 88
+include_trailing_comma = true
+force_alphabetical_sort = true
+
+[tool.mypy]
+python_version = "3.10"
+strict = false
+show_error_codes = true
+ignore_errors = false
+follow_imports = "normal"
+warn_unused_configs = true
+plugins = []
+exclude = [
+    "tests/",
+    "*.pyc",
+    "__pycache__",
+]
+files = [
+    "src/",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "--cov=src --cov-report=term-missing"
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "W503"]
+exclude = [
+    ".git",
+    "__pycache__",
+    "*.pyc",
+    "*.pyo",
+    ".eggs",
+    "*.egg-info",
+    "tests/",
+]
+
+[tool.pre-commit]
+default_language_version = {python = "python3.10"}
+repos = [
+    {
+        repo = "https://github.com/psf/black",
+        rev = "23.12.0",
+        hooks = [{id = "black"}],
+    },
+    {
+        repo = "https://github.com/PyCQA/isort",
+        rev = "5.13.0",
+        hooks = [{id = "isort"}],
+    },
+    {
+        repo = "https://github.com/PyCQA/flake8",
+        rev = "6.1.0",
+        hooks = [{id = "flake8"}],
+    },
+]

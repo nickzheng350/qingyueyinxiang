@@ -1,7 +1,7 @@
 """格式转换模块 - 图片、视频、音频格式转换"""
 import logging
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any, List, Union
+from typing import Optional, Dict, Any, List
 
 from src.model_dispatcher.type_system import (
     ModelFunctionType,

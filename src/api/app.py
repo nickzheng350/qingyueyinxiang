@@ -10,13 +10,22 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from src.core.config import get_config
 from src.core.stability import get_stability_manager
 from src.core.exceptions import HydraFlowError, ErrorResponse
 from src.api.routes import api_router
+from src.api.routes_plugins import router as plugins_router
+from src.api.security import (
+    SecurityHeadersMiddleware,
+    InputValidationMiddleware,
+    limiter,
+)
 from src.ws.manager import get_ws_manager
 from src.ws.routes import WebSocketRoutes
+from src.plugins.manager import PluginManager
 
 logger = logging.getLogger("hydraflow.api")
 
@@ -26,6 +35,25 @@ _start_time = time.time()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("HydraFlow AI API 服务启动")
+
+    # 初始化插件系统
+    plugin_manager = PluginManager()
+    plugin_manager.discover_plugins()
+    loaded_plugins = plugin_manager.load_all_plugins()
+    logger.info(f"已加载 {len(loaded_plugins)} 个插件")
+
+    # 注册插件端点
+    for plugin_name, plugin_inst in loaded_plugins.items():
+        endpoints = plugin_inst.get_endpoints()
+        for endpoint in endpoints:
+            if "router" in endpoint:
+                app.include_router(
+                    endpoint["router"],
+                    prefix=endpoint.get("prefix", ""),
+                    tags=endpoint.get("tags", [plugin_name])
+                )
+                logger.info(f"注册插件端点: {plugin_name}")
+
     yield
     logger.info("HydraFlow AI API 服务关闭")
 
@@ -41,6 +69,9 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
         docs_url="/docs" if api_config.get("docs_enabled", True) else None,
     )
+
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
     @app.middleware("http")
     async def add_request_id(request: Request, call_next):
@@ -59,11 +90,15 @@ def create_app() -> FastAPI:
         CORSMiddleware,
         allow_origins=cors_origins,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization", "X-CSRF-Token", "X-Request-ID"],
     )
 
+    app.add_middleware(SecurityHeadersMiddleware)
+    app.add_middleware(InputValidationMiddleware)
+
     app.include_router(api_router, prefix="/api/v1")
+    app.include_router(plugins_router)
 
     ws_manager = get_ws_manager()
     ws_routes = WebSocketRoutes(ws_manager)

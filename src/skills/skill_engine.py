@@ -9,6 +9,8 @@ from dataclasses import dataclass, field
 import asyncio
 import traceback
 
+from .safe_eval import safe_eval
+
 logger = logging.getLogger("hydraflow.skill_engine")
 
 
@@ -294,22 +296,22 @@ class ConfigBasedSkillExecutor(SkillExecutor):
             raise ValueError(f"未知的文件操作：{operation}")
     
     def _data_transform(self, params: Dict[str, Any]) -> Any:
-        """数据转换动作"""
+        """数据转换动作 - 使用安全表达式求值器"""
         transform_type = params.get('type')
         data = params.get('data')
         
         if transform_type == 'filter':
             condition = params.get('condition')
-            return [item for item in data if eval(condition, {}, {'item': item})]
+            return [item for item in data if safe_eval(condition, item=item)]
         elif transform_type == 'map':
             expression = params.get('expression')
-            return [eval(expression, {}, {'item': item}) for item in data]
+            return [safe_eval(expression, item=item) for item in data]
         elif transform_type == 'reduce':
             initial = params.get('initial')
             expression = params.get('expression')
             result = initial
             for item in data:
-                result = eval(expression, {}, {'result': result, 'item': item})
+                result = safe_eval(expression, result=result, item=item)
             return result
         else:
             raise ValueError(f"未知的转换类型：{transform_type}")

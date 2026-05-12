@@ -6,20 +6,37 @@ __pycache__/
 .Python
 .venv/
 .env
+.env.local
+.env.*.local
+
+# 敏感文件
+*.pem
+*.key
+*.crt
+secrets/
+credentials/
+config/secrets/
 
 # 模型文件
 models/
 *.bin
 *.safetensors
 *.ckpt
+*.onnx
+*.pt
+*.pth
 
 # 日志
 *.log
 logs/
+*.log.*
 
 # 缓存
 .cache/
 *.pkl
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 # 编辑器
 .vscode/
@@ -27,20 +44,44 @@ logs/
 *.swp
 *.swo
 *~
+.project
+.pydevproject
+.settings/
 
 # 系统
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # 构建
 dist/
 build/
 *.egg-info/
+.eggs/
+*.egg
 
 # 测试
 test_*.py
 .pytest_cache/
+.coverage
+htmlcov/
 
 # Node.js
 node_modules/
 package-lock.json
+yarn.lock
+
+# 数据库
+*.db
+*.sqlite
+*.sqlite3
+
+# 备份文件
+*.bak
+*.backup
+*~
+
+# 临时文件
+tmp/
+temp/
+*.tmp

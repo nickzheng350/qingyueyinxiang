@@ -1,7 +1,7 @@
 """音频提示词数字公式化引擎 - 风格特性参数化、优化组合"""
 import logging
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any, List, Tuple
+from typing import Optional, Dict, Any, List
 from enum import Enum
 import math
 

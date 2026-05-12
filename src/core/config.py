@@ -338,13 +338,21 @@ class LegacyConfigManager:
 
 @lru_cache()
 def get_settings() -> Settings:
-    """获取全局配置单例"""
+    """获取全局配置单例（推荐）"""
     return Settings()
 
 
 def get_legacy_config() -> LegacyConfigManager:
-    """获取兼容旧配置的管理器（用于迁移）"""
+    """获取兼容旧配置的管理器（仅用于迁移，将在 v2.0 移除）"""
+    import warnings
+    warnings.warn(
+        "get_legacy_config() 已弃用，请使用 get_settings()",
+        DeprecationWarning,
+        stacklevel=2
+    )
     return LegacyConfigManager()
 
 
-get_config = get_legacy_config
+def get_config() -> Settings:
+    """获取全局配置（统一入口）"""
+    return get_settings()
