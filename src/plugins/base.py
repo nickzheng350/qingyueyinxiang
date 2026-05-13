@@ -4,8 +4,22 @@
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, List
-from pydantic import BaseModel
+from typing import Dict, Any, Optional, List, get_type_hints
+
+try:
+    from pydantic import BaseModel
+    PYDANTIC_AVAILABLE = True
+except ImportError:
+    PYDANTIC_AVAILABLE = False
+    class BaseModel:
+        def __init__(self, **kwargs):
+            hints = get_type_hints(self.__class__)
+            for name, hint_type in hints.items():
+                value = kwargs.get(name)
+                if value is not None:
+                    setattr(self, name, value)
+                elif hasattr(self.__class__, name):
+                    setattr(self, name, getattr(self.__class__, name))
 
 
 class PluginConfig(BaseModel):

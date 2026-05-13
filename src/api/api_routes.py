@@ -1,9 +1,40 @@
 """API 路由定义"""
 
-from typing import Optional
+from typing import Optional, get_type_hints
 
-from fastapi import APIRouter, HTTPException, Header
-from pydantic import BaseModel, Field
+try:
+    from fastapi import APIRouter, HTTPException, Header
+    FASTAPI_AVAILABLE = True
+except ImportError:
+    FASTAPI_AVAILABLE = False
+    class APIRouter:
+        def include_router(self, router):
+            pass
+    
+    class HTTPException(Exception):
+        pass
+    
+    def Header(default=None):
+        return default
+
+try:
+    from pydantic import BaseModel, Field
+    PYDANTIC_AVAILABLE = True
+except ImportError:
+    PYDANTIC_AVAILABLE = False
+    class Field:
+        def __init__(self, default=None, **kwargs):
+            self.default = default
+    
+    class BaseModel:
+        def __init__(self, **kwargs):
+            hints = get_type_hints(self.__class__)
+            for name, hint_type in hints.items():
+                value = kwargs.get(name)
+                if value is not None:
+                    setattr(self, name, value)
+                elif hasattr(self.__class__, name):
+                    setattr(self, name, getattr(self.__class__, name))
 
 from src.intent_parser.factory import IntentParserFactory
 from src.prompt_engine.engine import PromptEngine
@@ -15,7 +46,17 @@ from src.task_engine import get_task_executor, TaskType
 from src.persistence import get_storage
 from src.auth import get_auth_manager
 
+# 导入文件管理路由
+from src.api.routes.files import router as files_router
+# 导入数据库管理路由
+from src.api.routes.database import router as database_router
+
 api_router = APIRouter()
+
+# 包含文件管理路由
+api_router.include_router(files_router)
+# 包含数据库管理路由
+api_router.include_router(database_router)
 
 
 class ParseRequest(BaseModel):
@@ -35,6 +76,11 @@ class GenerateRequest(BaseModel):
 class SkillInstallRequest(BaseModel):
     path: str = Field(..., description="技能路径")
     skill_type: str = Field(default="local", description="技能类型")
+
+
+class SkillInstallUrlRequest(BaseModel):
+    url: str = Field(..., description="技能下载URL")
+    skill_type: str = Field(default="downloaded", description="技能类型")
 
 
 @api_router.post("/intent/parse")
@@ -162,10 +208,49 @@ async def list_skills(skill_type: str = ""):
     return {"skills": skills, "total": len(skills)}
 
 
+@api_router.get("/skills/market/search")
+async def search_market_skills(query: str = "", category: str = "", limit: int = 10):
+    manager = SkillManager()
+    skills = manager.search_market_skills(query, category, limit)
+    return {"skills": skills, "total": len(skills)}
+
+
+@api_router.get("/skills/market/categories")
+async def get_market_categories():
+    manager = SkillManager()
+    return manager.get_market_categories()
+
+
+@api_router.get("/skills/market/featured")
+async def get_featured_skills(limit: int = 5):
+    manager = SkillManager()
+    skills = manager.get_featured_skills(limit)
+    return {"skills": skills, "total": len(skills)}
+
+
+@api_router.post("/skills/{skill_id}/toggle")
+async def toggle_skill(skill_id: str):
+    manager = SkillManager()
+    try:
+        result = manager.toggle_skill(skill_id)
+        return result
+    except SkillNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
 @api_router.post("/skills/install")
 async def install_skill(request: SkillInstallRequest):
     manager = SkillManager()
     result = manager.install_skill_from_path(request.path, request.skill_type)
+    if result["status"] == "error":
+        raise HTTPException(status_code=400, detail=result["message"])
+    return result
+
+
+@api_router.post("/skills/install/url")
+async def install_skill_from_url(request: SkillInstallUrlRequest):
+    manager = SkillManager()
+    result = manager.install_skill_from_url(request.url, request.skill_type)
     if result["status"] == "error":
         raise HTTPException(status_code=400, detail=result["message"])
     return result
@@ -356,17 +441,6 @@ async def execute_skill(request: SkillExecuteRequest):
         **request.parameters
     )
     return result
-
-
-@api_router.get("/skills")
-async def list_skills(skill_type: str = ""):
-    """列出所有技能"""
-    skill_manager = SkillManager()
-    if skill_type:
-        skills = skill_manager.list_skills_by_type(skill_type)
-    else:
-        skills = skill_manager.list_skills()
-    return {"skills": skills, "total": len(skills)}
 
 
 @api_router.get("/skills/{skill_id}")

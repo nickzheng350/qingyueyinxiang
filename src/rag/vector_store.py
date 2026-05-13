@@ -68,6 +68,11 @@ class VectorStore(ABC):
         """文档数量"""
         pass
 
+    @abstractmethod
+    async def list_documents(self) -> list[str]:
+        """获取所有文档ID列表"""
+        pass
+
 
 class InMemoryVectorStore(VectorStore):
     """内存向量存储 - 单机使用"""
@@ -128,6 +133,11 @@ class InMemoryVectorStore(VectorStore):
         """文档数量"""
         async with self._lock:
             return len(self._documents)
+
+    async def list_documents(self) -> list[str]:
+        """获取所有文档ID列表"""
+        async with self._lock:
+            return list(self._documents.keys())
 
     @staticmethod
     def _cosine_distance(a: list[float], b: list[float]) -> float:
@@ -253,6 +263,11 @@ class BM25VectorStore(VectorStore):
         """文档数量"""
         async with self._lock:
             return len(self._documents)
+
+    async def list_documents(self) -> list[str]:
+        """获取所有文档ID列表"""
+        async with self._lock:
+            return list(self._documents.keys())
 
 
 class VectorStoreFactory:

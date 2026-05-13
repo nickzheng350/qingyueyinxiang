@@ -1,9 +1,44 @@
 """模型类型系统 - 提供统一的类型定义和兼容性处理"""
 
 from enum import Enum
-from typing import Any, Optional, Union, Dict, List
-from pydantic import BaseModel, field_validator, ValidationError
+from typing import Any, Optional, Union, Dict, List, get_type_hints
 import logging
+
+try:
+    from pydantic import BaseModel, field_validator, ValidationError
+    PYDANTIC_AVAILABLE = True
+except ImportError:
+    PYDANTIC_AVAILABLE = False
+    # 创建简化的模拟类
+    class ValidationError(Exception):
+        pass
+    
+    def field_validator(*args, **kwargs):
+        def decorator(func):
+            return func
+        return decorator
+    
+    class BaseModel:
+        def __init__(self, **kwargs):
+            hints = get_type_hints(self.__class__)
+            for name, hint_type in hints.items():
+                value = kwargs.get(name)
+                if value is not None:
+                    setattr(self, name, value)
+                elif hasattr(self.__class__, name):
+                    setattr(self, name, getattr(self.__class__, name))
+        
+        def model_dump(self):
+            result = {}
+            hints = get_type_hints(self.__class__)
+            for name in hints.keys():
+                if hasattr(self, name):
+                    result[name] = getattr(self, name)
+            return result
+        
+        @classmethod
+        def model_validate(cls, data):
+            return cls(**data)
 
 logger = logging.getLogger("hydraflow.type_system")
 

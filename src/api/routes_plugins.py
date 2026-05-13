@@ -2,13 +2,49 @@
 插件管理 API - 提供管理员添加和管理模块的接口
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
-from pydantic import BaseModel
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, get_type_hints
 import logging
 import os
 import json
 from pathlib import Path
+
+try:
+    from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+    FASTAPI_AVAILABLE = True
+except ImportError:
+    FASTAPI_AVAILABLE = False
+    class APIRouter:
+        def __init__(self, **kwargs):
+            pass
+    
+    def Depends(func=None):
+        return func
+    
+    class HTTPException(Exception):
+        pass
+    
+    class UploadFile:
+        pass
+    
+    def File(default=None):
+        return default
+    
+    status = type('status', (), {'HTTP_200_OK': 200, 'HTTP_400_BAD_REQUEST': 400})
+
+try:
+    from pydantic import BaseModel
+    PYDANTIC_AVAILABLE = True
+except ImportError:
+    PYDANTIC_AVAILABLE = False
+    class BaseModel:
+        def __init__(self, **kwargs):
+            hints = get_type_hints(self.__class__)
+            for name, hint_type in hints.items():
+                value = kwargs.get(name)
+                if value is not None:
+                    setattr(self, name, value)
+                elif hasattr(self.__class__, name):
+                    setattr(self, name, getattr(self.__class__, name))
 
 from src.plugins.manager import PluginManager
 from src.api.security import get_current_admin_user

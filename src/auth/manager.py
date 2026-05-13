@@ -222,3 +222,59 @@ class OAuthService:
 def get_oauth_service() -> OAuthService:
     """获取 OAuth 服务"""
     return OAuthService()
+
+
+class AuthManager:
+    """认证管理器"""
+
+    _instance: Optional["AuthManager"] = None
+
+    def __new__(cls) -> "AuthManager":
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    async def login(self, username: str, password: str) -> tuple[str, str]:
+        """用户登录，返回 (access_token, refresh_token)"""
+        async for db in get_db_session():
+            user = await authenticate_user(db, username, password)
+            if not user:
+                raise AuthenticationError("用户名或密码错误")
+
+            access_token = create_access_token({"sub": user.id})
+            refresh_token = create_refresh_token({"sub": user.id})
+
+            return access_token, refresh_token
+
+    async def refresh_token(self, refresh_token: str) -> str:
+        """刷新访问令牌"""
+        payload = decode_token(refresh_token)
+
+        if payload.get("type") != "refresh":
+            raise AuthenticationError("无效的刷新令牌")
+
+        user_id: Optional[int] = payload.get("sub")
+        if user_id is None:
+            raise AuthenticationError("无效的令牌")
+
+        async for db in get_db_session():
+            user = await get_user(db, user_id)
+            if user is None or not user.is_active:
+                raise AuthenticationError("用户不存在或已被禁用")
+
+            return create_access_token({"sub": user.id})
+
+    async def register(self, username: str, email: str, password: str) -> User:
+        """用户注册"""
+        async for db in get_db_session():
+            return await create_user(db, username, email, password)
+
+    async def get_user_info(self, token: str) -> User:
+        """获取用户信息"""
+        async for db in get_db_session():
+            return await get_current_user(db, token)
+
+
+def get_auth_manager() -> AuthManager:
+    """获取认证管理器"""
+    return AuthManager()

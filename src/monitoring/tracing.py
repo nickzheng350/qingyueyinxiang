@@ -34,6 +34,25 @@ try:
 except ImportError:
     OTEL_AVAILABLE = False
     logger.warning("OpenTelemetry not installed. Tracing will be disabled.")
+    
+    # 定义占位类型
+    class Tracer:
+        pass
+    
+    class Span:
+        pass
+    
+    class Status:
+        pass
+    
+    class StatusCode:
+        pass
+    
+    class Link:
+        pass
+    
+    class Context:
+        pass
 
 
 T = TypeVar("T")

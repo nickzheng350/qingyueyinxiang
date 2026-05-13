@@ -118,7 +118,7 @@ class Task(Base):
     task_id: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
     type: Mapped[TaskType] = mapped_column(String(50), nullable=False)
     prompt: Mapped[str] = mapped_column(Text, nullable=False)
-    parameters: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default_factory=dict)
+    parameters: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=lambda: {})
     model_id: Mapped[str] = mapped_column(String(100), nullable=False)
     status: Mapped[TaskStatus] = mapped_column(String(50), nullable=False, default=TaskStatus.PENDING)
     progress: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
@@ -126,7 +126,7 @@ class Task(Base):
     error_message: Mapped[Optional[str]] = mapped_column(Text)
     started_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    metadata: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default_factory=dict)
+    task_metadata: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=lambda: {}, name="metadata")
     retries: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     max_retries: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
     priority: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
@@ -175,7 +175,7 @@ class ApiKey(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     last_used_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
     expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
-    permissions: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default_factory=dict)
+    permissions: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=lambda: {})
 
     user: Mapped["User"] = relationship("User", back_populates="api_keys")
 
@@ -215,8 +215,8 @@ class Skill(Base):
     category: Mapped[Optional[str]] = mapped_column(String(100))
     is_enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_public: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    config: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default_factory=dict)
-    metadata: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default_factory=dict)
+    config: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=lambda: {})
+    task_metadata: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=lambda: {}, name="metadata")
 
     __table_args__ = (
         Index("idx_skill_category", "category"),
@@ -250,7 +250,7 @@ class WebSocketConnection(Base):
     connected_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     disconnected_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    subscriptions: Mapped[list[str]] = mapped_column(JSON, nullable=False, default_factory=list)
+    subscriptions: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=lambda: [])
 
     __table_args__ = (
         Index("idx_ws_active", "is_active"),

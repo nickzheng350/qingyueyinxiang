@@ -4,7 +4,7 @@ import threading
 import time
 import heapq
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Union
 from enum import Enum
 from abc import ABC, abstractmethod
 import uuid
@@ -17,8 +17,9 @@ from src.model_dispatcher.type_system import (
 from src.multimodal.audio_prompt_engine import AudioPromptEngine
 from src.multimodal.enhanced_audio_engine import EnhancedAudioEngine
 from src.multimodal.av_multimodal_fusion import AVMultimodalFusionEngine
-from src.cache.priority_queue import MultiLevelCache
+from src.cache.advanced_cache import get_multi_level_cache, MultiLevelCacheManager
 from src.core.concurrency import UnifiedExecutor
+from src.core.smart_scheduler import get_adaptive_scheduler, AdaptiveScheduler, TaskMetadata as SchedulerTaskMetadata
 
 logger = logging.getLogger("hydraflow.core.unified_engine")
 
@@ -537,12 +538,12 @@ class UnifiedIntelligentEngine:
         self._initialized = True
         
         self.validator = get_consistency_validator()
-        self.cache = MultiLevelCache(l1_max_size=1000, l2_max_size=10000)
+        self.cache = get_multi_level_cache()  # 使用高级多级缓存
         self.executor = UnifiedExecutor()
         
         self.resource_profile = ResourceProfile()
         self.resource_optimizer = ResourceOptimizer(self.resource_profile)
-        self.scheduler = SmartScheduler()
+        self.scheduler = get_adaptive_scheduler()  # 使用智能调度器
         self.metrics = PerformanceMetrics()
         
         self.sub_engines: Dict[str, BaseSubEngine] = {
@@ -557,8 +558,9 @@ class UnifiedIntelligentEngine:
         
         self.running = False
         self.work_thread: Optional[threading.Thread] = None
+        self._task_metadata_map: Dict[str, Task] = {}  # 任务ID到任务对象的映射
         
-        logger.info("UnifiedIntelligentEngine initialized")
+        logger.info("UnifiedIntelligentEngine initialized with advanced scheduler and cache")
     
     def _build_type_mapping(self) -> Dict[ModelFunctionType, str]:
         """构建类型到引擎的映射"""
@@ -620,7 +622,25 @@ class UnifiedIntelligentEngine:
             TouchPoint.PRE_PROCESSING
         )
         
-        self.scheduler.add_task(task)
+        # 使用智能调度器的任务元数据格式
+        scheduler_priority = self._convert_priority(priority)
+        scheduler_metadata = SchedulerTaskMetadata(
+            task_id=task.task_id,
+            task_type=task_type.value,
+            priority=scheduler_priority,
+            resource_requirements=self._estimate_resource_requirements(task_type, mode),
+            estimated_duration=self._estimate_duration(task_type, mode),
+            dependencies=dependencies or [],
+            created_at=task.created_at,
+            **kwargs
+        )
+        
+        # 使用asyncio.run同步调用异步方法
+        import asyncio
+        asyncio.run(self.scheduler.add_task(scheduler_metadata))
+        
+        # 保存任务映射
+        self._task_metadata_map[task.task_id] = task
         self.metrics.total_tasks += 1
         
         if not self.running:
@@ -628,34 +648,109 @@ class UnifiedIntelligentEngine:
         
         return task.task_id
     
+    def _convert_priority(self, priority: TaskPriority) -> 'SchedulerTaskMetadata.priority.type':
+        """转换优先级到调度器格式"""
+        from src.core.smart_scheduler import TaskPriority as SchedulerPriority
+        priority_map = {
+            TaskPriority.CRITICAL: SchedulerPriority.CRITICAL,
+            TaskPriority.HIGH: SchedulerPriority.HIGH,
+            TaskPriority.MEDIUM: SchedulerPriority.MEDIUM,
+            TaskPriority.LOW: SchedulerPriority.LOW,
+        }
+        return priority_map.get(priority, SchedulerPriority.MEDIUM)
+    
+    def _estimate_resource_requirements(self, task_type: ModelFunctionType, mode: EngineMode) -> Dict[str, float]:
+        """估算资源需求"""
+        base_requirements = {
+            ModelFunctionType.TEXT_GENERATION: {"gpu_memory": 4.0, "cpu_cores": 2, "ram": 8.0},
+            ModelFunctionType.CODE_GENERATION: {"gpu_memory": 8.0, "cpu_cores": 4, "ram": 16.0},
+            ModelFunctionType.TEXT_TO_IMAGE: {"gpu_memory": 16.0, "cpu_cores": 4, "ram": 16.0},
+            ModelFunctionType.TEXT_TO_VIDEO: {"gpu_memory": 24.0, "cpu_cores": 8, "ram": 32.0},
+            ModelFunctionType.TEXT_TO_AUDIO: {"gpu_memory": 2.0, "cpu_cores": 2, "ram": 4.0},
+            ModelFunctionType.AV_FUSION: {"gpu_memory": 32.0, "cpu_cores": 8, "ram": 64.0},
+        }
+        
+        reqs = base_requirements.get(task_type, {"gpu_memory": 8.0, "cpu_cores": 4, "ram": 16.0})
+        
+        # 根据模式调整
+        if mode == EngineMode.QUALITY:
+            return {k: v * 1.5 for k, v in reqs.items()}
+        elif mode == EngineMode.ECO:
+            return {k: v * 0.5 for k, v in reqs.items()}
+        
+        return reqs
+    
+    def _estimate_duration(self, task_type: ModelFunctionType, mode: EngineMode) -> float:
+        """估算任务时长（秒）"""
+        base_durations = {
+            ModelFunctionType.TEXT_GENERATION: 5.0,
+            ModelFunctionType.CODE_GENERATION: 10.0,
+            ModelFunctionType.TEXT_TO_IMAGE: 15.0,
+            ModelFunctionType.TEXT_TO_VIDEO: 60.0,
+            ModelFunctionType.TEXT_TO_AUDIO: 5.0,
+            ModelFunctionType.AV_FUSION: 120.0,
+        }
+        
+        duration = base_durations.get(task_type, 30.0)
+        
+        if mode == EngineMode.QUALITY:
+            return duration * 1.5
+        elif mode == EngineMode.ECO:
+            return duration * 0.7
+        
+        return duration
+    
     def get_task_status(self, task_id: str) -> Optional[TaskStatus]:
         """获取任务状态"""
-        for task in self.scheduler.task_queue:
-            if task.task_id == task_id:
-                return task.status
-        if task_id in self.scheduler.active_tasks:
-            return self.scheduler.active_tasks[task_id].status
+        # 从本地映射获取
+        if task_id in self._task_metadata_map:
+            return self._task_metadata_map[task_id].status
+        
+        # 从调度器获取统计
+        stats = self.scheduler.get_stats()
+        if stats["active"] > 0:
+            return TaskStatus.RUNNING
+        if stats["queued"] > 0:
+            return TaskStatus.QUEUED
+        
         return None
     
-    def get_task_result(self, task_id: str) -> Optional[EngineResult]:
-        """获取任务结果"""
-        cached = self.cache.get(task_id)
+    async def _get_task_result_async(self, task_id: str) -> Optional[EngineResult]:
+        """异步获取任务结果"""
+        cached = await self.cache.get(task_id)
         if cached:
             return cached
         
-        for task in self.scheduler.task_queue:
-            if task.task_id == task_id and task.result:
+        # 检查本地任务映射
+        if task_id in self._task_metadata_map:
+            task = self._task_metadata_map[task_id]
+            if task.result:
                 result = EngineResult(
                     success=True,
                     task_id=task_id,
                     output=task.result
                 )
-                self.cache.put(task_id, result)
+                await self.cache.put(task_id, result)
                 return result
+        
         return None
     
-    def _process_task(self, task: Task):
-        """处理任务"""
+    def get_task_result(self, task_id: str) -> Optional[EngineResult]:
+        """获取任务结果"""
+        import asyncio
+        return asyncio.run(self._get_task_result_async(task_id))
+    
+    def _process_task(self, task_metadata: SchedulerTaskMetadata):
+        """处理任务（使用调度器任务元数据）"""
+        # 获取本地任务对象
+        if task_metadata.task_id not in self._task_metadata_map:
+            logger.error(f"Task {task_metadata.task_id} not found in local map")
+            return
+        
+        task = self._task_metadata_map[task_metadata.task_id]
+        task.status = TaskStatus.RUNNING
+        task.started_at = time.time()
+        
         engine = self.get_engine_for_type(task.task_type)
         if not engine:
             result = EngineResult(
@@ -663,7 +758,10 @@ class UnifiedIntelligentEngine:
                 task_id=task.task_id,
                 errors=[f"No engine for type {task.task_type}"]
             )
-            self.scheduler.complete_task(task.task_id, result)
+            import asyncio
+            asyncio.run(self.scheduler.complete_task(task.task_id, success=False))
+            task.status = TaskStatus.FAILED
+            task.error = "; ".join(result.errors)
             return
         
         estimated_cost = engine.estimate_cost(task)
@@ -674,32 +772,47 @@ class UnifiedIntelligentEngine:
                 task_id=task.task_id,
                 errors=["Resources unavailable"]
             )
-            self.scheduler.complete_task(task.task_id, result)
+            import asyncio
+            asyncio.run(self.scheduler.complete_task(task.task_id, success=False))
+            task.status = TaskStatus.FAILED
+            task.error = "; ".join(result.errors)
             return
         
         self.resource_optimizer.allocate_resources(task, estimated_cost)
         
         try:
-            task.started_at = time.time()
             result = engine.execute(task)
             
             if result.success:
                 self.metrics.completed_tasks += 1
+                task.status = TaskStatus.COMPLETED
+                task.result = result.output
             else:
                 self.metrics.failed_tasks += 1
+                task.status = TaskStatus.FAILED
+                task.error = "; ".join(result.errors)
             
-            self.cache.put(task.task_id, result)
-            self.scheduler.complete_task(task.task_id, result)
+            task.completed_at = time.time()
+            
+            # 异步缓存结果
+            import asyncio
+            asyncio.run(self.cache.put(task.task_id, result))
+            asyncio.run(self.scheduler.complete_task(task.task_id, success=result.success))
         finally:
             self.resource_optimizer.release_resources(task, estimated_cost)
     
     def _work_loop(self):
-        """工作循环"""
+        """工作循环 - 集成智能调度器"""
+        import asyncio
+        
         while self.running:
-            task = self.scheduler.get_next_task(self.resource_profile.max_concurrent_tasks)
+            # 使用智能调度器获取下一个任务
+            task_metadata = asyncio.run(
+                self.scheduler.get_next_task(self.resource_profile.max_concurrent_tasks)
+            )
             
-            if task:
-                self._process_task(task)
+            if task_metadata:
+                self._process_task(task_metadata)
             else:
                 time.sleep(0.1)
     
@@ -709,13 +822,23 @@ class UnifiedIntelligentEngine:
             return
         
         self.running = True
+        
+        # 启动智能调度器
+        import asyncio
+        asyncio.run(self.scheduler.start())
+        
         self.work_thread = threading.Thread(target=self._work_loop, daemon=True)
         self.work_thread.start()
-        logger.info("UnifiedIntelligentEngine started")
+        logger.info("UnifiedIntelligentEngine started with adaptive scheduler")
     
     def stop(self):
         """停止引擎"""
         self.running = False
+        
+        # 停止智能调度器
+        import asyncio
+        asyncio.run(self.scheduler.stop())
+        
         if self.work_thread:
             self.work_thread.join(timeout=5.0)
         logger.info("UnifiedIntelligentEngine stopped")
@@ -724,31 +847,14 @@ class UnifiedIntelligentEngine:
         """获取性能指标 - 增强缓存效率统计"""
         self.metrics.resource_utilization = self.resource_optimizer.get_current_utilization()
         
-        # 计算缓存命中率
-        total_hits = self.cache._hits["l1"] + self.cache._hits["l2"]
-        self.metrics.cache_hit_rate = (
-            total_hits / max(1, self.cache._hits["total"])
-            if self.cache._hits["total"] > 0 else 0
-        )
+        # 获取高级缓存统计
+        cache_stats = self.cache.get_combined_stats()
         
-        # 添加缓存效率指标（L1缓存命中率，反映热数据访问效率）
-        self.metrics.cache_efficiency = (
-            self.cache._hits["l1"] / max(1, total_hits)
-            if total_hits > 0 else 0
-        )
-        
-        # 添加缓存分层命中率
-        self.metrics.l1_hit_rate = (
-            self.cache._hits["l1"] / max(1, self.cache._hits["total"])
-            if self.cache._hits["total"] > 0 else 0
-        )
-        self.metrics.l2_hit_rate = (
-            self.cache._hits["l2"] / max(1, self.cache._hits["total"])
-            if self.cache._hits["total"] > 0 else 0
-        )
-        
-        # 添加缓存大小信息
-        self.metrics.cache_size = self.cache.get_size()
+        self.metrics.cache_hit_rate = cache_stats.get("hit_rate", 0.0)
+        self.metrics.cache_efficiency = cache_stats.get("l1_hit_rate", 0.0) / max(1, cache_stats.get("hit_rate", 1.0))
+        self.metrics.l1_hit_rate = cache_stats.get("l1_hit_rate", 0.0)
+        self.metrics.l2_hit_rate = cache_stats.get("l2_hit_rate", 0.0)
+        self.metrics.cache_size = cache_stats.get("l1_size", 0)
         
         return self.metrics
     
@@ -766,7 +872,7 @@ class UnifiedIntelligentEngine:
         """获取系统状态"""
         return {
             "running": self.running,
-            "scheduler": self.scheduler.get_queue_stats(),
+            "scheduler": self.scheduler.get_stats(),
             "metrics": self.get_performance_metrics(),
             "resource_utilization": self.resource_optimizer.get_current_utilization(),
         }

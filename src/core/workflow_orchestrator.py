@@ -3,7 +3,7 @@ import logging
 import time
 import threading
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any, List, Tuple
+from typing import Optional, Dict, Any, List, Tuple, Union
 from enum import Enum
 from collections import deque
 import uuid

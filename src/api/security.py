@@ -270,3 +270,14 @@ ALLOWED_AUDIO_TYPES = [".mp3", ".wav", ".ogg", ".flac", ".aac", ".m4a"]
 MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10MB
 MAX_VIDEO_SIZE = 500 * 1024 * 1024  # 500MB
 MAX_AUDIO_SIZE = 50 * 1024 * 1024  # 50MB
+
+
+async def get_current_admin_user(db, token: str):
+    """获取当前管理员用户"""
+    from src.auth.manager import get_current_user
+    from src.core.exceptions import AuthorizationError
+    
+    user = await get_current_user(db, token)
+    if not user.is_superuser:
+        raise AuthorizationError("需要管理员权限")
+    return user

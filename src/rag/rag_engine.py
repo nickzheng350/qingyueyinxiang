@@ -222,14 +222,12 @@ class RAGEngine:
     async def clear(self) -> int:
         """清空知识库"""
         count = await self._vector_store.count()
-        docs = []
-        async with asyncio.Lock():
-            for doc_id in []:
-                doc = await self._vector_store.get(doc_id)
-                if doc:
-                    docs.append(doc_id)
+        if count == 0:
+            return 0
 
-        for doc_id in docs:
+        # 获取所有文档ID并删除
+        doc_ids = await self._vector_store.list_documents()
+        for doc_id in doc_ids:
             await self._vector_store.delete(doc_id)
 
         logger.info(f"Cleared {count} documents from knowledge base")

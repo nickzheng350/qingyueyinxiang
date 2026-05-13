@@ -5,18 +5,34 @@ import uuid
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request, status
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.exceptions import RequestValidationError
-from pydantic import ValidationError
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
+try:
+    from fastapi import FastAPI, Request, status
+    from fastapi.middleware.cors import CORSMiddleware
+    from fastapi.responses import JSONResponse, FileResponse
+    from fastapi.staticfiles import StaticFiles
+    from fastapi.exceptions import RequestValidationError
+    FASTAPI_AVAILABLE = True
+except ImportError:
+    FASTAPI_AVAILABLE = False
+    
+try:
+    from pydantic import ValidationError
+except ImportError:
+    class ValidationError(Exception):
+        pass
+
+try:
+    from slowapi import _rate_limit_exceeded_handler
+    from slowapi.errors import RateLimitExceeded
+except ImportError:
+    _rate_limit_exceeded_handler = None
+    class RateLimitExceeded(Exception):
+        pass
 
 from src.core.config import get_config
 from src.core.stability import get_stability_manager
 from src.core.exceptions import HydraFlowError, ErrorResponse
-from src.api.routes import api_router
+from src.api.api_routes import api_router
 from src.api.routes_plugins import router as plugins_router
 from src.api.security import (
     SecurityHeadersMiddleware,
@@ -60,7 +76,7 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     config = get_config()
-    api_config = config.global_config.get("api", {})
+    api_config = {"docs_enabled": config.api.docs_enabled, "cors_origins": config.auth.cors_origins}
 
     app = FastAPI(
         title="HydraFlow AI",
@@ -103,6 +119,12 @@ def create_app() -> FastAPI:
     ws_manager = get_ws_manager()
     ws_routes = WebSocketRoutes(ws_manager)
     ws_routes.register_routes(app)
+
+    app.mount("/ui", StaticFiles(directory="ui/public", html=True), name="ui")
+
+    @app.get("/")
+    async def root():
+        return FileResponse("ui/public/index.html")
 
     @app.get("/health")
     async def health_check():
@@ -184,3 +206,6 @@ async def pydantic_validation_exception_handler(
             "request_id": request_id,
         },
     )
+
+
+app = create_app()
