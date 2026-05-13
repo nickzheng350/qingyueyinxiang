@@ -339,11 +339,11 @@ class AuthSettings(BaseSettings):
     @field_validator("cors_origins", mode="before")
     @classmethod
     def validate_cors_origins(cls, v):
-        if isinstance(v, str):
+        if isinstance(v, str) and v:
             try:
                 return json.loads(v)
-            except json.JSONDecodeError:
-                return [v.strip() for v in v.split(",")]
+            except (json.JSONDecodeError, TypeError):
+                return [item.strip() for item in v.split(",") if item.strip()]
         return v
 
 
@@ -626,6 +626,33 @@ class Settings(BaseSettings):
         extra="ignore"
     )
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._load_configs_private()
+
+    def _load_configs_private(self) -> None:
+        """加载JSON配置文件（Settings专用）"""
+        self._config: dict[str, Any] = {}
+        config_dir = PROJECT_ROOT / "config"
+        config_files = {
+            "global": "global_config.json",
+            "models": "models.json",
+            "api_keys": "api_keys.json",
+            "categories": "categories.json",
+            "skill_template": "skill_template.json",
+        }
+        for key, filename in config_files.items():
+            filepath = config_dir / filename
+            if filepath.exists():
+                try:
+                    with open(filepath, "r", encoding="utf-8") as f:
+                        self._config[key] = json.load(f)
+                except (json.JSONDecodeError, OSError):
+                    self._config[key] = {}
+            else:
+                self._config[key] = {}
+
+
     @property
     def is_development(self) -> bool:
         return self.environment == Environment.DEVELOPMENT
@@ -637,6 +664,26 @@ class Settings(BaseSettings):
     @property
     def is_staging(self) -> bool:
         return self.environment == Environment.STAGING
+
+    @property
+    def models_config(self) -> dict:
+        return self._config.get("models", {})
+
+    @property
+    def api_keys_config(self) -> dict:
+        return self._config.get("api_keys", {})
+
+    @property
+    def categories_config(self) -> dict:
+        return self._config.get("categories", {})
+
+    @property
+    def global_config(self) -> dict:
+        return self._config.get("global", {})
+
+    @property
+    def skill_market_config(self) -> dict:
+        return self._config.get("skill_template", {})
 
 
 class LegacyConfigManager:

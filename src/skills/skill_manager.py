@@ -38,18 +38,32 @@ class SkillManager:
     def _load_skills(self) -> None:
         if not self._skills_dir.exists():
             return
-        for skill_dir in self._skills_dir.iterdir():
-            if skill_dir.is_dir():
-                manifest = skill_dir / "manifest.json"
+        # Support both flat layout (skills/*/manifest.json) and typed layout (skills/{type}/{skill}/manifest.json)
+        for entry in self._skills_dir.iterdir():
+            if entry.is_dir():
+                # Check if this is a skill directory (has manifest.json directly)
+                manifest = entry / "manifest.json"
                 if manifest.exists():
-                    try:
-                        with open(manifest, "r", encoding="utf-8") as f:
-                            data = json.load(f)
-                        data["type"] = data.get("type", "local")
-                        data["path"] = str(skill_dir)
-                        self._skills[data.get("skill_id", skill_dir.name)] = data
-                    except (json.JSONDecodeError, OSError) as e:
-                        logger.error(f"加载技能失败 {skill_dir}: {e}")
+                    self._load_skill_dir(entry, entry.name)
+                else:
+                    # Assume it's a type directory containing skills
+                    skill_type = entry.name
+                    for skill_dir in entry.iterdir():
+                        if skill_dir.is_dir():
+                            self._load_skill_dir(skill_dir, skill_type)
+
+    def _load_skill_dir(self, skill_dir: Path, skill_type: str) -> None:
+        manifest = skill_dir / "manifest.json"
+        if not manifest.exists():
+            return
+        try:
+            with open(manifest, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            data["type"] = data.get("type", skill_type)
+            data["path"] = str(skill_dir)
+            self._skills[data.get("skill_id", skill_dir.name)] = data
+        except (json.JSONDecodeError, OSError) as e:
+            logger.error(f"加载技能失败 {skill_dir}: {e}")
 
     def list_skills(self) -> list[dict[str, Any]]:
         return list(self._skills.values())
