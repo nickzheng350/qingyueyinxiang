@@ -31,6 +31,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'prompt', name: 'Prompt', component: () => import('@/views/PromptView.vue') },
       { path: 'api', name: 'Api', component: () => import('@/views/ApiView.vue') },
       { path: 'system', name: 'System', component: () => import('@/views/SystemView.vue') },
+      { path: 'buttons', name: 'Buttons', component: () => import('@/views/ButtonTestView.vue') },
     ]
   }
 ]
@@ -38,6 +39,23 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+})
+
+router.onError((error) => {
+  console.error('[Router] Navigation error:', error)
+})
+
+router.beforeEach((to, from, next) => {
+  try {
+    next()
+  } catch (error) {
+    console.error('[Router] Before each error:', error)
+    next('/dialogue')
+  }
+})
+
+router.afterEach((to, from) => {
+  console.log('[Router] Navigated from', from.path, 'to', to.path)
 })
 
 export default router

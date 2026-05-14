@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中国传统色主题测试</title>
+    <style>
+        /* 中国传统色主题系统 */
+        :root {
+            --primary: #6A9BD1;
+            --primary-dark: #4A7BB7;
+            --primary-light: #9EC5E8;
+            --secondary: #8B7BA8;
+            --accent: #7FB3D3;
+            --success: #789262;
+            --warning: #CA6924;
+            --danger: #F47983;
+            --info: #6A9BD1;
+            --bg-dark: #0F1419;
+            --bg-card: #1A1F2E;
+            --bg-hover: #252B3B;
+            --text-primary: #F1F5F9;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+            --border: #2D3436;
+            --radius-md: 12px;
+            --transition-fast: 0.15s ease;
+            --transition-normal: 0.25s ease;
+        }
+
+        .theme-tianqing {
+            --primary: #6A9BD1;
+            --primary-dark: #4A7BB7;
+            --primary-light: #9EC5E8;
+            --secondary: #8B7BA8;
+            --accent: #7FB3D3;
+            --bg-dark: #0F1419;
+            --bg-card: #1A1F2E;
+            --bg-hover: #252B3B;
+            --text-primary: #F1F5F9;
+            --text-secondary: #94A3B8;
+            --border: #2D3436;
+        }
+
+        .theme-mujianzi {
+            --primary: #8B7BA8;
+            --primary-dark: #6B5B88;
+            --primary-light: #A89BB8;
+            --secondary: #D4868A;
+            --accent: #E6B85C;
+            --bg-dark: #141018;
+            --bg-card: #1E1824;
+            --bg-hover: #2A2430;
+            --text-primary: #F5F0F6;
+            --text-secondary: #A89BB8;
+            --border: #3A3048;
+        }
+
+        .theme-zhuhuang {
+            --primary: #789262;
+            --primary-dark: #587242;
+            --primary-light: #98B282;
+            --secondary: #7FB3D3;
+            --accent: #CA6924;
+            --bg-dark: #0F140D;
+            --bg-card: #1A1F16;
+            --bg-hover: #252B20;
+            --text-primary: #F0F4EE;
+            --text-secondary: #98B282;
+            --border: #2D3428;
+        }
+
+        .theme-hupo {
+            --primary: #CA6924;
+            --primary-dark: #AA4914;
+            --primary-light: #E8A060;
+            --secondary: #E6B85C;
+            --accent: #C47A5A;
+            --bg-dark: #181008;
+            --bg-card: #221810;
+            --bg-hover: #2E2018;
+            --text-primary: #FAF5F0;
+            --text-secondary: #E8A060;
+            --border: #3A2818;
+        }
+
+        .theme-qianhongsha {
+            --primary: #F47983;
+            --primary-dark: #D45963;
+            --primary-light: #F8A0A8;
+            --secondary: #D4868A;
+            --accent: #E6B85C;
+            --bg-dark: #180F12;
+            --bg-card: #22181C;
+            --bg-hover: #2E2026;
+            --text-primary: #FAF0F2;
+            --text-secondary: #F8A0A8;
+            --border: #3A2830;
+        }
+
+        .theme-shuise {
+            --primary: #7FB3D3;
+            --primary-dark: #5F93B3;
+            --primary-light: #A8D0E8;
+            --secondary: #6A9BD1;
+            --accent: #789262;
+            --bg-dark: #0D1418;
+            --bg-card: #161F26;
+            --bg-hover: #202D36;
+            --text-primary: #EEF5F9;
+            --text-secondary: #A8D0E8;
+            --border: #283440;
+        }
+
+        .theme-baimu {
+            --primary: #E8D5C4;
+            --primary-dark: #C8B5A4;
+            --primary-light: #F0E5D8;
+            --secondary: #8B7BA8;
+            --accent: #6A9BD1;
+            --bg-dark: #1A1510;
+            --bg-card: #25201A;
+            --bg-hover: #302A24;
+            --text-primary: #FAF5F0;
+            --text-secondary: #E8D5C4;
+            --border: #3A3028;
+        }
+
+        .theme-mogu {
+            --primary: #4A5568;
+            --primary-dark: #2D3436;
+            --primary-light: #6B7280;
+            --secondary: #6A9BD1;
+            --accent: #E8D5C4;
+            --bg-dark: #0A0A0A;
+            --bg-card: #121212;
+            --bg-hover: #1A1A1A;
+            --text-primary: #E2E8F0;
+            --text-secondary: #6B7280;
+            --border: #2A2A2A;
+        }
+
+        .theme-tanhuang {
+            --primary: #E6B85C;
+            --primary-dark: #C6983C;
+            --primary-light: #F0D88C;
+            --secondary: #CA6924;
+            --accent: #789262;
+            --bg-dark: #181408;
+            --bg-card: #221E10;
+            --bg-hover: #2E2818;
+            --text-primary: #FAF8F0;
+            --text-secondary: #F0D88C;
+            --border: #3A3220;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(145deg, var(--bg-dark) 0%, color-mix(in srgb, var(--bg-dark) 80%, var(--primary-dark) 20%) 50%, var(--bg-dark) 100%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        .theme-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+        }
+
+        .theme-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: var(--bg-hover);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            min-width: 100px;
+        }
+
+        .theme-btn:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px color-mix(in srgb, var(--primary) 20%, transparent);
+        }
+
+        .theme-btn.active {
+            border-color: var(--primary);
+            background: color-mix(in srgb, var(--primary) 15%, var(--bg-card));
+        }
+
+        .color-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .theme-name {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .theme-desc {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .preview-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.25s ease;
+        }
+
+        .card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 0 20px color-mix(in srgb, var(--primary) 15%, transparent);
+        }
+
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            font-size: 0.875rem;
+            border: none;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px color-mix(in srgb, var(--primary) 30%, transparent);
+        }
+
+        .btn-secondary {
+            background: var(--bg-hover);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            background: color-mix(in srgb, var(--primary) 10%, transparent);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .input {
+            width: 100%;
+            padding: 10px 16px;
+            background: var(--bg-hover);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            outline: none;
+            transition: all var(--transition-fast);
+            margin-bottom: 8px;
+        }
+
+        .input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 10%, transparent);
+        }
+
+        .input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: var(--bg-hover);
+            border: 1px solid var(--border);
+            margin-right: 8px;
+            margin-bottom: 8px;
+            transition: all var(--transition-fast);
+        }
+
+        .tag.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-color: transparent;
+        }
+
+        .tag:hover:not(.active) {
+            border-color: var(--primary);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: var(--bg-hover);
+            border-radius: 12px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--bg-hover);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            border-radius: 4px;
+            animation: progress 1.5s ease-out forwards;
+        }
+
+        @keyframes progress {
+            from { width: 0; }
+            to { width: 75%; }
+        }
+
+        .footer {
+            text-align: center;
+            padding: 1rem;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">🎨 中国传统色主题系统</h1>
+            <p class="subtitle">点击下方按钮切换主题，体验9种精美配色方案</p>
+        </div>
+
+        <div class="theme-selector">
+            <button class="theme-btn active" data-theme="tianqing">
+                <div class="color-dots">
+                    <span class="dot" style="background: #6A9BD1;"></span>
+                    <span class="dot" style="background: #8B7BA8;"></span>
+                    <span class="dot" style="background: #7FB3D3;"></span>
+                </div>
+                <span class="theme-name">天青 · 雅</span>
+                <span class="theme-desc">雨过天青</span>
+            </button>
+
+            <button class="theme-btn" data-theme="mujianzi">
+                <div class="color-dots">
+                    <span class="dot" style="background: #8B7BA8;"></span>
+                    <span class="dot" style="background: #D4868A;"></span>
+                    <span class="dot" style="background: #E6B85C;"></span>
+                </div>
+                <span class="theme-name">木簪 · 韵</span>
+                <span class="theme-desc">紫罗兰</span>
+            </button>
+
+            <button class="theme-btn" data-theme="zhuhuang">
+                <div class="color-dots">
+                    <span class="dot" style="background: #789262;"></span>
+                    <span class="dot" style="background: #7FB3D3;"></span>
+                    <span class="dot" style="background: #CA6924;"></span>
+                </div>
+                <span class="theme-name">竹黄 · 逸</span>
+                <span class="theme-desc">竹皮之色</span>
+            </button>
+
+            <button class="theme-btn" data-theme="hupo">
+                <div class="color-dots">
+                    <span class="dot" style="background: #CA6924;"></span>
+                    <span class="dot" style="background: #E6B85C;"></span>
+                    <span class="dot" style="background: #C47A5A;"></span>
+                </div>
+                <span class="theme-name">琥珀 · 暖</span>
+                <span class="theme-desc">温馨活力</span>
+            </button>
+
+            <button class="theme-btn" data-theme="qianhongsha">
+                <div class="color-dots">
+                    <span class="dot" style="background: #F47983;"></span>
+                    <span class="dot" style="background: #D4868A;"></span>
+                    <span class="dot" style="background: #E6B85C;"></span>
+                </div>
+                <span class="theme-name">藕色 · 柔</span>
+                <span class="theme-desc">少女之色</span>
+            </button>
+
+            <button class="theme-btn" data-theme="shuise">
+                <div class="color-dots">
+                    <span class="dot" style="background: #7FB3D3;"></span>
+                    <span class="dot" style="background: #6A9BD1;"></span>
+                    <span class="dot" style="background: #789262;"></span>
+                </div>
+                <span class="theme-name">水色 · 清</span>
+                <span class="theme-desc">清新通透</span>
+            </button>
+
+            <button class="theme-btn" data-theme="baimu">
+                <div class="color-dots">
+                    <span class="dot" style="background: #E8D5C4;"></span>
+                    <span class="dot" style="background: #8B7BA8;"></span>
+                    <span class="dot" style="background: #6A9BD1;"></span>
+                </div>
+                <span class="theme-name">白木 · 素</span>
+                <span class="theme-desc">素雅纯净</span>
+            </button>
+
+            <button class="theme-btn" data-theme="mogu">
+                <div class="color-dots">
+                    <span class="dot" style="background: #4A5568;"></span>
+                    <span class="dot" style="background: #6A9BD1;"></span>
+                    <span class="dot" style="background: #E8D5C4;"></span>
+                </div>
+                <span class="theme-name">墨骨 · 玄</span>
+                <span class="dot">极简深邃</span>
+            </button>
+
+            <button class="theme-btn" data-theme="tanhuang">
+                <div class="color-dots">
+                    <span class="dot" style="background: #E6B85C;"></span>
+                    <span class="dot" style="background: #CA6924;"></span>
+                    <span class="dot" style="background: #789262;"></span>
+                </div>
+                <span class="theme-name">淡黄 · 明</span>
+                <span class="theme-desc">明亮温暖</span>
+            </button>
+        </div>
+
+        <div class="preview-section">
+            <div class="card">
+                <h3 class="card-title">按钮样式</h3>
+                <button class="btn btn-primary">主要按钮</button>
+                <button class="btn btn-secondary">次要按钮</button>
+                <button class="btn btn-success">成功按钮</button>
+                <button class="btn btn-warning">警告按钮</button>
+                <button class="btn btn-danger">危险按钮</button>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">输入框</h3>
+                <input type="text" class="input" placeholder="用户名">
+                <input type="password" class="input" placeholder="密码">
+                <input type="email" class="input" placeholder="邮箱地址">
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">标签</h3>
+                <span class="tag active">活跃</span>
+                <span class="tag">待处理</span>
+                <span class="tag">已完成</span>
+                <span class="tag">已取消</span>
+                <span class="tag">进行中</span>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">数据统计</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">2,847</div>
+                        <div class="stat-label">总用户</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">156</div>
+                        <div class="stat-label">今日新增</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">98%</div>
+                        <div class="stat-label">满意度</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">进度条</h3>
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
+                </div>
+                <p style="color: var(--text-secondary); font-size: 0.875rem;">任务完成进度: 75%</p>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">文字样式</h3>
+                <p style="color: var(--text-primary); font-weight: 600; margin-bottom: 0.5rem;">主要文字 - 天青色等烟雨</p>
+                <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">次要文字 - 而我在等你</p>
+                <p style="color: var(--text-muted); font-size: 0.875rem;">弱化文字 - 炊烟袅袅升起</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>主题切换测试页面 | 中国传统色配色方案 | 刷新页面会保留上次选择的主题</p>
+        </div>
+    </div>
+
+    <script>
+        const themeButtons = document.querySelectorAll('.theme-btn');
+
+        function setTheme(themeId) {
+            const root = document.documentElement;
+            root.className = '';
+            root.classList.add(`theme-${themeId}`);
+            
+            localStorage.setItem('hydraflow_theme', themeId);
+            
+            themeButtons.forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[data-theme="${themeId}"]`)?.classList.add('active');
+        }
+
+        themeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const themeId = btn.dataset.theme;
+                setTheme(themeId);
+            });
+        });
+
+        const savedTheme = localStorage.getItem('hydraflow_theme');
+        if (savedTheme) {
+            setTheme(savedTheme);
+        }
+    </script>
+</body>
+</html>

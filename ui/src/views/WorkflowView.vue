@@ -14,7 +14,7 @@
               🎛️ {{ lang === 'zh' ? '调整模式' : 'Manual' }}
             </button>
           </div>
-          <el-button type="primary" @click="createWorkflow">➕ {{ lang === 'zh' ? '新建流水线' : 'New Pipeline' }}</el-button>
+          <button class="btn btn-primary" @click="createWorkflow">➕ {{ lang === 'zh' ? '新建流水线' : 'New Pipeline' }}</button>
         </div>
       </div>
 
@@ -39,9 +39,9 @@
           <div class="workflow-desc">{{ w.description }}</div>
           <div style="margin-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
             <span :class="`status-badge status-${w.status}`">{{ w.statusText }}</span>
-            <el-button size="small" :type="w.status === 'pending' ? 'primary' : ''">
+            <button class="btn btn-config" :class="{ 'btn-primary': w.status === 'pending' }">
               {{ w.status === 'pending' ? (lang === 'zh' ? '⚙️ 配置' : '⚙️ Config') : (lang === 'zh' ? '▶️ 运行' : '▶️ Run') }}
-            </el-button>
+            </button>
           </div>
         </div>
       </div>
@@ -52,9 +52,9 @@
       <div class="card-header">
         <div><div class="card-title">🎨 {{ lang === 'zh' ? '流水线设计器' : 'Pipeline Designer' }}</div><div class="card-subtitle">{{ lang === 'zh' ? '可视化构建工作流程' : 'Visually build workflows' }}</div></div>
         <div style="display: flex; gap: 0.5rem;">
-          <el-button size="small" @click="clearWorkflow">🗑️ {{ lang === 'zh' ? '清空' : 'Clear' }}</el-button>
-          <el-button size="small" type="primary" @click="saveWorkflow">💾 {{ lang === 'zh' ? '保存' : 'Save' }}</el-button>
-          <el-button size="small" type="success" @click="runWorkflow">▶️ {{ lang === 'zh' ? '运行' : 'Run' }}</el-button>
+          <button class="btn btn-secondary btn-sm" @click="clearWorkflow">🗑️ {{ lang === 'zh' ? '清空' : 'Clear' }}</button>
+          <button class="btn btn-primary btn-sm" @click="saveWorkflow">💾 {{ lang === 'zh' ? '保存' : 'Save' }}</button>
+          <button class="btn btn-primary btn-sm" @click="runWorkflow">▶️ {{ lang === 'zh' ? '运行' : 'Run' }}</button>
         </div>
       </div>
       <div style="display: flex; gap: 2rem;">
@@ -94,7 +94,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useWorkflowStore } from '@/stores/workflowStore'
-import { useThemeStore } from '@/stores/themeStore'
+import { useThemeStore } from '@/stores/theme'
 import { storeToRefs } from 'pinia'
 
 const store = useWorkflowStore()
@@ -179,36 +179,29 @@ function runWorkflow() { }
 </script>
 
 <style scoped>
-.card { background: linear-gradient(145deg, var(--bg-card), rgba(15, 23, 42, 0.8)); border-radius: 16px; border: 1px solid var(--border); padding: 1.75rem; }
+.card { background: linear-gradient(145deg, var(--bg-card), var(--bg-dark)); border-radius: 16px; border: 1px solid var(--border); padding: 1.75rem; }
 .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
 .card-title { font-size: 1.1rem; font-weight: 600; }
 .card-subtitle { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem; }
 .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
 
 .mode-toggle { display: flex; background: var(--bg-dark); border-radius: 8px; padding: 2px; }
-.mode-toggle button { padding: 0.4rem 0.75rem; border-radius: 6px; border: none; background: transparent; cursor: pointer; font-size: 0.8rem; transition: all 0.3s; }
+.mode-toggle button { padding: 0.4rem 0.75rem; border-radius: 6px; border: none; background: transparent; cursor: pointer; font-size: 0.8rem; transition: all 0.3s; color: white; }
 .mode-toggle button.active { background: var(--primary); color: white; }
 
 .direction-filter { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
-.dir-btn { padding: 0.3rem 0.75rem; border-radius: 20px; border: 1px solid var(--border); background: var(--bg-dark); cursor: pointer; transition: all 0.3s; font-size: 0.8rem; }
+.dir-btn { padding: 0.3rem 0.75rem; border-radius: 20px; border: 1px solid var(--border); background: var(--bg-dark); cursor: pointer; transition: all 0.3s; font-size: 0.8rem; color: white; }
 .dir-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
-.workflow-card {
-  background: linear-gradient(145deg, var(--bg-card), rgba(15, 23, 42, 0.8));
-  border-radius: 16px;
-  padding: 1.75rem;
-  border: 1px solid var(--border);
-  cursor: pointer;
-  transition: all 0.4s;
-}
-.workflow-card:hover { border-color: var(--primary); transform: translateY(-4px); box-shadow: 0 12px 40px rgba(99, 102, 241, 0.15); }
+.workflow-card { background: linear-gradient(145deg, var(--bg-card), var(--bg-dark)); border-radius: 12px; padding: 1.25rem; border: 1px solid var(--border); cursor: pointer; transition: all 0.4s; }
+.workflow-card:hover { border-color: var(--primary); transform: translateY(-4px); box-shadow: 0 12px 40px color-mix(in srgb, var(--primary) 15%, transparent); }
 .workflow-name { font-size: 1.1rem; font-weight: 600; }
 .workflow-desc { color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem; }
 
 .status-badge { padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 500; }
-.status-success { background: rgba(16, 185, 129, 0.2); color: var(--success); }
-.status-pending { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
-.status-warning { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+.status-success { background: color-mix(in srgb, var(--success) 20%, transparent); color: var(--success); }
+.status-pending { background: color-mix(in srgb, var(--warning) 20%, transparent); color: var(--warning); }
+.status-warning { background: color-mix(in srgb, var(--warning) 20%, transparent); color: var(--warning); }
 
 .node-panel { width: 220px; padding-right: 1rem; border-right: 1px solid var(--border); }
 .node-group-label { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.75rem; margin-top: 1rem; }

@@ -19,10 +19,10 @@
           </div>
         </div>
         <div style="display: flex; gap: 1rem; margin-top: 1.5rem; flex-wrap: wrap;">
-          <el-button type="primary" @click="analyzeAndConnect">🔍 智能分析并连接</el-button>
-          <el-button @click="saveSettings">💾 保存设置</el-button>
-          <el-button @click="loadSettings">📂 加载设置</el-button>
-          <el-button type="danger" @click="clearSettings">🗑️ 清除设置</el-button>
+          <button class="btn btn-primary" @click="analyzeAndConnect">🔍 智能分析并连接</button>
+          <button class="btn btn-secondary" @click="saveSettings">💾 保存设置</button>
+          <button class="btn btn-secondary" @click="loadSettings">📂 加载设置</button>
+          <button class="btn btn-danger" @click="clearSettings">🗑️ 清除设置</button>
         </div>
         <div v-if="statusMessage" class="status-msg" :class="statusType">{{ statusMessage }}</div>
       </el-form>
@@ -71,13 +71,13 @@ function clearSettings() { localStorage.removeItem('hydraflow_api_settings'); ap
 </script>
 
 <style scoped>
-.card { background: linear-gradient(145deg, var(--bg-card), rgba(15, 23, 42, 0.8)); border-radius: 16px; border: 1px solid var(--border); padding: 1.75rem; }
+.card { background: linear-gradient(145deg, var(--bg-card), var(--bg-dark)); border-radius: 16px; border: 1px solid var(--border); padding: 1.75rem; }
 .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
 .card-title { font-size: 1.1rem; font-weight: 600; }
 .card-subtitle { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem; }
 .analysis-result { margin-top: 1rem; padding: 1rem; border-radius: 8px; background: var(--bg-dark); border: 1px solid var(--border); }
 .analysis-header { display: flex; align-items: center; gap: 1rem; }
 .status-msg { margin-top: 1rem; padding: 0.75rem 1rem; border-radius: 8px; }
-.status-msg.success { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--success); }
-.status-msg.error { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: var(--danger); }
+.status-msg.success { background: color-mix(in srgb, var(--success) 10%, transparent); border: 1px solid color-mix(in srgb, var(--success) 30%, transparent); color: var(--success); }
+.status-msg.error { background: color-mix(in srgb, var(--danger) 10%, transparent); border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent); color: var(--danger); }
 </style>

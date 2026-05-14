@@ -2,9 +2,9 @@
   <aside class="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-logo">H</div>
-      <div>
+      <div class="sidebar-title-wrapper">
         <div class="sidebar-title">清悦印象</div>
-        <div class="sidebar-subtitle">清新淡雅，悦己，留下印象<</div>
+        <div class="sidebar-subtitle">清新淡雅，悦己，留下印象</div>
       </div>
     </div>
 
@@ -14,7 +14,7 @@
       <li v-for="item in mainNav" :key="item.path" class="nav-item">
         <router-link :to="item.path" active-class="active">
           <span class="nav-icon">{{ item.icon }}</span>
-          {{ lang === 'zh' ? item.label : item.labelEn }}
+          <span class="nav-label">{{ lang === 'zh' ? item.label : item.labelEn }}</span>
           <span v-if="item.badge" class="nav-badge">{{ item.badge }}</span>
         </router-link>
       </li>
@@ -26,7 +26,7 @@
       <li v-for="item in currentSubMenu" :key="item.path" class="nav-item">
         <router-link :to="item.path" active-class="active">
           <span class="nav-icon">{{ item.icon }}</span>
-          {{ lang === 'zh' ? item.label : item.labelEn }}
+          <span class="nav-label">{{ lang === 'zh' ? item.label : item.labelEn }}</span>
         </router-link>
       </li>
     </nav>
@@ -37,7 +37,7 @@
       <li v-for="item in settingsNav" :key="item.path" class="nav-item">
         <router-link :to="item.path" active-class="active">
           <span class="nav-icon">{{ item.icon }}</span>
-          {{ lang === 'zh' ? item.label : item.labelEn }}
+          <span class="nav-label">{{ lang === 'zh' ? item.label : item.labelEn }}</span>
         </router-link>
       </li>
     </nav>
@@ -121,11 +121,11 @@ const currentSubMenu = computed(() => {
 
 <style scoped>
 .sidebar {
-  width: 280px;
-  background: linear-gradient(180deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%);
+  width: 196px;
+  background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-dark) 100%);
   backdrop-filter: blur(20px);
   border-right: 1px solid var(--border);
-  padding: 1.75rem;
+  padding: 1.25rem;
   position: fixed;
   left: 0;
   top: 0;
@@ -138,61 +138,74 @@ const currentSubMenu = computed(() => {
 .sidebar-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
   border-bottom: 1px solid var(--border);
 }
 
 .sidebar-logo {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
+  font-size: 1.1rem;
   font-weight: bold;
+  color: white;
+  flex-shrink: 0;
+}
+
+.sidebar-title-wrapper {
+  flex: 1;
+  overflow: hidden;
 }
 
 .sidebar-title {
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-weight: 700;
   background: linear-gradient(90deg, var(--primary), var(--accent));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sidebar-subtitle {
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .nav-menu {
   list-style: none;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .nav-section-title {
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   text-transform: uppercase;
   color: var(--text-secondary);
-  padding: 0.5rem 1rem;
+  padding: 0.35rem 0.75rem;
   letter-spacing: 0.05em;
 }
 
 .nav-item {
-  margin-bottom: 0.15rem;
+  margin-bottom: 0.1rem;
 }
 
 .nav-item a {
   display: flex;
   align-items: center;
-  gap: 0.875rem;
-  padding: 0.75rem 1rem;
-  border-radius: 10px;
+  gap: 0.6rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
   color: var(--text-secondary);
   text-decoration: none;
   transition: all 0.3s;
@@ -202,11 +215,11 @@ const currentSubMenu = computed(() => {
 .nav-item a:hover {
   background: var(--bg-hover);
   color: var(--text-primary);
-  transform: translateX(4px);
+  transform: translateX(3px);
 }
 
 .nav-item a.active {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(139, 92, 246, 0.15));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 20%, transparent), color-mix(in srgb, var(--secondary) 10%, transparent));
   color: var(--text-primary);
 }
 
@@ -216,34 +229,43 @@ const currentSubMenu = computed(() => {
   left: 0;
   top: 50%;
   transform: translateY(-50%);
-  width: 3px;
-  height: 60%;
+  width: 2px;
+  height: 50%;
   background: linear-gradient(180deg, var(--primary), var(--secondary));
-  border-radius: 0 2px 2px 0;
+  border-radius: 0 1px 1px 0;
 }
 
 .nav-icon {
-  font-size: 1.1rem;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.nav-label {
+  font-size: 0.78rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .nav-badge {
   margin-left: auto;
-  padding: 0.2rem 0.5rem;
-  border-radius: 20px;
-  font-size: 0.7rem;
-  background: var(--primary);
+  padding: 0.15rem 0.4rem;
+  border-radius: 12px;
+  font-size: 0.6rem;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
   color: white;
+  flex-shrink: 0;
 }
 
 .sub-menu {
   border-left: 2px solid var(--border);
-  margin-left: 0.5rem;
-  padding-left: 0.5rem;
+  margin-left: 0.35rem;
+  padding-left: 0.35rem;
 }
 
 .settings-menu {
   margin-top: auto;
-  padding-top: 1rem;
+  padding-top: 0.75rem;
   border-top: 1px solid var(--border);
 }
 

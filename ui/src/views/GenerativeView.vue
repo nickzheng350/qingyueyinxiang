@@ -1,7 +1,7 @@
 <template>
   <div>
-    <div class="gen-tabs">
-      <el-button v-for="t in tabs" :key="t.id" :type="activeTab === t.id ? 'primary' : ''" @click="activeTab = t.id">{{ t.icon }} {{ t.label }}</el-button>
+    <div class="btn-group">
+      <button v-for="t in tabs" :key="t.id" class="btn" :class="{ active: activeTab === t.id }" @click="activeTab = t.id">{{ t.icon }} {{ t.label }}</button>
     </div>
 
     <!-- 文本生成 -->
@@ -17,14 +17,14 @@
             <el-form-item label="语气风格"><el-select v-model="textForm.tone" style="width:100%">
               <el-option v-for="o in textTones" :key="o.value" :label="o.label" :value="o.value" /></el-select>
             </el-form-item>
-            <el-button type="primary" style="width:100%" @click="generateText" :loading="generating">✨ 生成文本</el-button>
+            <button class="btn btn-primary" style="width:100%" @click="generateText" :class="{ 'btn-loading': generating }">✨ 生成文本</button>
           </el-form>
         </div>
         <div>
           <div class="output-box" v-html="textOutput || '<div style=\'text-align:center;padding:3rem;color:var(--text-secondary)\'>📄<p>生成的文本将显示在这里</p></div>'"></div>
           <div style="display:flex;gap:0.5rem;margin-top:0.75rem;">
-            <el-button size="small" @click="copyText" :disabled="!textOutput">📋 复制</el-button>
-            <el-button size="small" @click="textOutput=''">🗑️ 清空</el-button>
+            <button class="btn btn-secondary btn-sm" @click="copyText" :disabled="!textOutput">📋 复制</button>
+            <button class="btn btn-secondary btn-sm" @click="textOutput=''">🗑️ 清空</button>
           </div>
         </div>
       </div>
@@ -43,7 +43,7 @@
             <el-form-item label="分辨率"><el-select v-model="imageForm.res" style="width:100%">
               <el-option label="512×512" value="512x512" /><el-option label="1024×1024" value="1024x1024" /><el-option label="1024×1536" value="1024x1536" /></el-select>
             </el-form-item>
-            <el-button type="primary" style="width:100%" @click="generateImage" :loading="generating">🎨 生成图像</el-button>
+            <button class="btn btn-primary" style="width:100%" @click="generateImage" :class="{ 'btn-loading': generating }">🎨 生成图像</button>
           </el-form>
         </div>
         <div>
@@ -65,7 +65,7 @@
             <el-form-item label="时长"><el-select v-model="audioForm.duration" style="width:100%">
               <el-option label="30秒" value="30" /><el-option label="1分钟" value="60" /><el-option label="2分钟" value="120" /></el-select>
             </el-form-item>
-            <el-button type="primary" style="width:100%" @click="generateAudio" :loading="generating">🎶 生成音频</el-button>
+            <button class="btn btn-primary" style="width:100%" @click="generateAudio" :class="{ 'btn-loading': generating }">🎶 生成音频</button>
           </el-form>
         </div>
         <div class="output-box" style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
@@ -85,7 +85,7 @@
             <el-form-item label="分辨率"><el-select v-model="videoForm.res" style="width:100%">
               <el-option label="720p" value="720p" /><el-option label="1080p" value="1080p" /><el-option label="4K" value="4k" /></el-select>
             </el-form-item>
-            <el-button type="primary" style="width:100%" @click="generateVideo" :loading="generating">🎥 生成视频</el-button>
+            <button class="btn btn-primary" style="width:100%" @click="generateVideo" :class="{ 'btn-loading': generating }">🎥 生成视频</button>
           </el-form>
         </div>
         <div class="output-box" style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
@@ -156,7 +156,7 @@ async function generateVideo() { generating.value = true; await new Promise(r =>
 
 <style scoped>
 .gen-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
-.card { background: linear-gradient(145deg, var(--bg-card), rgba(15, 23, 42, 0.8)); border-radius: 16px; border: 1px solid var(--border); padding: 1.75rem; margin-bottom: 1.5rem; }
+.card { background: linear-gradient(145deg, var(--bg-card), var(--bg-dark)); border-radius: 16px; border: 1px solid var(--border); padding: 1.75rem; margin-bottom: 1.5rem; }
 .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
 .card-title { font-size: 1.1rem; font-weight: 600; }
 .card-subtitle { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem; }

@@ -22,6 +22,10 @@ app.get('/login', (req, res) => {
   res.sendFile(path.join(publicPath, 'login.html'));
 });
 
+app.get('/theme-test', (req, res) => {
+  res.sendFile(path.join(publicPath, 'theme-test.html'));
+});
+
 app.get('/', (req, res) => {
   res.redirect('/login');
 });
@@ -56,7 +60,7 @@ app.use('/health', createProxyMiddleware({
   changeOrigin: true,
 }));
 
-app.get('*', (req, res) => {
+app.use((req, res) => {
   const requestedPath = req.path.replace(/^\//, '');
   
   if (requestedPath && requestedPath !== 'index.html') {
@@ -74,5 +78,6 @@ app.get('*', (req, res) => {
 app.listen(PORT, HOST, () => {
   console.log(`\n  🎨 清悦印象 AI UI 已启动`);
   console.log(`  访问: http://${HOST}:${PORT}`);
-  console.log(`  API:  ${API_URL}\n`);
+  console.log(`  API:  ${API_URL}`);
+  console.log(`  主题测试: http://${HOST}:${PORT}/theme-test\n`);
 });

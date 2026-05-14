@@ -5,11 +5,17 @@ import 'element-plus/dist/index.css'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import router from './router'
 import App from './App.vue'
-import './assets/styles/variables.css'
+import { useThemeStore } from './stores/theme'
 import './assets/styles/global.css'
 
 const app = createApp(App)
-app.use(createPinia())
+const pinia = createPinia()
+
+app.use(pinia)
 app.use(router)
 app.use(ElementPlus, { locale: zhCn })
+
+const themeStore = useThemeStore()
+themeStore.init()
+
 app.mount('#app')

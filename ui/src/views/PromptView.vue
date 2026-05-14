@@ -2,7 +2,7 @@
   <div class="card">
     <div class="card-header">
       <div><div class="card-title">✏️ 提示词管理</div><div class="card-subtitle">创建和管理AI提示词</div></div>
-      <el-button type="primary" @click="promptVisible = true">➕ 新建提示词</el-button>
+      <button class="btn btn-primary" @click="promptVisible = true">➕ 新建提示词</button>
     </div>
     <div class="grid-2">
       <div>
@@ -12,7 +12,7 @@
             <el-option value="system" label="系统提示词" /><el-option value="user" label="用户提示词" /><el-option value="assistant" label="助手提示词" />
           </el-select></el-form-item>
           <el-form-item label="提示词内容"><el-input v-model="form.content" type="textarea" :rows="10" placeholder="输入提示词内容..." @input="updatePreview" /></el-form-item>
-          <el-button type="primary" @click="savePrompt">保存提示词</el-button>
+          <button class="btn btn-primary" @click="savePrompt">保存提示词</button>
         </el-form>
       </div>
       <div>
@@ -28,7 +28,7 @@
         </el-select></el-form-item>
         <el-form-item label="内容"><el-input v-model="newPrompt.content" type="textarea" :rows="6" /></el-form-item>
       </el-form>
-      <template #footer><el-button @click="promptVisible = false">取消</el-button><el-button type="primary" @click="createPrompt">创建</el-button></template>
+      <template #footer><button class="btn btn-secondary" @click="promptVisible = false">取消</button><button class="btn btn-primary" @click="createPrompt">创建</button></template>
     </el-dialog>
   </div>
 </template>
@@ -45,7 +45,7 @@ function createPrompt() { promptVisible.value = false; newPrompt.value = { name:
 </script>
 
 <style scoped>
-.card { background: linear-gradient(145deg, var(--bg-card), rgba(15, 23, 42, 0.8)); border-radius: 16px; border: 1px solid var(--border); padding: 1.75rem; }
+.card { background: linear-gradient(145deg, var(--bg-card), var(--bg-dark)); border-radius: 16px; border: 1px solid var(--border); padding: 1.75rem; }
 .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
 .card-title { font-size: 1.1rem; font-weight: 600; }
 .card-subtitle { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem; }

@@ -19,7 +19,7 @@
         </el-form>
       </div>
     </div>
-    <el-button type="primary" style="margin-top: 1rem;" @click="saveSystemSettings">保存设置</el-button>
+    <button class="btn btn-primary" style="margin-top: 1rem;" @click="saveSystemSettings">保存设置</button>
   </div>
 </template>
 
@@ -30,7 +30,7 @@ function saveSystemSettings() { console.log('save', form.value) }
 </script>
 
 <style scoped>
-.card { background: linear-gradient(145deg, var(--bg-card), rgba(15, 23, 42, 0.8)); border-radius: 16px; border: 1px solid var(--border); padding: 1.75rem; }
+.card { background: linear-gradient(145deg, var(--bg-card), var(--bg-dark)); border-radius: 16px; border: 1px solid var(--border); padding: 1.75rem; }
 .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
 .card-title { font-size: 1.1rem; font-weight: 600; }
 .card-subtitle { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem; }

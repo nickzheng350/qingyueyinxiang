@@ -1,52 +1,52 @@
 <template>
-  <header class="top-bar">
-    <!-- 顶部Tab导航 -->
-    <div class="top-tabs">
-      <router-link
-        v-for="tab in topTabs"
-        :key="tab.path"
-        :to="tab.path"
-        class="top-tab"
-        active-class="active"
-      >
-        <span class="tab-icon">{{ tab.icon }}</span>
-        <span class="tab-label">{{ lang === 'zh' ? tab.label : tab.labelEn }}</span>
-      </router-link>
+  <header class="app-header">
+    <div class="header-left">
+      <button class="collapse-btn" @click="$emit('toggle-sidebar')">
+        <span class="collapse-icon">{{ collapsed ? '→' : '←' }}</span>
+      </button>
+      <div class="breadcrumb">
+        <span class="breadcrumb-item active">{{ currentModule }}</span>
+      </div>
     </div>
 
-    <!-- 右侧操作区 -->
-    <div class="top-actions">
-      <!-- 主题切换 -->
-      <div class="theme-switcher">
-        <button
-          v-for="theme in themeList"
-          :key="theme.name"
-          class="theme-btn"
-          :class="{ active: currentTheme === theme.name }"
-          :style="{ background: theme.primary }"
-          :title="theme.nameZh"
-          @click="setTheme(theme.name)"
-        ></button>
-      </div>
+    <div class="header-center">
+      <nav class="header-tabs">
+        <router-link
+          v-for="tab in tabs"
+          :key="tab.path"
+          :to="tab.path"
+          class="header-tab"
+          active-class="active"
+        >
+          <span class="tab-icon">{{ tab.icon }}</span>
+          <span class="tab-label">{{ lang === 'zh' ? tab.label : tab.labelEn }}</span>
+        </router-link>
+      </nav>
+    </div>
+
+    <div class="header-right">
+      <!-- 主题切换组件 -->
+      <ThemeSwitch />
 
       <!-- 语言切换 -->
       <button class="lang-btn" @click="toggleLanguage">
-        {{ lang === 'zh' ? 'EN' : '中' }}
+        {{ lang === 'zh' ? 'EN' : '中文' }}
       </button>
 
-      <!-- 搜索框 -->
+      <!-- 搜索 -->
       <div class="search-box">
-        <span>🔍</span>
+        <span class="search-icon">🔍</span>
         <input
           type="text"
+          class="search-input"
           :placeholder="lang === 'zh' ? '搜索...' : 'Search...'"
-          v-model="keyword"
-          @keyup.enter="handleSearch"
         />
       </div>
 
       <!-- 用户头像 -->
-      <div class="user-avatar">N</div>
+      <div class="user-avatar">
+        {{ userInitial }}
+      </div>
     </div>
   </header>
 </template>
@@ -54,16 +54,19 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useThemeStore, themes, type ThemeName } from '@/stores/theme'
+import { useThemeStore } from '@/stores/theme'
 import { storeToRefs } from 'pinia'
+import ThemeSwitch from './ThemeSwitch.vue'
+
+defineEmits(['toggle-sidebar'])
 
 const route = useRoute()
 const themeStore = useThemeStore()
-const { language: lang, currentTheme } = storeToRefs(themeStore)
+const { language: lang } = storeToRefs(themeStore)
 
-const keyword = ref('')
+const collapsed = ref(false)
 
-const topTabs = [
+const tabs = [
   { path: '/dialogue', icon: '💬', label: '对话', labelEn: 'Chat' },
   { path: '/memory', icon: '🧠', label: '记忆', labelEn: 'Memory' },
   { path: '/skills', icon: '⚡', label: '技能', labelEn: 'Skills' },
@@ -73,153 +76,197 @@ const topTabs = [
   { path: '/experience', icon: '📚', label: '经验库', labelEn: 'Experience' },
 ]
 
-const themeList = Object.values(themes)
+const currentModule = computed(() => {
+  const path = route.path
+  const map: Record<string, string> = {
+    '/dialogue': '对话',
+    '/memory': '记忆',
+    '/skills': '技能',
+    '/plugins': '插件',
+    '/workflow': '工作流',
+    '/models': '模型',
+    '/experience': '经验库',
+  }
+  return map[path.split('/')[1]] || '清悦印象'
+})
 
-function setTheme(name: ThemeName) {
-  themeStore.setTheme(name)
-}
+const userInitial = 'N'
 
 function toggleLanguage() {
   themeStore.setLanguage(lang.value === 'zh' ? 'en' : 'zh')
 }
-
-function handleSearch() {
-  console.log('search:', keyword.value)
-}
 </script>
 
 <style scoped>
-.top-bar {
-  background: linear-gradient(180deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.95) 100%);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border);
-  padding: 0.75rem 1.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: sticky;
+.app-header {
+  position: fixed;
   top: 0;
-  z-index: 100;
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
-}
-
-.top-tabs {
-  display: flex;
-  gap: 0.25rem;
-}
-
-.top-tab {
+  left: 280px;
+  right: 0;
+  height: 64px;
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1rem;
-  border-radius: 8px;
-  color: var(--text-secondary);
-  text-decoration: none;
-  transition: all 0.3s;
-  font-size: 0.9rem;
+  justify-content: space-between;
+  padding: 0 var(--space-lg);
+  z-index: 100;
 }
 
-.top-tab:hover {
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.collapse-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.collapse-btn:hover {
   background: var(--bg-hover);
   color: var(--text-primary);
 }
 
-.top-tab.active {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(139, 92, 246, 0.15));
-  color: var(--text-primary);
-}
-
-.tab-icon {
-  font-size: 1.1rem;
-}
-
-.tab-label {
-  font-weight: 500;
-}
-
-.top-actions {
+.breadcrumb {
   display: flex;
-  gap: 1rem;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.breadcrumb-item {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.breadcrumb-item.active {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.header-center {
+  display: flex;
   align-items: center;
 }
 
-.theme-switcher {
+.header-tabs {
   display: flex;
-  gap: 0.35rem;
+  align-items: center;
+  gap: var(--space-xs);
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 4px;
 }
 
-.theme-btn {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: all 0.3s;
+.header-tab {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: all var(--transition-fast);
 }
 
-.theme-btn:hover {
-  transform: scale(1.15);
+.header-tab:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
 }
 
-.theme-btn.active {
-  border-color: white;
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+.header-tab.active {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+}
+
+.tab-icon {
+  font-size: 0.9rem;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
 }
 
 .lang-btn {
-  padding: 0.4rem 0.75rem;
-  border-radius: 6px;
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--bg-hover);
   border: 1px solid var(--border);
-  background: var(--bg-dark);
-  color: var(--text-primary);
-  cursor: pointer;
-  font-size: 0.8rem;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
   font-weight: 600;
-  transition: all 0.3s;
+  cursor: pointer;
+  transition: all var(--transition-fast);
 }
 
 .lang-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
   border-color: var(--primary);
 }
 
 .search-box {
-  background: var(--bg-hover);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 0.5rem 1rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  color: var(--text-secondary);
+  gap: var(--space-sm);
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-xs) var(--space-md);
 }
 
-.search-box input {
-  background: transparent;
+.search-icon {
+  font-size: 0.875rem;
+  opacity: 0.6;
+}
+
+.search-input {
+  background: none;
   border: none;
   color: var(--text-primary);
+  font-size: 0.875rem;
   outline: none;
   width: 140px;
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
 }
 
 .user-avatar {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  background: linear-gradient(135deg, var(--secondary), var(--accent));
   display: flex;
   align-items: center;
   justify-content: center;
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: white;
   cursor: pointer;
-  font-weight: 600;
+  transition: all var(--transition-fast);
 }
 
-@media (max-width: 1200px) {
-  .tab-label {
-    display: none;
-  }
-  .top-tab {
-    padding: 0.625rem 0.75rem;
-  }
+.user-avatar:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-md);
 }
 </style>

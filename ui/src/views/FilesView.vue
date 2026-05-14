@@ -3,8 +3,8 @@
     <div class="card-header">
       <div><div class="card-title">📁 文件管理</div><div class="card-subtitle">管理存储中的文件，支持上传、下载和删除</div></div>
       <div style="display: flex; gap: 0.5rem;">
-        <el-button type="primary" @click="uploadVisible = true">📤 上传文件</el-button>
-        <el-button @click="fetchFiles">🔄 刷新</el-button>
+        <button class="btn btn-primary" @click="uploadVisible = true">📤 上传文件</button>
+        <button class="btn btn-secondary" @click="fetchFiles">🔄 刷新</button>
       </div>
     </div>
     <div class="file-stats">
@@ -16,7 +16,7 @@
     <div v-if="!files.length" class="empty-state">
       <div style="font-size: 3rem;">📂</div>
       <p>暂无文件</p>
-      <el-button type="primary" style="margin-top:1rem;" @click="uploadVisible = true">上传文件</el-button>
+      <button class="btn btn-primary" style="margin-top:1rem;" @click="uploadVisible = true">上传文件</button>
     </div>
     <el-table v-else :data="files" size="small">
       <el-table-column prop="name" label="文件名" />
@@ -24,17 +24,17 @@
       <el-table-column prop="time" label="修改时间" width="160" />
       <el-table-column label="操作" width="120">
         <template #default="{ row }">
-          <el-button size="small" link>下载</el-button>
-          <el-button size="small" link type="danger">删除</el-button>
+          <button class="btn btn-text btn-sm">下载</button>
+          <button class="btn btn-danger btn-sm">删除</button>
         </template>
       </el-table-column>
     </el-table>
     <el-dialog v-model="uploadVisible" title="📤 上传文件" width="500px">
       <el-form>
-        <el-form-item label="选择文件"><el-upload :auto-upload="false" multiple><el-button>选择文件</el-button></el-upload></el-form-item>
+        <el-form-item label="选择文件"><el-upload :auto-upload="false" multiple><button class="btn btn-secondary">选择文件</button></el-upload></el-form-item>
         <el-form-item label="目标目录"><el-input placeholder="留空则上传到根目录" /></el-form-item>
       </el-form>
-      <template #footer><el-button @click="uploadVisible = false">取消</el-button><el-button type="primary">开始上传</el-button></template>
+      <template #footer><button class="btn btn-secondary" @click="uploadVisible = false">取消</button><button class="btn btn-primary">开始上传</button></template>
     </el-dialog>
   </div>
 </template>
@@ -47,7 +47,7 @@ function fetchFiles() { files.value = [] }
 </script>
 
 <style scoped>
-.card { background: linear-gradient(145deg, var(--bg-card), rgba(15, 23, 42, 0.8)); border-radius: 16px; border: 1px solid var(--border); padding: 1.75rem; }
+.card { background: linear-gradient(145deg, var(--bg-card), var(--bg-dark)); border-radius: 16px; border: 1px solid var(--border); padding: 1.75rem; }
 .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
 .card-title { font-size: 1.1rem; font-weight: 600; }
 .card-subtitle { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem; }

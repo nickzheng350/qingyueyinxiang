@@ -40,7 +40,7 @@ function selectTier(id: string) { console.log('tier:', id) }
 </script>
 
 <style scoped>
-.card { background: linear-gradient(145deg, var(--bg-card), rgba(15, 23, 42, 0.8)); border-radius: 16px; border: 1px solid var(--border); padding: 1.75rem; }
+.card { background: linear-gradient(145deg, var(--bg-card), var(--bg-dark)); border-radius: 16px; border: 1px solid var(--border); padding: 1.75rem; }
 .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
 .card-title { font-size: 1.1rem; font-weight: 600; }
 .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
@@ -48,15 +48,15 @@ function selectTier(id: string) { console.log('tier:', id) }
 .hardware-title { font-weight: 600; margin-bottom: 0.5rem; }
 .hardware-info { color: var(--text-secondary); font-size: 0.85rem; }
 .grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; }
-.tier-card { background: linear-gradient(145deg, var(--bg-card), rgba(15, 23, 42, 0.8)); border-radius: 16px; padding: 1.75rem; border: 1px solid var(--border); cursor: pointer; transition: all 0.4s; }
+.tier-card { background: linear-gradient(145deg, var(--bg-card), var(--bg-dark)); border-radius: 16px; padding: 1.75rem; border: 1px solid var(--border); cursor: pointer; transition: all 0.4s; }
 .tier-card:hover { border-color: var(--primary); transform: translateY(-4px); }
 .tier-name { font-size: 1.1rem; font-weight: 600; }
 .tier-desc { color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem; }
 .tier-badge { padding: 0.375rem 0.75rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600; display: inline-block; }
-.tier-development { background: rgba(148, 163, 184, 0.2); color: var(--text-secondary); }
-.tier-small { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
-.tier-medium { background: rgba(139, 92, 246, 0.2); color: var(--secondary); }
-.tier-large { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
-.tier-enterprise { background: rgba(16, 185, 129, 0.2); color: var(--success); }
-.tier-cluster { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+.tier-development { background: color-mix(in srgb, var(--text-secondary) 20%, transparent); color: var(--text-secondary); }
+.tier-small { background: color-mix(in srgb, var(--primary) 20%, transparent); color: white; }
+.tier-medium { background: color-mix(in srgb, var(--secondary) 20%, transparent); color: var(--secondary); }
+.tier-large { background: color-mix(in srgb, var(--warning) 20%, transparent); color: var(--warning); }
+.tier-enterprise { background: color-mix(in srgb, var(--success) 20%, transparent); color: var(--success); }
+.tier-cluster { background: color-mix(in srgb, var(--danger) 20%, transparent); color: var(--danger); }
 </style>

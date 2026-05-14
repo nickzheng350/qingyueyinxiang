@@ -6,7 +6,7 @@
         <div class="card-subtitle">{{ lang === 'zh' ? '管理插件和MCP连接' : 'Manage plugins and MCP connections' }}</div>
       </div>
       <div style="display: flex; gap: 0.5rem;">
-        <el-button @click="fetchPlugins">🔄 {{ lang === 'zh' ? '刷新' : 'Refresh' }}</el-button>
+        <button class="btn-secondary" @click="fetchPlugins">🔄 {{ lang === 'zh' ? '刷新' : 'Refresh' }}</button>
       </div>
     </div>
 
@@ -58,16 +58,16 @@
           <span v-for="dep in plugin.dependencies" :key="dep" class="dep-tag">{{ dep }}</span>
         </div>
         <div class="plugin-actions">
-          <el-button
-            size="small"
-            :type="plugin.enabled ? '' : 'primary'"
+          <button 
+            class="btn-config" 
+            :class="{ 'btn-primary': !plugin.enabled }"
             @click="togglePlugin(plugin.id)"
           >
             {{ plugin.enabled ? (lang === 'zh' ? '禁用' : 'Disable') : (lang === 'zh' ? '启用' : 'Enable') }}
-          </el-button>
-          <el-button size="small" @click="showDetail(plugin)">
+          </button>
+          <button class="btn-config" @click="showDetail(plugin)">
             {{ lang === 'zh' ? '详情' : 'Details' }}
-          </el-button>
+          </button>
         </div>
       </div>
     </div>
@@ -76,9 +76,9 @@
     <div v-else class="mcp-section">
       <div class="mcp-header">
         <h3>🔗 MCP {{ lang === 'zh' ? '模型上下文协议链接' : 'Model Context Protocol Links' }}</h3>
-        <el-button type="primary" @click="showAddMCPDialog = true">
+        <button class="btn-primary" @click="showAddMCPDialog = true">
           ➕ {{ lang === 'zh' ? '添加链接' : 'Add Link' }}
-        </el-button>
+        </button>
       </div>
 
       <div class="mcp-list">
@@ -95,16 +95,16 @@
             </div>
           </div>
           <div class="mcp-actions">
-            <el-button
-              size="small"
-              @click="syncMCPLink(link.id)"
+            <button 
+              class="btn-config" 
               :disabled="link.status === 'connected'"
+              @click="syncMCPLink(link.id)"
             >
               🔄 {{ lang === 'zh' ? '同步' : 'Sync' }}
-            </el-button>
-            <el-button size="small" type="danger" @click="removeMCPLink(link.id)">
+            </button>
+            <button class="btn-config btn-danger" @click="removeMCPLink(link.id)">
               🗑️
-            </el-button>
+            </button>
           </div>
         </div>
       </div>
@@ -145,7 +145,7 @@
           </div>
         </div>
         <div class="dialog-actions">
-          <el-button @click="showDetailDialog = false">{{ lang === 'zh' ? '关闭' : 'Close' }}</el-button>
+          <button class="btn-secondary" @click="showDetailDialog = false">{{ lang === 'zh' ? '关闭' : 'Close' }}</button>
         </div>
       </div>
     </div>
@@ -159,12 +159,12 @@
           <input v-model="newMCP.name" type="text" />
         </div>
         <div class="form-group">
-          <label>{{ lang === 'zh' ? 'URL' }}:</label>
+          <label>URL:</label>
           <input v-model="newMCP.url" type="text" placeholder="https://api.example.com" />
         </div>
         <div class="dialog-actions">
-          <el-button @click="showAddMCPDialog = false">{{ lang === 'zh' ? '取消' : 'Cancel' }}</el-button>
-          <el-button type="primary" @click="addNewMCPLink">{{ lang === 'zh' ? '添加' : 'Add' }}</el-button>
+          <button class="btn-secondary" @click="showAddMCPDialog = false">{{ lang === 'zh' ? '取消' : 'Cancel' }}</button>
+          <button class="btn-primary" @click="addNewMCPLink">{{ lang === 'zh' ? '添加' : 'Add' }}</button>
         </div>
       </div>
     </div>
@@ -174,7 +174,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { usePluginStore } from '@/stores/pluginStore'
-import { useThemeStore } from '@/stores/themeStore'
+import { useThemeStore } from '@/stores/theme'
 import { storeToRefs } from 'pinia'
 
 const pluginStore = usePluginStore()
@@ -237,13 +237,74 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.card { background: linear-gradient(145deg, var(--bg-card), rgba(15, 23, 42, 0.8)); border-radius: 16px; border: 1px solid var(--border); padding: 1.75rem; }
+.card { background: linear-gradient(145deg, var(--bg-card), var(--bg-dark)); border-radius: 16px; border: 1px solid var(--border); padding: 1.75rem; color: var(--text-primary); }
 .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
-.card-title { font-size: 1.1rem; font-weight: 600; }
+.card-title { font-size: 1.1rem; font-weight: 600; color: var(--text-primary); }
 .card-subtitle { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem; }
 
+.btn-primary {
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.3s;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
+.btn-secondary {
+  padding: 0.5rem 1rem;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.3s;
+}
+
+.btn-secondary:hover {
+  border-color: var(--primary);
+}
+
+.btn-config {
+  padding: 0.35rem 0.75rem;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.3s;
+}
+
+.btn-config:hover {
+  border-color: var(--primary);
+}
+
+.btn-config:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-danger {
+  background: color-mix(in srgb, var(--danger) 20%, transparent);
+  color: var(--danger);
+}
+
+.btn-danger:hover {
+  background: color-mix(in srgb, var(--danger) 30%, transparent);
+  border-color: var(--danger);
+}
+
 .plugin-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
-.plugin-tab { padding: 0.5rem 1.25rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); cursor: pointer; transition: all 0.3s; }
+.plugin-tab { padding: 0.5rem 1.25rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); cursor: pointer; transition: all 0.3s; color: white; }
 .plugin-tab:hover { border-color: var(--primary); }
 .plugin-tab.active { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border-color: transparent; }
 
@@ -256,13 +317,13 @@ onMounted(() => {
 .plugin-name { font-weight: 600; }
 .plugin-version { font-size: 0.75rem; color: var(--text-secondary); }
 .plugin-status { padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
-.plugin-status.enabled { background: rgba(74, 222, 128, 0.2); color: var(--success); }
-.plugin-status.disabled { background: rgba(248, 113, 113, 0.2); color: var(--error); }
+.plugin-status.enabled { background: color-mix(in srgb, var(--success) 20%, transparent); color: var(--success); }
+.plugin-status.disabled { background: color-mix(in srgb, var(--danger) 20%, transparent); color: var(--danger); }
 .plugin-desc { color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 0.75rem; }
 .plugin-meta { display: flex; gap: 1rem; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.75rem; }
 .plugin-deps { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
 .deps-label { font-size: 0.75rem; color: var(--text-secondary); }
-.dep-tag { padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; background: rgba(99, 102, 241, 0.2); color: var(--primary); }
+.dep-tag { padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; background: color-mix(in srgb, var(--primary) 20%, transparent); color: white; }
 .plugin-actions { display: flex; gap: 0.5rem; }
 
 .mcp-section {}

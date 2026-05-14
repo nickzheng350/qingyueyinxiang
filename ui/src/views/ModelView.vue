@@ -6,8 +6,8 @@
         <div class="card-subtitle">{{ lang === 'zh' ? '管理AI模型和API设置' : 'Manage AI models and API settings' }}</div>
       </div>
       <div style="display: flex; gap: 0.5rem;">
-        <el-button type="primary" @click="showAddModelDialog = true">➕ {{ lang === 'zh' ? '添加模型' : 'Add Model' }}</el-button>
-        <el-button @click="fetchModels">🔄 {{ lang === 'zh' ? '刷新' : 'Refresh' }}</el-button>
+        <button class="btn-primary" @click="showAddModelDialog = true">➕ {{ lang === 'zh' ? '添加模型' : 'Add Model' }}</button>
+        <button class="btn-secondary" @click="fetchModels">🔄 {{ lang === 'zh' ? '刷新' : 'Refresh' }}</button>
       </div>
     </div>
 
@@ -121,15 +121,15 @@
         </div>
 
         <div class="model-actions">
-          <el-switch
-            v-model="model.enabled"
-            @change="toggleModel(model.id)"
-            :active-text="lang === 'zh' ? '启用' : 'ON'"
-            :inactive-text="lang === 'zh' ? '禁用' : 'OFF'"
-          />
-          <el-button size="small" @click="editModel(model)">
+          <div class="toggle-switch" :class="{ active: model.enabled }" @click="toggleModel(model.id)">
+            <span class="toggle-label">{{ model.enabled ? (lang === 'zh' ? '启用' : 'ON') : (lang === 'zh' ? '禁用' : 'OFF') }}</span>
+            <div class="toggle-track">
+              <div class="toggle-thumb"></div>
+            </div>
+          </div>
+          <button class="btn-config" @click="editModel(model)">
             {{ lang === 'zh' ? '配置' : 'Config' }}
-          </el-button>
+          </button>
         </div>
       </div>
     </div>
@@ -163,7 +163,7 @@
           </select>
         </div>
         <div class="form-group">
-          <label>{{ lang === 'zh' ? 'API Key' }}</label>
+          <label>{{ lang === 'zh' ? 'API Key' : 'API Key' }}</label>
           <input v-model="newModel.apiKey" type="password" />
         </div>
         <div class="form-group">
@@ -171,8 +171,8 @@
           <input v-model="newModel.baseUrl" type="text" placeholder="https://api.openai.com/v1" />
         </div>
         <div class="dialog-actions">
-          <el-button @click="showAddModelDialog = false">{{ lang === 'zh' ? '取消' : 'Cancel' }}</el-button>
-          <el-button type="primary" @click="addNewModel">{{ lang === 'zh' ? '添加' : 'Add' }}</el-button>
+          <button class="btn-secondary" @click="showAddModelDialog = false">{{ lang === 'zh' ? '取消' : 'Cancel' }}</button>
+          <button class="btn-primary" @click="addNewModel">{{ lang === 'zh' ? '添加' : 'Add' }}</button>
         </div>
       </div>
     </div>
@@ -187,11 +187,11 @@
             <input v-model="selectedModel.name" type="text" readonly />
           </div>
           <div class="form-group">
-            <label>{{ lang === 'zh' ? 'API Key' }}</label>
+            <label>{{ lang === 'zh' ? 'API Key' : 'API Key' }}</label>
             <input v-model="editConfig.apiKey" type="password" />
           </div>
           <div class="form-group">
-            <label>{{ lang === 'zh' ? 'Base URL' }}</label>
+            <label>{{ lang === 'zh' ? 'Base URL' : 'Base URL' }}</label>
             <input v-model="editConfig.baseUrl" type="text" />
           </div>
           <div v-for="(value, key) in selectedModel.config" :key="key" class="form-group">
@@ -200,8 +200,8 @@
           </div>
         </div>
         <div class="dialog-actions">
-          <el-button @click="showEditModelDialog = false">{{ lang === 'zh' ? '取消' : 'Cancel' }}</el-button>
-          <el-button type="primary" @click="saveModelConfig">{{ lang === 'zh' ? '保存' : 'Save' }}</el-button>
+          <button class="btn-secondary" @click="showEditModelDialog = false">{{ lang === 'zh' ? '取消' : 'Cancel' }}</button>
+          <button class="btn-primary" @click="saveModelConfig">{{ lang === 'zh' ? '保存' : 'Save' }}</button>
         </div>
       </div>
     </div>
@@ -211,7 +211,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useModelStore } from '@/stores/modelStore'
-import { useThemeStore } from '@/stores/themeStore'
+import { useThemeStore } from '@/stores/theme'
 import { storeToRefs } from 'pinia'
 
 const modelStore = useModelStore()
@@ -281,7 +281,11 @@ function getStatusText(status: string) {
 }
 
 function toggleModel(id: string) {
-  modelStore.toggleModel(id)
+  try {
+    modelStore.toggleModel(id)
+  } catch (e) {
+    console.error('[Model] Error toggling model:', e)
+  }
 }
 
 function editModel(model: any) {
@@ -298,77 +302,224 @@ function saveModelConfig() {
 }
 
 function addNewModel() {
-  const config: Record<string, string> = {}
-  if (newModel.value.apiKey) config.apiKey = newModel.value.apiKey
-  if (newModel.value.baseUrl) config.baseUrl = newModel.value.baseUrl
+  try {
+    const config: Record<string, string> = {}
+    if (newModel.value.apiKey) config.apiKey = newModel.value.apiKey
+    if (newModel.value.baseUrl) config.baseUrl = newModel.value.baseUrl
 
-  modelStore.addModel({
-    id: newModel.value.id,
-    name: newModel.value.name,
-    provider: newModel.value.provider,
-    functionType: newModel.value.functionType,
-    category: newModel.value.functionType,
-    config,
-    status: 'offline',
-    enabled: true,
-  })
+    modelStore.addModel({
+      id: newModel.value.id,
+      name: newModel.value.name,
+      provider: newModel.value.provider,
+      functionType: newModel.value.functionType,
+      category: newModel.value.functionType,
+      config,
+      status: 'offline',
+      enabled: true,
+    })
 
-  showAddModelDialog.value = false
-  newModel.value = { id: '', name: '', provider: 'openai', functionType: 'text', apiKey: '', baseUrl: '' }
+    showAddModelDialog.value = false
+    newModel.value = { id: '', name: '', provider: 'openai', functionType: 'text', apiKey: '', baseUrl: '' }
+  } catch (e) {
+    console.error('[Model] Error adding model:', e)
+  }
 }
 
 onMounted(() => {
-  modelStore.fetchModels()
+  try {
+    modelStore.fetchModels()
+  } catch (e) {
+    console.error('[Model] Error fetching models:', e)
+  }
 })
 </script>
 
 <style scoped>
-.card { background: linear-gradient(145deg, var(--bg-card), rgba(15, 23, 42, 0.8)); border-radius: 16px; border: 1px solid var(--border); padding: 1.75rem; }
+.card { 
+  background: linear-gradient(145deg, var(--bg-card), var(--bg-dark)); 
+  border-radius: 16px; 
+  border: 1px solid var(--border); 
+  padding: 1.75rem; 
+  color: var(--text-primary);
+}
 .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
-.card-title { font-size: 1.1rem; font-weight: 600; }
+.card-title { font-size: 1.1rem; font-weight: 600; color: var(--text-primary); }
 .card-subtitle { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem; }
 
+.btn-primary {
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.3s;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
+.btn-secondary {
+  padding: 0.5rem 1rem;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.3s;
+}
+
+.btn-secondary:hover {
+  border-color: var(--primary);
+}
+
+.btn-config {
+  padding: 0.35rem 0.75rem;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.3s;
+}
+
+.btn-config:hover {
+  border-color: var(--primary);
+}
+
 .function-tabs, .provider-tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
-.function-tab, .provider-tab { padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); cursor: pointer; transition: all 0.3s; font-size: 0.85rem; }
+.function-tab, .provider-tab { 
+  padding: 0.5rem 1rem; 
+  border-radius: 8px; 
+  border: 1px solid var(--border); 
+  background: var(--bg-hover); 
+  cursor: pointer; 
+  transition: all 0.3s; 
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
 .function-tab:hover, .provider-tab:hover { border-color: var(--primary); }
-.function-tab.active, .provider-tab.active { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border-color: transparent; }
+.function-tab.active, .provider-tab.active { 
+  background: linear-gradient(135deg, var(--primary), var(--secondary)); 
+  color: white; 
+  border-color: transparent; 
+}
 .provider-logo { margin-right: 0.25rem; }
 .provider-category { margin-left: 0.25rem; opacity: 0.7; }
 
 .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
-.stat-card { background: var(--bg-dark); border-radius: 12px; padding: 1rem; display: flex; align-items: center; gap: 1rem; }
+.stat-card { background: var(--bg-hover); border-radius: 12px; padding: 1rem; display: flex; align-items: center; gap: 1rem; }
 .stat-icon { font-size: 1.5rem; }
-.stat-num { font-size: 1.5rem; font-weight: bold; }
+.stat-num { font-size: 1.5rem; font-weight: bold; color: var(--text-primary); }
 .stat-label { font-size: 0.8rem; color: var(--text-secondary); }
 
-.model-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 1.5rem; }
-.model-card { background: var(--bg-dark); border-radius: 12px; padding: 1.25rem; transition: all 0.3s; }
-.model-card:hover { border: 1px solid var(--primary); transform: translateY(-2px); }
+.model-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; }
+.model-card { 
+  background: var(--bg-hover); 
+  border-radius: 12px; 
+  padding: 1.25rem; 
+  transition: all 0.3s; 
+  border: 1px solid var(--border);
+}
+.model-card:hover { border-color: var(--primary); transform: translateY(-2px); }
 .model-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
 .model-provider-logo { font-size: 2rem; }
 .model-info { flex: 1; }
-.model-name { font-weight: 600; }
+.model-name { font-weight: 600; color: var(--text-primary); }
 .model-provider { font-size: 0.8rem; color: var(--text-secondary); }
-.model-status { display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; }
-.model-status.online { background: rgba(74, 222, 128, 0.2); color: var(--success); }
-.model-status.offline { background: rgba(248, 113, 113, 0.2); color: var(--error); }
-.model-status.error { background: rgba(251, 191, 36, 0.2); color: var(--warning); }
+.model-status { 
+  display: flex; 
+  align-items: center; 
+  gap: 0.5rem; 
+  padding: 0.25rem 0.75rem; 
+  border-radius: 20px; 
+  font-size: 0.75rem; 
+}
+.model-status.online { background: color-mix(in srgb, var(--success) 20%, transparent); color: var(--success); }
+.model-status.offline { background: color-mix(in srgb, var(--danger) 20%, transparent); color: var(--danger); }
+.model-status.error { background: color-mix(in srgb, var(--warning) 20%, transparent); color: var(--warning); }
 .status-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
 .model-meta { display: flex; gap: 1.5rem; margin-bottom: 1rem; font-size: 0.85rem; }
 .meta-label { color: var(--text-secondary); }
 .meta-value { color: var(--text-primary); }
-.model-config { background: var(--bg-card); border-radius: 8px; padding: 0.75rem; margin-bottom: 1rem; }
+.model-config { background: var(--bg-dark); border-radius: 8px; padding: 0.75rem; margin-bottom: 1rem; }
 .config-item { display: flex; gap: 0.5rem; font-size: 0.8rem; margin-bottom: 0.25rem; }
 .config-key { color: var(--text-secondary); }
 .config-value { color: var(--text-primary); font-family: monospace; }
 .model-actions { display: flex; justify-content: space-between; align-items: center; }
 
-.dialog-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-.dialog { background: var(--bg-card); border-radius: 16px; padding: 2rem; width: 500px; max-width: 90%; }
-.dialog h3 { margin-bottom: 1.5rem; }
+.toggle-switch {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.toggle-switch.active {
+  color: var(--success);
+}
+
+.toggle-track {
+  width: 40px;
+  height: 20px;
+  background: var(--bg-dark);
+  border-radius: 10px;
+  position: relative;
+  transition: all 0.3s;
+}
+
+.toggle-switch.active .toggle-track {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 50%;
+  transition: all 0.3s;
+}
+
+.toggle-switch.active .toggle-thumb {
+  left: 22px;
+}
+
+.toggle-label {
+  width: 24px;
+}
+
+.dialog-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.dialog { 
+  background: var(--bg-card); 
+  border-radius: 16px; 
+  padding: 2rem; 
+  width: 500px; 
+  max-width: 90%; 
+  border: 1px solid var(--border);
+}
+.dialog h3 { margin-bottom: 1.5rem; color: var(--text-primary); }
 .form-group { margin-bottom: 1rem; }
 .form-group label { display: block; margin-bottom: 0.5rem; font-size: 0.85rem; color: var(--text-secondary); }
-.form-group input, .form-group select { width: 100%; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; color: var(--text-primary); outline: none; }
+.form-group input, .form-group select { 
+  width: 100%; 
+  background: var(--bg-hover); 
+  border: 1px solid var(--border); 
+  border-radius: 8px; 
+  padding: 0.75rem; 
+  color: var(--text-primary); 
+  outline: none; 
+}
 .form-group input:focus, .form-group select:focus { border-color: var(--primary); }
+.form-group input::placeholder { color: var(--text-muted); }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.5rem; }
 </style>

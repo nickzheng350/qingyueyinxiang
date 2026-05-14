@@ -11,18 +11,18 @@
     </div>
     <div class="skill-desc">{{ skill.description }}</div>
     <div class="skill-actions">
-      <el-button v-if="showInstall && !skill.installed" size="small" type="primary" @click="$emit('install', skill)">
+      <button v-if="showInstall && !skill.installed" class="btn btn-primary btn-sm" @click="$emit('install', skill)">
         {{ lang === 'zh' ? '安装' : 'Install' }}
-      </el-button>
-      <el-button v-if="showToggle" size="small" @click="$emit('toggle', skill)">
+      </button>
+      <button v-if="showToggle" class="btn btn-secondary btn-sm" @click="$emit('toggle', skill)">
         {{ skill.enabled ? (lang === 'zh' ? '禁用' : 'Disable') : (lang === 'zh' ? '启用' : 'Enable') }}
-      </el-button>
+      </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useThemeStore } from '@/stores/themeStore'
+import { useThemeStore } from '@/stores/theme'
 import { storeToRefs } from 'pinia'
 
 defineProps<{ skill: any; showToggle?: boolean; showInstall?: boolean }>()
@@ -58,7 +58,7 @@ function getSkillIcon(type: string) {
 .skill-icon { font-size: 2rem; }
 .skill-name-col { flex: 1; }
 .skill-name { font-size: 1.1rem; font-weight: 600; }
-.skill-type { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem; background: rgba(99, 102, 241, 0.2); color: var(--primary); margin-top: 0.25rem; }
+.skill-type { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.7rem; background: color-mix(in srgb, var(--primary) 20%, transparent); color: white; margin-top: 0.25rem; }
 .skill-desc { color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem; line-height: 1.5; }
 .skill-actions { display: flex; gap: 0.5rem; }
 </style>

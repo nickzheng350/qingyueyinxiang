@@ -36,7 +36,7 @@
             <div class="card-title">最近任务</div>
             <div class="card-subtitle">最近执行的任务列表</div>
           </div>
-          <el-button size="small" @click="$router.push('/tasks')">查看全部</el-button>
+          <button class="btn-config" @click="$router.push('/tasks')">{{ lang === 'zh' ? '查看全部' : 'View All' }}</button>
         </div>
         <el-table :data="recentTasks" size="small" style="background: transparent;">
           <el-table-column prop="id" label="ID" width="70" />
@@ -60,10 +60,15 @@
         </div>
       </div>
       <div class="grid-auto">
-        <el-button v-for="op in quickActions" :key="op.label" :type="op.primary ? 'primary' : ''" @click="$router.push(op.path)" class="quick-btn">
+        <button 
+          v-for="op in quickActions" 
+          :key="op.label" 
+          :class="['quick-btn', op.primary ? 'btn-primary' : 'btn-secondary']"
+          @click="op.path && $router.push(op.path)"
+        >
           <span class="quick-icon">{{ op.icon }}</span>
           <span>{{ op.label }}</span>
-        </el-button>
+        </button>
       </div>
     </div>
   </div>
@@ -72,6 +77,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import StatCard from '@/components/StatCard.vue'
+import { useThemeStore } from '@/stores/theme'
+import { storeToRefs } from 'pinia'
+
+const themeStore = useThemeStore()
+const { language: lang } = storeToRefs(themeStore)
 
 const stats = ref({ cpu: 24, memory: 4.2, gpu: 0, storage: 128 })
 const recentTasks = ref([
@@ -115,10 +125,11 @@ onMounted(() => {
 .grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; }
 
 .card {
-  background: linear-gradient(145deg, var(--bg-card), rgba(15, 23, 42, 0.8));
+  background: linear-gradient(145deg, var(--bg-card), var(--bg-dark));
   border-radius: 16px;
   border: 1px solid var(--border);
   padding: 1.75rem;
+  color: var(--text-primary);
 }
 
 .card-header {
@@ -130,8 +141,54 @@ onMounted(() => {
   border-bottom: 1px solid var(--border);
 }
 
-.card-title { font-size: 1.1rem; font-weight: 600; }
+.card-title { font-size: 1.1rem; font-weight: 600; color: var(--text-primary); }
 .card-subtitle { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem; }
+
+.btn-primary {
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.3s;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
+.btn-secondary {
+  padding: 0.5rem 1rem;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.3s;
+}
+
+.btn-secondary:hover {
+  border-color: var(--primary);
+}
+
+.btn-config {
+  padding: 0.35rem 0.75rem;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.3s;
+}
+
+.btn-config:hover {
+  border-color: var(--primary);
+}
 
 .status-badge {
   padding: 0.25rem 0.75rem;
@@ -139,10 +196,10 @@ onMounted(() => {
   font-size: 0.75rem;
   font-weight: 500;
 }
-.status-success { background: rgba(16, 185, 129, 0.2); color: var(--success); }
-.status-running { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
-.status-pending { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
-.status-error { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+.status-success { background: color-mix(in srgb, var(--success) 20%, transparent); color: var(--success); }
+.status-running { background: color-mix(in srgb, var(--primary) 20%, transparent); color: white; }
+.status-pending { background: color-mix(in srgb, var(--warning) 20%, transparent); color: var(--warning); }
+.status-error { background: color-mix(in srgb, var(--danger) 20%, transparent); color: var(--danger); }
 
 .health-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
 .health-label { color: var(--text-secondary); }
@@ -150,7 +207,7 @@ onMounted(() => {
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  background: rgba(16, 185, 129, 0.1);
+  background: color-mix(in srgb, var(--success) 10%, transparent);
   border: 3px solid var(--success);
   display: flex;
   align-items: center;

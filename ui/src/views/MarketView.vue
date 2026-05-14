@@ -5,11 +5,11 @@
         <div class="card-title">🏪 技能市场</div>
         <div class="card-subtitle">发现新技能，一键安装</div>
       </div>
-      <el-button @click="fetchMarket">🔄 刷新</el-button>
+      <button class="btn btn-secondary" @click="fetchMarket">🔄 刷新</button>
     </div>
     <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
       <el-input v-model="keyword" placeholder="搜索技能名称、描述或标签..." style="flex: 1;" @keyup.enter="search" />
-      <el-button type="primary" @click="search">🔍 搜索</el-button>
+      <button class="btn btn-primary" @click="search">🔍 搜索</button>
     </div>
     <div v-if="loading" style="text-align: center; padding: 3rem;"><span class="loading"></span></div>
     <div v-else class="grid-auto">
@@ -60,8 +60,8 @@ onMounted(fetchMarket)
 </script>
 
 <style scoped>
-.card {
-  background: linear-gradient(145deg, var(--bg-card), rgba(15, 23, 42, 0.8));
+.card { 
+  background: linear-gradient(145deg, var(--bg-card), var(--bg-dark));
   border-radius: 16px;
   border: 1px solid var(--border);
   padding: 1.75rem;

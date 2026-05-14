@@ -6,8 +6,8 @@
         <div class="card-subtitle">{{ lang === 'zh' ? '管理已安装的技能' : 'Manage installed skills' }}</div>
       </div>
       <div style="display: flex; gap: 0.5rem;">
-        <el-button type="primary" @click="$router.push('/market')">🏪 {{ lang === 'zh' ? '技能市场' : 'Market' }}</el-button>
-        <el-button @click="fetchInstalled">🔄 {{ lang === 'zh' ? '刷新' : 'Refresh' }}</el-button>
+        <button class="btn btn-primary" @click="$router.push('/market')">🏪 {{ lang === 'zh' ? '技能市场' : 'Market' }}</button>
+        <button class="btn btn-secondary" @click="fetchInstalled">🔄 {{ lang === 'zh' ? '刷新' : 'Refresh' }}</button>
       </div>
     </div>
 
@@ -72,7 +72,7 @@
 import { computed, onMounted, ref } from 'vue'
 import SkillCard from '@/components/SkillCard.vue'
 import { useSkillStore } from '@/stores/skillStore'
-import { useThemeStore } from '@/stores/themeStore'
+import { useThemeStore } from '@/stores/theme'
 import { storeToRefs } from 'pinia'
 
 const store = useSkillStore()
@@ -149,18 +149,18 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.card { background: linear-gradient(145deg, var(--bg-card), rgba(15, 23, 42, 0.8)); border-radius: 16px; border: 1px solid var(--border); padding: 1.75rem; }
+.card { background: linear-gradient(145deg, var(--bg-card), var(--bg-dark)); border-radius: 16px; border: 1px solid var(--border); padding: 1.75rem; }
 .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
 .card-title { font-size: 1.1rem; font-weight: 600; }
 .card-subtitle { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem; }
 
 .skill-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-.skill-tab { padding: 0.5rem 1.25rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); cursor: pointer; transition: all 0.3s; }
+.skill-tab { padding: 0.5rem 1.25rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-dark); cursor: pointer; transition: all 0.3s; color: white; }
 .skill-tab:hover { border-color: var(--primary); }
 .skill-tab.active { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border-color: transparent; }
 
 .direction-filter { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-.dir-btn { padding: 0.3rem 0.75rem; border-radius: 20px; border: 1px solid var(--border); background: var(--bg-dark); cursor: pointer; transition: all 0.3s; font-size: 0.8rem; }
+.dir-btn { padding: 0.3rem 0.75rem; border-radius: 20px; border: 1px solid var(--border); background: var(--bg-dark); cursor: pointer; transition: all 0.3s; font-size: 0.8rem; color: white; }
 .dir-btn:hover { border-color: var(--primary); }
 .dir-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 

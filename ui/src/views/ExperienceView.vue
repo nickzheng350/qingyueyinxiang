@@ -6,8 +6,8 @@
         <div class="card-subtitle">{{ lang === 'zh' ? '管理和复用AI学习经验' : 'Manage and reuse AI learning experiences' }}</div>
       </div>
       <div style="display: flex; gap: 0.5rem;">
-        <el-button type="primary" @click="generateFromDialogue">⚡ {{ lang === 'zh' ? '从对话生成' : 'Generate from Dialogue' }}</el-button>
-        <el-button @click="fetchExperiences">🔄 {{ lang === 'zh' ? '刷新' : 'Refresh' }}</el-button>
+        <button class="btn btn-primary" @click="generateFromDialogue">⚡ {{ lang === 'zh' ? '从对话生成' : 'Generate from Dialogue' }}</button>
+        <button class="btn btn-secondary" @click="fetchExperiences">🔄 {{ lang === 'zh' ? '刷新' : 'Refresh' }}</button>
       </div>
     </div>
 
@@ -68,9 +68,9 @@
             <div class="suggestion-type">{{ getSuggestionTypeText(suggestion.type) }}</div>
             <div class="suggestion-message">{{ suggestion.message }}</div>
           </div>
-          <el-button size="small" type="primary" @click="applySuggestion(suggestion)">
+          <button class="btn btn-primary btn-sm" @click="applySuggestion(suggestion)">
             {{ lang === 'zh' ? '应用' : 'Apply' }}
-          </el-button>
+          </button>
         </div>
       </div>
     </div>
@@ -111,15 +111,15 @@
           </div>
 
           <div class="exp-actions">
-            <el-button size="small" @click="useExperience(exp)">
+            <button class="btn btn-secondary btn-sm" @click="useExperience(exp)">
               {{ lang === 'zh' ? '使用' : 'Use' }}
-            </el-button>
-            <el-button size="small" @click="duplicateExperience(exp)">
+            </button>
+            <button class="btn btn-secondary btn-sm" @click="duplicateExperience(exp)">
               {{ lang === 'zh' ? '复制' : 'Copy' }}
-            </el-button>
-            <el-button size="small" type="danger" @click="deleteExperience(exp.id)">
+            </button>
+            <button class="btn btn-danger btn-sm" @click="deleteExperience(exp.id)">
               🗑️
-            </el-button>
+            </button>
           </div>
         </div>
       </div>
@@ -147,10 +147,10 @@
           </select>
         </div>
         <div class="dialog-actions">
-          <el-button @click="showGenerateDialog = false">{{ lang === 'zh' ? '取消' : 'Cancel' }}</el-button>
-          <el-button type="primary" @click="confirmGenerate" :loading="generating">
+          <button class="btn btn-secondary" @click="showGenerateDialog = false">{{ lang === 'zh' ? '取消' : 'Cancel' }}</button>
+          <button class="btn btn-primary" @click="confirmGenerate" :class="{ 'btn-loading': generating }">
             {{ lang === 'zh' ? '生成' : 'Generate' }}
-          </el-button>
+          </button>
         </div>
       </div>
     </div>
@@ -161,7 +161,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useExperienceStore } from '@/stores/experienceStore'
 import { useDialogueStore } from '@/stores/dialogueStore'
-import { useThemeStore } from '@/stores/themeStore'
+import { useThemeStore } from '@/stores/theme'
 import { storeToRefs } from 'pinia'
 
 const experienceStore = useExperienceStore()
@@ -259,7 +259,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.card { background: linear-gradient(145deg, var(--bg-card), rgba(15, 23, 42, 0.8)); border-radius: 16px; border: 1px solid var(--border); padding: 1.75rem; }
+.card { background: linear-gradient(145deg, var(--bg-card), var(--bg-dark)); border-radius: 16px; border: 1px solid var(--border); padding: 1.75rem; }
 .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
 .card-title { font-size: 1.1rem; font-weight: 600; }
 .card-subtitle { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem; }
@@ -291,7 +291,7 @@ onMounted(() => {
 .experience-card { background: var(--bg-dark); border-radius: 12px; padding: 1.25rem; transition: all 0.3s; }
 .experience-card:hover { border: 1px solid var(--primary); transform: translateY(-2px); }
 .exp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
-.exp-direction { font-size: 0.75rem; color: var(--primary); }
+.exp-direction { font-size: 0.75rem; color: white; }
 .exp-quality { display: flex; align-items: center; gap: 0.5rem; }
 .quality-bar { width: 60px; height: 6px; background: var(--bg-card); border-radius: 3px; overflow: hidden; }
 .quality-fill { height: 100%; background: linear-gradient(90deg, var(--success), var(--primary)); border-radius: 3px; }
@@ -299,7 +299,7 @@ onMounted(() => {
 .exp-name { font-weight: 600; margin-bottom: 0.5rem; }
 .exp-description { color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 0.75rem; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .exp-tags { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
-.exp-tag { padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; background: rgba(99, 102, 241, 0.2); color: var(--primary); }
+.exp-tag { padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; background: color-mix(in srgb, var(--primary) 20%, transparent); color: white; }
 .exp-footer { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.75rem; }
 .exp-source { opacity: 0.7; }
 .exp-actions { display: flex; gap: 0.5rem; }

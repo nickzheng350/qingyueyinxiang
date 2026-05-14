@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>主题变量绑定诊断</title>
+    <style>
+        :root {
+            --primary: #6A9BD1;
+            --primary-dark: #4A7BB7;
+            --secondary: #8B7BA8;
+            --accent: #7FB3D3;
+            --success: #789262;
+            --warning: #CA6924;
+            --danger: #F47983;
+            --bg-dark: #0F1419;
+            --bg-card: #1A1F2E;
+            --bg-hover: #252B3B;
+            --text-primary: #F1F5F9;
+            --text-secondary: #94A3B8;
+            --text-muted: #64748B;
+            --border: #2D3436;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            padding: 20px;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+        }
+
+        h1 { color: var(--primary); margin-bottom: 20px; }
+
+        .diagnostic-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .test-element {
+            padding: 20px;
+            background: var(--bg-hover);
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .test-button {
+            padding: 10px 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .test-button.secondary {
+            background: var(--secondary);
+        }
+
+        .test-button.success {
+            background: var(--success);
+        }
+
+        .test-button.warning {
+            background: var(--warning);
+        }
+
+        .test-button.danger {
+            background: var(--danger);
+        }
+
+        pre {
+            background: #0a0a0a;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .log-entry { margin: 5px 0; }
+        .log-error { color: #ff6b6b; }
+        .log-success { color: #51cf66; }
+        .log-info { color: #339af0; }
+
+        .variable-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .variable-item {
+            padding: 10px;
+            background: var(--bg-hover);
+            border-radius: 8px;
+            font-family: monospace;
+        }
+
+        .variable-name { color: var(--text-secondary); font-size: 12px; }
+        .variable-value { color: var(--primary); font-size: 14px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>🔍 主题变量绑定诊断</h1>
+
+    <div class="diagnostic-panel">
+        <h3>1. HTML 元素结构检查</h3>
+        <div id="element-check"></div>
+    </div>
+
+    <div class="diagnostic-panel">
+        <h3>2. CSS 变量当前值</h3>
+        <div class="variable-grid" id="variables-display"></div>
+    </div>
+
+    <div class="diagnostic-panel">
+        <h3>3. 测试元素（使用 CSS 变量）</h3>
+        <div class="test-element">
+            <p style="color: var(--text-primary); font-weight: bold;">主要文字 - var(--text-primary)</p>
+            <p style="color: var(--text-secondary);">次要文字 - var(--text-secondary)</p>
+            <p style="color: var(--text-muted);">弱化文字 - var(--text-muted)</p>
+        </div>
+        <button class="test-button">主要按钮 - var(--primary)</button>
+        <button class="test-button secondary">次要按钮 - var(--secondary)</button>
+        <button class="test-button success">成功 - var(--success)</button>
+        <button class="test-button warning">警告 - var(--warning)</button>
+        <button class="test-button danger">危险 - var(--danger)</button>
+    </div>
+
+    <div class="diagnostic-panel">
+        <h3>4. 主题切换测试</h3>
+        <div id="theme-buttons"></div>
+    </div>
+
+    <div class="diagnostic-panel">
+        <h3>5. 控制台日志</h3>
+        <pre id="log-output"></pre>
+    </div>
+
+    <script>
+        const themes = {
+            tianqing: {
+                name: '天青 · 雅',
+                primary: '#6A9BD1', bgDark: '#0F1419', bgCard: '#1A1F2E',
+                textPrimary: '#F1F5F9', textSecondary: '#94A3B8', border: '#2D3436'
+            },
+            mujianzi: {
+                name: '木簪 · 韵',
+                primary: '#8B7BA8', bgDark: '#141018', bgCard: '#1E1824',
+                textPrimary: '#F5F0F6', textSecondary: '#A89BB8', border: '#3A3048'
+            },
+            zhuhuang: {
+                name: '竹黄 · 逸',
+                primary: '#789262', bgDark: '#0F140D', bgCard: '#1A1F16',
+                textPrimary: '#F0F4EE', textSecondary: '#98B282', border: '#2D3428'
+            },
+            hupo: {
+                name: '琥珀 · 暖',
+                primary: '#CA6924', bgDark: '#181008', bgCard: '#221810',
+                textPrimary: '#FAF5F0', textSecondary: '#E8A060', border: '#3A2818'
+            },
+            qianhongsha: {
+                name: '藕色 · 柔',
+                primary: '#F47983', bgDark: '#180F12', bgCard: '#22181C',
+                textPrimary: '#FAF0F2', textSecondary: '#F8A0A8', border: '#3A2830'
+            },
+            shuise: {
+                name: '水色 · 清',
+                primary: '#7FB3D3', bgDark: '#0D1418', bgCard: '#161F26',
+                textPrimary: '#EEF5F9', textSecondary: '#A8D0E8', border: '#283440'
+            },
+            baimu: {
+                name: '白木 · 素',
+                primary: '#E8D5C4', bgDark: '#1A1510', bgCard: '#25201A',
+                textPrimary: '#FAF5F0', textSecondary: '#E8D5C4', border: '#3A3028'
+            },
+            mogu: {
+                name: '墨骨 · 玄',
+                primary: '#4A5568', bgDark: '#0A0A0A', bgCard: '#121212',
+                textPrimary: '#E2E8F0', textSecondary: '#6B7280', border: '#2A2A2A'
+            },
+            tanhuang: {
+                name: '淡黄 · 明',
+                primary: '#E6B85C', bgDark: '#181408', bgCard: '#221E10',
+                textPrimary: '#FAF8F0', textSecondary: '#F0D88C', border: '#3A3220'
+            }
+        };
+
+        const variables = [
+            'primary', 'primary-dark', 'secondary', 'accent', 'success',
+            'warning', 'danger', 'bg-dark', 'bg-card', 'bg-hover',
+            'text-primary', 'text-secondary', 'text-muted', 'border'
+        ];
+
+        function log(message, type = 'info') {
+            const output = document.getElementById('log-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+            const className = type === 'error' ? 'log-error' : type === 'success' ? 'log-success' : 'log-info';
+            output.innerHTML = `<div class="log-entry ${className}">${timestamp} ${prefix} ${message}</div>` + output.innerHTML;
+            console.log(`[Theme-Diag] ${message}`);
+        }
+
+        function checkElementStructure() {
+            const container = document.getElementById('element-check');
+            const html = document.documentElement;
+            const body = document.body;
+
+            container.innerHTML = `
+                <p><strong>html 元素:</strong> ${html.tagName} (id="${html.id}", class="${html.className}")</p>
+                <p><strong>body 元素:</strong> ${body.tagName} (id="${body.id}", class="${body.className}")</p>
+                <p><strong>html style 内联:</strong> ${html.getAttribute('style') || '(无)'}</p>
+                <p><strong>CSS 变量数量 (html):</strong> ${html.style.length}</p>
+            `;
+
+            log(`HTML 结构正常: ${html.tagName} -> ${body.tagName}`);
+        }
+
+        function displayVariables() {
+            const container = document.getElementById('variables-display');
+            const root = document.documentElement;
+            const computed = getComputedStyle(root);
+
+            container.innerHTML = variables.map(v => {
+                const value = computed.getPropertyValue(`--${v}`).trim();
+                return `
+                    <div class="variable-item">
+                        <div class="variable-name">--${v}</div>
+                        <div class="variable-value">${value || '(未设置)'}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function createThemeButtons() {
+            const container = document.getElementById('theme-buttons');
+            container.innerHTML = Object.entries(themes).map(([key, theme]) =>
+                `<button class="test-button" onclick="setTheme('${key}')" style="background: ${theme.primary}; color: white;">
+                    ${theme.name}
+                </button>`
+            ).join('');
+        }
+
+        function setTheme(themeId) {
+            const theme = themes[themeId];
+            if (!theme) {
+                log(`未知主题: ${themeId}`, 'error');
+                return;
+            }
+
+            log(`切换到主题: ${theme.name} (${themeId})`);
+            const root = document.documentElement;
+
+            Object.entries(theme).forEach(([key, value]) => {
+                if (key !== 'name') {
+                    root.style.setProperty(`--${key}`, value);
+                    log(`  设置 --${key} = ${value}`);
+                }
+            });
+
+            localStorage.setItem('hydraflow_theme', themeId);
+            log(`已保存到 localStorage: hydraflow_theme = ${themeId}`, 'success');
+
+            displayVariables();
+        }
+
+        function runDiagnostics() {
+            log('开始诊断...');
+
+            // 1. 检查元素结构
+            checkElementStructure();
+
+            // 2. 显示当前变量
+            displayVariables();
+
+            // 3. 检查 localStorage
+            const saved = localStorage.getItem('hydraflow_theme');
+            if (saved && themes[saved]) {
+                log(`发现保存的主题: ${saved} (${themes[saved].name})`, 'success');
+                log('将在页面上应用保存的主题...');
+                setTimeout(() => setTheme(saved), 500);
+            } else {
+                log('未发现保存的主题，使用默认变量');
+            }
+
+            // 4. 创建主题按钮
+            createThemeButtons();
+
+            log('诊断完成！');
+        }
+
+        // 运行诊断
+        runDiagnostics();
+    </script>
+</body>
+</html>

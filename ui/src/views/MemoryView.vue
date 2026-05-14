@@ -6,8 +6,8 @@
         <div class="card-subtitle">{{ lang === 'zh' ? '管理知识库和学习经验' : 'Manage knowledge base and learning experiences' }}</div>
       </div>
       <div style="display: flex; gap: 0.5rem;">
-        <el-button type="primary" @click="showAddDialog = true">➕ {{ lang === 'zh' ? '添加记忆' : 'Add Memory' }}</el-button>
-        <el-button @click="fetchEntries">🔄 {{ lang === 'zh' ? '刷新' : 'Refresh' }}</el-button>
+        <button class="btn btn-primary" @click="showAddDialog = true">➕ {{ lang === 'zh' ? '添加记忆' : 'Add Memory' }}</button>
+        <button class="btn btn-secondary" @click="fetchEntries">🔄 {{ lang === 'zh' ? '刷新' : 'Refresh' }}</button>
       </div>
     </div>
 
@@ -147,8 +147,8 @@
           <input v-model="newEntry.tagsInput" type="text" />
         </div>
         <div class="dialog-actions">
-          <el-button @click="showAddDialog = false">{{ lang === 'zh' ? '取消' : 'Cancel' }}</el-button>
-          <el-button type="primary" @click="addNewEntry">{{ lang === 'zh' ? '保存' : 'Save' }}</el-button>
+          <button class="btn btn-secondary" @click="showAddDialog = false">{{ lang === 'zh' ? '取消' : 'Cancel' }}</button>
+          <button class="btn btn-primary" @click="addNewEntry">{{ lang === 'zh' ? '保存' : 'Save' }}</button>
         </div>
       </div>
     </div>
@@ -158,7 +158,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useMemoryStore } from '@/stores/memoryStore'
-import { useThemeStore } from '@/stores/themeStore'
+import { useThemeStore } from '@/stores/theme'
 import { storeToRefs } from 'pinia'
 
 const memoryStore = useMemoryStore()
@@ -247,7 +247,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.card { background: linear-gradient(145deg, var(--bg-card), rgba(15, 23, 42, 0.8)); border-radius: 16px; border: 1px solid var(--border); padding: 1.75rem; }
+.card { background: linear-gradient(145deg, var(--bg-card), var(--bg-dark)); border-radius: 16px; border: 1px solid var(--border); padding: 1.75rem; }
 .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
 .card-title { font-size: 1.1rem; font-weight: 600; }
 .card-subtitle { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem; }
@@ -287,13 +287,13 @@ onMounted(() => {
 .memory-card { background: var(--bg-dark); border-radius: 12px; padding: 1.25rem; transition: all 0.3s; }
 .memory-card:hover { border: 1px solid var(--primary); transform: translateY(-2px); }
 .memory-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
-.memory-direction { font-size: 0.75rem; color: var(--primary); }
+.memory-direction { font-size: 0.75rem; color: white; }
 .delete-btn { background: none; border: none; cursor: pointer; opacity: 0; transition: opacity 0.3s; }
 .memory-card:hover .delete-btn { opacity: 1; }
 .memory-title { font-weight: 600; margin-bottom: 0.5rem; }
 .memory-content { color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 0.75rem; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .memory-tags { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
-.memory-tag { padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; background: rgba(99, 102, 241, 0.2); color: var(--primary); }
+.memory-tag { padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; background: color-mix(in srgb, var(--primary) 20%, transparent); color: white; }
 .memory-footer { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-secondary); }
 .memory-source { opacity: 0.7; }
 
