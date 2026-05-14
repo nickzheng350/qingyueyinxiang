@@ -87,3 +87,9 @@ temp/
 *.tmp
 venv/
 .backup
+
+# Git bundle 和压缩文件
+*.bundle
+*.zip
+*.tar
+*.gz
