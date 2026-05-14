@@ -50,6 +50,12 @@ from src.auth import get_auth_manager
 from src.api.routes.files import router as files_router
 # 导入数据库管理路由
 from src.api.routes.database import router as database_router
+# 导入经验库路由
+from src.api.routes.experience import router as experience_router
+# 导入记忆路由
+from src.api.routes.memory import router as memory_router
+# 导入模型配置路由
+from src.api.routes.models import router as models_router
 
 api_router = APIRouter()
 
@@ -57,6 +63,12 @@ api_router = APIRouter()
 api_router.include_router(files_router)
 # 包含数据库管理路由
 api_router.include_router(database_router)
+# 包含经验库路由
+api_router.include_router(experience_router)
+# 包含记忆路由
+api_router.include_router(memory_router)
+# 包含模型配置路由
+api_router.include_router(models_router)
 
 
 class ParseRequest(BaseModel):
@@ -152,6 +164,80 @@ async def generate(request: GenerateRequest):
         "model": selected_model,
         "parameters": {**parse_result.parameters, **request.parameters},
         "confidence": parse_result.confidence,
+    }
+
+
+class RealGenerateRequest(BaseModel):
+    prompt: str = Field(..., description="用户输入/提示词")
+    model: str = Field(default="", description="模型ID")
+    system: str = Field(default="", description="系统提示词")
+    max_tokens: int = Field(default=2048, description="最大生成token数")
+    temperature: float = Field(default=0.7, description="温度参数")
+    stream: bool = Field(default=False, description="是否流式返回")
+
+
+@api_router.post("/v1/generate")
+async def real_generate(request: RealGenerateRequest):
+    """真正的 AI 生成接口 - 调用实际模型
+
+    支持:
+    - OpenAI GPT 系列
+    - Anthropic Claude
+    - 通义千问 (Dashscope)
+    - 本地 Ollama
+    - 本地 LM Studio
+    """
+    dispatcher = ModelDispatcher()
+
+    # 选择模型
+    if request.model:
+        try:
+            model_info = dispatcher.get_model(request.model)
+            selected_model = {"id": request.model, **model_info}
+        except (ValueError, KeyError):
+            selected_model = dispatcher.select_model("text_generation", None)
+    else:
+        selected_model = dispatcher.select_model("text_generation", None)
+
+    model_id = selected_model.get("id", "")
+
+    # 调用模型生成
+    result = dispatcher.generate_text(
+        prompt=request.prompt,
+        model_id=model_id,
+        intent_type="text_generation",
+        model_suggestions=[request.model] if request.model else None,
+        system=request.system or None,
+        max_tokens=request.max_tokens,
+        temperature=request.temperature,
+    )
+
+    if not result.get("success", False):
+        error_msg = result.get("error", "生成失败")
+        # 检查是否是配置问题
+        if "无可用的 AI 客户端" in error_msg or "No model" in error_msg:
+            return {
+                "status": "error",
+                "error": f"AI 客户端未配置或模型 {model_id} 不可用。请检查：\n"
+                          f"1. config/api_keys.json 中是否配置了对应的 API key\n"
+                          f"2. 本地模型服务（如 Ollama/LM Studio）是否启动",
+                "model": selected_model,
+                "content": "",
+            }
+        return {
+            "status": "error",
+            "error": error_msg,
+            "model": selected_model,
+            "content": "",
+        }
+
+    return {
+        "status": "success",
+        "content": result.get("content", ""),
+        "model": model_id,
+        "provider": result.get("provider", "unknown"),
+        "usage": result.get("usage", {}),
+        "intent": "text_generation",
     }
 
 

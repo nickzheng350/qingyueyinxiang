@@ -1,0 +1,883 @@
+"""统一智能引擎 - 多模块多引擎整合，唯一入口，智能调度"""
+import logging
+import threading
+import time
+import heapq
+from dataclasses import dataclass, field
+from typing import Optional, Dict, Any, List, Union
+from enum import Enum
+from abc import ABC, abstractmethod
+import uuid
+
+from src.model_dispatcher.type_system import (
+    ModelFunctionType,
+    get_consistency_validator,
+    TouchPoint,
+)
+from src.multimodal.audio_prompt_engine import AudioPromptEngine
+from src.multimodal.enhanced_audio_engine import EnhancedAudioEngine
+from src.multimodal.av_multimodal_fusion import AVMultimodalFusionEngine
+from src.cache.advanced_cache import get_multi_level_cache, MultiLevelCacheManager
+from src.core.concurrency import UnifiedExecutor
+from src.core.smart_scheduler import get_adaptive_scheduler, AdaptiveScheduler, TaskMetadata as SchedulerTaskMetadata
+
+logger = logging.getLogger("hydraflow.core.unified_engine")
+
+
+class EngineMode(str, Enum):
+    """引擎模式"""
+    EFFICIENCY = "efficiency"      # 效率优先
+    QUALITY = "quality"            # 质量优先
+    BALANCED = "balanced"          # 平衡
+    ECO = "eco"                    # 节能模式
+
+
+class TaskPriority(int, Enum):
+    """任务优先级"""
+    CRITICAL = 0
+    HIGH = 1
+    MEDIUM = 2
+    LOW = 3
+
+
+class TaskStatus(str, Enum):
+    """任务状态"""
+    PENDING = "pending"
+    QUEUED = "queued"
+    RUNNING = "running"
+    PAUSED = "paused"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+@dataclass
+class ResourceProfile:
+    """资源配置文件"""
+    cpu_cores: int = 4
+    gpu_memory_gb: float = 8.0
+    ram_gb: float = 16.0
+    storage_gb: float = 100.0
+    max_concurrent_tasks: int = 5
+    max_cache_gb: float = 4.0
+
+
+@dataclass
+class PerformanceMetrics:
+    """性能指标"""
+    total_tasks: int = 0
+    completed_tasks: int = 0
+    failed_tasks: int = 0
+    average_completion_time: float = 0.0
+    cache_hit_rate: float = 0.0
+    cache_efficiency: float = 0.0
+    l1_hit_rate: float = 0.0
+    l2_hit_rate: float = 0.0
+    cache_size: int = 0
+    resource_utilization: Dict[str, float] = field(default_factory=dict)
+    cost_savings: float = 0.0
+
+
+@dataclass
+class PromptComponent:
+    """提示词组件"""
+    component_type: str
+    content: str
+    weight: float = 1.0
+    required: bool = False
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class MultiModalPrompt:
+    """多元化提示词结构"""
+    prompt_id: str
+    primary: str
+    components: List[PromptComponent] = field(default_factory=list)
+    context: Dict[str, Any] = field(default_factory=dict)
+    constraints: Dict[str, Any] = field(default_factory=dict)
+    style_hints: Dict[str, Any] = field(default_factory=dict)
+    quality_requirements: Dict[str, Any] = field(default_factory=dict)
+    
+    def add_component(self, component: PromptComponent):
+        """添加提示词组件"""
+        self.components.append(component)
+    
+    def get_weighted_content(self) -> str:
+        """获取加权内容"""
+        weighted = [self.primary]
+        for comp in self.components:
+            if comp.weight > 0:
+                weighted.append(comp.content)
+        return " ".join(weighted)
+
+
+@dataclass
+class Task:
+    """任务"""
+    task_id: str
+    task_type: ModelFunctionType
+    prompt: MultiModalPrompt
+    priority: TaskPriority = TaskPriority.MEDIUM
+    mode: EngineMode = EngineMode.BALANCED
+    dependencies: List[str] = field(default_factory=list)
+    status: TaskStatus = TaskStatus.PENDING
+    created_at: float = field(default_factory=time.time)
+    started_at: Optional[float] = None
+    completed_at: Optional[float] = None
+    result: Optional[Any] = None
+    error: Optional[str] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class EngineResult:
+    """引擎结果"""
+    success: bool
+    task_id: Optional[str] = None
+    output: Optional[Any] = None
+    warnings: List[str] = field(default_factory=list)
+    errors: List[str] = field(default_factory=list)
+    metrics: Dict[str, Any] = field(default_factory=dict)
+
+
+class BaseSubEngine(ABC):
+    """基础子引擎"""
+    
+    @abstractmethod
+    def get_supported_types(self) -> List[ModelFunctionType]:
+        """获取支持的类型"""
+        pass
+    
+    @abstractmethod
+    def execute(self, task: Task) -> EngineResult:
+        """执行任务"""
+        pass
+    
+    @abstractmethod
+    def estimate_cost(self, task: Task) -> float:
+        """估算成本"""
+        pass
+
+
+class AudioSubEngine(BaseSubEngine):
+    """音频子引擎"""
+    
+    def __init__(self):
+        self.enhanced_audio = EnhancedAudioEngine()
+        self.audio_prompt = AudioPromptEngine()
+    
+    def get_supported_types(self) -> List[ModelFunctionType]:
+        return [
+            ModelFunctionType.TEXT_TO_AUDIO,
+            ModelFunctionType.SCRIPT_TO_AUDIO,
+            ModelFunctionType.CHARACTER_VOICEOVER,
+            ModelFunctionType.DUBBING,
+            ModelFunctionType.FOLEY,
+            ModelFunctionType.BACKGROUND_MUSIC,
+            ModelFunctionType.SOUND_DESIGN,
+            ModelFunctionType.AUDIO_STYLE_TRANSFER,
+        ]
+    
+    def execute(self, task: Task) -> EngineResult:
+        try:
+            logger.info(f"AudioEngine executing {task.task_id}")
+            
+            result = EngineResult(
+                success=True,
+                task_id=task.task_id,
+                output={"mode": task.mode.value}
+            )
+            
+            return result
+        except Exception as e:
+            return EngineResult(
+                success=False,
+                task_id=task.task_id,
+                errors=[str(e)]
+            )
+    
+    def estimate_cost(self, task: Task) -> float:
+        base_cost = 1.0
+        if task.mode == EngineMode.QUALITY:
+            return base_cost * 2.0
+        elif task.mode == EngineMode.ECO:
+            return base_cost * 0.5
+        return base_cost
+
+
+class VideoSubEngine(BaseSubEngine):
+    """视频子引擎"""
+    
+    def __init__(self):
+        self.fusion_engine = AVMultimodalFusionEngine()
+    
+    def get_supported_types(self) -> List[ModelFunctionType]:
+        return [
+            ModelFunctionType.TEXT_TO_VIDEO,
+            ModelFunctionType.IMAGE_TO_VIDEO,
+            ModelFunctionType.AUDIO_TO_VIDEO,
+            ModelFunctionType.SCENE_GENERATION,
+            ModelFunctionType.VIDEO_STYLE_TRANSFER,
+            ModelFunctionType.VIDEO_FORMAT_CONVERT,
+        ]
+    
+    def execute(self, task: Task) -> EngineResult:
+        try:
+            logger.info(f"VideoEngine executing {task.task_id}")
+            return EngineResult(
+                success=True,
+                task_id=task.task_id,
+                output={"processed": True}
+            )
+        except Exception as e:
+            return EngineResult(
+                success=False,
+                task_id=task.task_id,
+                errors=[str(e)]
+            )
+    
+    def estimate_cost(self, task: Task) -> float:
+        base_cost = 2.0
+        if task.mode == EngineMode.QUALITY:
+            return base_cost * 2.5
+        elif task.mode == EngineMode.ECO:
+            return base_cost * 0.6
+        return base_cost
+
+
+class VisualSubEngine(BaseSubEngine):
+    """视觉子引擎"""
+    
+    def get_supported_types(self) -> List[ModelFunctionType]:
+        return [
+            ModelFunctionType.TEXT_TO_IMAGE,
+            ModelFunctionType.IMAGE_EDIT,
+            ModelFunctionType.IMAGE_UPSCALE,
+            ModelFunctionType.IMAGE_STYLE_TRANSFER,
+            ModelFunctionType.IMAGE_FORMAT_CONVERT,
+        ]
+    
+    def execute(self, task: Task) -> EngineResult:
+        try:
+            logger.info(f"VisualEngine executing {task.task_id}")
+            return EngineResult(
+                success=True,
+                task_id=task.task_id,
+                output={"visual_result": "generated"}
+            )
+        except Exception as e:
+            return EngineResult(
+                success=False,
+                task_id=task.task_id,
+                errors=[str(e)]
+            )
+    
+    def estimate_cost(self, task: Task) -> float:
+        base_cost = 1.5
+        if task.mode == EngineMode.QUALITY:
+            return base_cost * 2.0
+        elif task.mode == EngineMode.ECO:
+            return base_cost * 0.7
+        return base_cost
+
+
+class TextSubEngine(BaseSubEngine):
+    """文本子引擎"""
+    
+    def get_supported_types(self) -> List[ModelFunctionType]:
+        return [
+            ModelFunctionType.TEXT_GENERATION,
+            ModelFunctionType.CODE_GENERATION,
+            ModelFunctionType.AUDIO_TO_TEXT,
+            ModelFunctionType.VIDEO_TO_TEXT,
+            ModelFunctionType.IMAGE_TO_TEXT,
+        ]
+    
+    def execute(self, task: Task) -> EngineResult:
+        try:
+            logger.info(f"TextEngine executing {task.task_id}")
+            return EngineResult(
+                success=True,
+                task_id=task.task_id,
+                output={"text_result": task.prompt.primary}
+            )
+        except Exception as e:
+            return EngineResult(
+                success=False,
+                task_id=task.task_id,
+                errors=[str(e)]
+            )
+    
+    def estimate_cost(self, task: Task) -> float:
+        base_cost = 0.5
+        if task.mode == EngineMode.QUALITY:
+            return base_cost * 1.5
+        elif task.mode == EngineMode.ECO:
+            return base_cost * 0.3
+        return base_cost
+
+
+class FusionSubEngine(BaseSubEngine):
+    """融合子引擎"""
+    
+    def __init__(self):
+        self.fusion_engine = AVMultimodalFusionEngine()
+    
+    def get_supported_types(self) -> List[ModelFunctionType]:
+        return [
+            ModelFunctionType.AV_FUSION,
+        ]
+    
+    def execute(self, task: Task) -> EngineResult:
+        try:
+            logger.info(f"FusionEngine executing {task.task_id}")
+            return EngineResult(
+                success=True,
+                task_id=task.task_id,
+                output={"fused": True}
+            )
+        except Exception as e:
+            return EngineResult(
+                success=False,
+                task_id=task.task_id,
+                errors=[str(e)]
+            )
+    
+    def estimate_cost(self, task: Task) -> float:
+        base_cost = 3.0
+        if task.mode == EngineMode.QUALITY:
+            return base_cost * 3.0
+        elif task.mode == EngineMode.ECO:
+            return base_cost * 0.8
+        return base_cost
+
+
+class SmartScheduler:
+    """智能调度器 - 使用优先队列优化性能"""
+    
+    def __init__(self):
+        # 使用优先队列（最小堆）存储任务，按优先级排序
+        self.task_heap: List[tuple] = []
+        # 跟踪队列中的任务，以便快速查找和更新
+        self.queued_tasks: Dict[str, Task] = {}
+        self.active_tasks: Dict[str, Task] = {}
+        # 记录已完成任务的时间戳，用于依赖检查优化
+        self.completed_tasks: Dict[str, float] = {}
+        self.lock = threading.RLock()
+        self.task_counter = 0  # 用于打破优先级相等时的平局
+    
+    def add_task(self, task: Task):
+        """添加任务 - O(log n)"""
+        with self.lock:
+            self.task_counter += 1
+            # 堆元素: (优先级值, 插入计数器, 任务ID)
+            heapq.heappush(
+                self.task_heap,
+                (task.priority.value, self.task_counter, task.task_id)
+            )
+            self.queued_tasks[task.task_id] = task
+            task.status = TaskStatus.QUEUED
+            logger.info(f"Task {task.task_id} queued at priority {task.priority}")
+    
+    def get_next_task(self, max_concurrent: int) -> Optional[Task]:
+        """获取下一个任务 - 优化的依赖检查算法"""
+        with self.lock:
+            if len(self.active_tasks) >= max_concurrent:
+                return None
+            
+            # 批量收集所有就绪任务
+            ready_tasks = []
+            temp_heap = []
+            
+            # 一次性扫描整个堆
+            while self.task_heap:
+                priority, counter, task_id = heapq.heappop(self.task_heap)
+                
+                # 检查任务是否仍在队列中
+                if task_id not in self.queued_tasks:
+                    continue
+                
+                task = self.queued_tasks[task_id]
+                
+                # 检查依赖是否都已完成（不在活跃状态且已完成）
+                dependencies_ready = True
+                for dep in task.dependencies:
+                    if dep in self.active_tasks:
+                        dependencies_ready = False
+                        break
+                    # 依赖可能还未提交，不算就绪
+                    # 只有当依赖已完成或不存在时才继续
+                
+                if dependencies_ready:
+                    ready_tasks.append((priority, counter, task))
+                else:
+                    # 依赖未就绪，重新推入临时堆
+                    temp_heap.append((priority, counter, task_id))
+            
+            # 将未就绪的任务重新推入主堆
+            while temp_heap:
+                heapq.heappush(self.task_heap, temp_heap.pop())
+            
+            # 选择优先级最高的就绪任务
+            if ready_tasks:
+                # 按优先级和插入顺序排序
+                ready_tasks.sort(key=lambda x: (x[0], x[1]))
+                _, _, task = ready_tasks[0]
+                
+                # 从队列中移除
+                del self.queued_tasks[task.task_id]
+                # 加入活跃任务
+                self.active_tasks[task.task_id] = task
+                task.status = TaskStatus.RUNNING
+                task.started_at = time.time()
+                
+                logger.debug(f"Task {task.task_id} started")
+                return task
+            
+            return None
+    
+    def complete_task(self, task_id: str, result: EngineResult):
+        """完成任务 - 记录完成时间戳用于依赖检查"""
+        with self.lock:
+            if task_id in self.active_tasks:
+                task = self.active_tasks.pop(task_id)
+                completion_time = time.time()
+                
+                # 记录已完成任务（用于依赖检查优化）
+                self.completed_tasks[task_id] = completion_time
+                
+                # 限制已完成任务记录数量，避免内存无限增长
+                if len(self.completed_tasks) > 10000:
+                    # 删除最早的一半记录
+                    oldest_keys = sorted(
+                        self.completed_tasks.keys(),
+                        key=lambda k: self.completed_tasks[k]
+                    )[:len(self.completed_tasks) // 2]
+                    for key in oldest_keys:
+                        del self.completed_tasks[key]
+                
+                if result.success:
+                    task.status = TaskStatus.COMPLETED
+                    task.result = result.output
+                else:
+                    task.status = TaskStatus.FAILED
+                    task.error = "; ".join(result.errors)
+                task.completed_at = completion_time
+                logger.info(f"Task {task_id} {task.status}")
+    
+    def get_queue_stats(self) -> Dict[str, Any]:
+        """获取队列统计"""
+        with self.lock:
+            return {
+                "queued": len(self.queued_tasks),
+                "active": len(self.active_tasks),
+                "completed": len(self.completed_tasks),
+            }
+
+
+class ResourceOptimizer:
+    """资源优化器"""
+    
+    def __init__(self, profile: ResourceProfile):
+        self.profile = profile
+        self.current_load: Dict[str, float] = {
+            "cpu": 0.0,
+            "gpu": 0.0,
+            "ram": 0.0,
+        }
+        self.lock = threading.RLock()
+    
+    def can_accept_task(self, estimated_cost: float) -> bool:
+        """检查是否可以接受任务"""
+        with self.lock:
+            max_cpu = self.profile.cpu_cores
+            max_ram = self.profile.ram_gb
+            
+            cpu_available = (max_cpu * (1 - self.current_load["cpu"])) > estimated_cost * 0.1
+            ram_available = (max_ram * (1 - self.current_load["ram"])) > estimated_cost * 0.5
+            
+            return cpu_available and ram_available
+    
+    def allocate_resources(self, task: Task, estimated_cost: float):
+        """分配资源"""
+        with self.lock:
+            cost_factor = estimated_cost / 10.0
+            self.current_load["cpu"] = min(1.0, self.current_load["cpu"] + cost_factor * 0.3)
+            self.current_load["ram"] = min(1.0, self.current_load["ram"] + cost_factor * 0.5)
+            self.current_load["gpu"] = min(1.0, self.current_load["gpu"] + cost_factor * 0.2)
+    
+    def release_resources(self, task: Task, estimated_cost: float):
+        """释放资源"""
+        with self.lock:
+            cost_factor = estimated_cost / 10.0
+            self.current_load["cpu"] = max(0.0, self.current_load["cpu"] - cost_factor * 0.3)
+            self.current_load["ram"] = max(0.0, self.current_load["ram"] - cost_factor * 0.5)
+            self.current_load["gpu"] = max(0.0, self.current_load["gpu"] - cost_factor * 0.2)
+    
+    def get_current_utilization(self) -> Dict[str, float]:
+        """获取当前利用率"""
+        with self.lock:
+            return self.current_load.copy()
+
+
+class UnifiedIntelligentEngine:
+    """统一智能引擎 - 唯一入口"""
+    
+    _instance: Optional["UnifiedIntelligentEngine"] = None
+    _initialized: bool = False
+    
+    def __new__(cls) -> "UnifiedIntelligentEngine":
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+    
+    def __init__(self):
+        if self._initialized:
+            return
+        self._initialized = True
+        
+        self.validator = get_consistency_validator()
+        self.cache = get_multi_level_cache()  # 使用高级多级缓存
+        self.executor = UnifiedExecutor()
+        
+        self.resource_profile = ResourceProfile()
+        self.resource_optimizer = ResourceOptimizer(self.resource_profile)
+        self.scheduler = get_adaptive_scheduler()  # 使用智能调度器
+        self.metrics = PerformanceMetrics()
+        
+        self.sub_engines: Dict[str, BaseSubEngine] = {
+            "audio": AudioSubEngine(),
+            "video": VideoSubEngine(),
+            "visual": VisualSubEngine(),
+            "text": TextSubEngine(),
+            "fusion": FusionSubEngine(),
+        }
+        
+        self.type_to_engine: Dict[ModelFunctionType, str] = self._build_type_mapping()
+        
+        self.running = False
+        self.work_thread: Optional[threading.Thread] = None
+        self._task_metadata_map: Dict[str, Task] = {}  # 任务ID到任务对象的映射
+        
+        logger.info("UnifiedIntelligentEngine initialized with advanced scheduler and cache")
+    
+    def _build_type_mapping(self) -> Dict[ModelFunctionType, str]:
+        """构建类型到引擎的映射"""
+        mapping = {}
+        for engine_name, engine in self.sub_engines.items():
+            for func_type in engine.get_supported_types():
+                mapping[func_type] = engine_name
+        return mapping
+    
+    def get_engine_for_type(self, task_type: ModelFunctionType) -> Optional[BaseSubEngine]:
+        """获取对应类型的引擎"""
+        engine_name = self.type_to_engine.get(task_type)
+        return self.sub_engines.get(engine_name)
+    
+    def create_prompt(
+        self,
+        primary: str,
+        **kwargs
+    ) -> MultiModalPrompt:
+        """创建多元化提示词"""
+        return MultiModalPrompt(
+            prompt_id=str(uuid.uuid4()),
+            primary=primary,
+            **kwargs
+        )
+    
+    def submit_task(
+        self,
+        task_type: ModelFunctionType,
+        prompt: Union[str, MultiModalPrompt],
+        priority: TaskPriority = TaskPriority.MEDIUM,
+        mode: EngineMode = EngineMode.BALANCED,
+        dependencies: Optional[List[str]] = None,
+        **kwargs
+    ) -> str:
+        """提交任务"""
+        if isinstance(prompt, str):
+            prompt = self.create_prompt(primary=prompt)
+        
+        task = Task(
+            task_id=str(uuid.uuid4()),
+            task_type=task_type,
+            prompt=prompt,
+            priority=priority,
+            mode=mode,
+            dependencies=dependencies or [],
+            metadata=kwargs
+        )
+        
+        validation_data = {
+            "type": task_type.value,
+            "priority": priority.value,
+            "mode": mode.value,
+        }
+        
+        self.validator.validate(
+            task_type,
+            validation_data,
+            TouchPoint.PRE_PROCESSING
+        )
+        
+        # 使用智能调度器的任务元数据格式
+        scheduler_priority = self._convert_priority(priority)
+        scheduler_metadata = SchedulerTaskMetadata(
+            task_id=task.task_id,
+            task_type=task_type.value,
+            priority=scheduler_priority,
+            resource_requirements=self._estimate_resource_requirements(task_type, mode),
+            estimated_duration=self._estimate_duration(task_type, mode),
+            dependencies=dependencies or [],
+            created_at=task.created_at,
+            **kwargs
+        )
+        
+        # 使用asyncio.run同步调用异步方法
+        import asyncio
+        asyncio.run(self.scheduler.add_task(scheduler_metadata))
+        
+        # 保存任务映射
+        self._task_metadata_map[task.task_id] = task
+        self.metrics.total_tasks += 1
+        
+        if not self.running:
+            self.start()
+        
+        return task.task_id
+    
+    def _convert_priority(self, priority: TaskPriority) -> 'SchedulerTaskMetadata.priority.type':
+        """转换优先级到调度器格式"""
+        from src.core.smart_scheduler import TaskPriority as SchedulerPriority
+        priority_map = {
+            TaskPriority.CRITICAL: SchedulerPriority.CRITICAL,
+            TaskPriority.HIGH: SchedulerPriority.HIGH,
+            TaskPriority.MEDIUM: SchedulerPriority.MEDIUM,
+            TaskPriority.LOW: SchedulerPriority.LOW,
+        }
+        return priority_map.get(priority, SchedulerPriority.MEDIUM)
+    
+    def _estimate_resource_requirements(self, task_type: ModelFunctionType, mode: EngineMode) -> Dict[str, float]:
+        """估算资源需求"""
+        base_requirements = {
+            ModelFunctionType.TEXT_GENERATION: {"gpu_memory": 4.0, "cpu_cores": 2, "ram": 8.0},
+            ModelFunctionType.CODE_GENERATION: {"gpu_memory": 8.0, "cpu_cores": 4, "ram": 16.0},
+            ModelFunctionType.TEXT_TO_IMAGE: {"gpu_memory": 16.0, "cpu_cores": 4, "ram": 16.0},
+            ModelFunctionType.TEXT_TO_VIDEO: {"gpu_memory": 24.0, "cpu_cores": 8, "ram": 32.0},
+            ModelFunctionType.TEXT_TO_AUDIO: {"gpu_memory": 2.0, "cpu_cores": 2, "ram": 4.0},
+            ModelFunctionType.AV_FUSION: {"gpu_memory": 32.0, "cpu_cores": 8, "ram": 64.0},
+        }
+        
+        reqs = base_requirements.get(task_type, {"gpu_memory": 8.0, "cpu_cores": 4, "ram": 16.0})
+        
+        # 根据模式调整
+        if mode == EngineMode.QUALITY:
+            return {k: v * 1.5 for k, v in reqs.items()}
+        elif mode == EngineMode.ECO:
+            return {k: v * 0.5 for k, v in reqs.items()}
+        
+        return reqs
+    
+    def _estimate_duration(self, task_type: ModelFunctionType, mode: EngineMode) -> float:
+        """估算任务时长（秒）"""
+        base_durations = {
+            ModelFunctionType.TEXT_GENERATION: 5.0,
+            ModelFunctionType.CODE_GENERATION: 10.0,
+            ModelFunctionType.TEXT_TO_IMAGE: 15.0,
+            ModelFunctionType.TEXT_TO_VIDEO: 60.0,
+            ModelFunctionType.TEXT_TO_AUDIO: 5.0,
+            ModelFunctionType.AV_FUSION: 120.0,
+        }
+        
+        duration = base_durations.get(task_type, 30.0)
+        
+        if mode == EngineMode.QUALITY:
+            return duration * 1.5
+        elif mode == EngineMode.ECO:
+            return duration * 0.7
+        
+        return duration
+    
+    def get_task_status(self, task_id: str) -> Optional[TaskStatus]:
+        """获取任务状态"""
+        # 从本地映射获取
+        if task_id in self._task_metadata_map:
+            return self._task_metadata_map[task_id].status
+        
+        # 从调度器获取统计
+        stats = self.scheduler.get_stats()
+        if stats["active"] > 0:
+            return TaskStatus.RUNNING
+        if stats["queued"] > 0:
+            return TaskStatus.QUEUED
+        
+        return None
+    
+    async def _get_task_result_async(self, task_id: str) -> Optional[EngineResult]:
+        """异步获取任务结果"""
+        cached = await self.cache.get(task_id)
+        if cached:
+            return cached
+        
+        # 检查本地任务映射
+        if task_id in self._task_metadata_map:
+            task = self._task_metadata_map[task_id]
+            if task.result:
+                result = EngineResult(
+                    success=True,
+                    task_id=task_id,
+                    output=task.result
+                )
+                await self.cache.put(task_id, result)
+                return result
+        
+        return None
+    
+    def get_task_result(self, task_id: str) -> Optional[EngineResult]:
+        """获取任务结果"""
+        import asyncio
+        return asyncio.run(self._get_task_result_async(task_id))
+    
+    def _process_task(self, task_metadata: SchedulerTaskMetadata):
+        """处理任务（使用调度器任务元数据）"""
+        # 获取本地任务对象
+        if task_metadata.task_id not in self._task_metadata_map:
+            logger.error(f"Task {task_metadata.task_id} not found in local map")
+            return
+        
+        task = self._task_metadata_map[task_metadata.task_id]
+        task.status = TaskStatus.RUNNING
+        task.started_at = time.time()
+        
+        engine = self.get_engine_for_type(task.task_type)
+        if not engine:
+            result = EngineResult(
+                success=False,
+                task_id=task.task_id,
+                errors=[f"No engine for type {task.task_type}"]
+            )
+            import asyncio
+            asyncio.run(self.scheduler.complete_task(task.task_id, success=False))
+            task.status = TaskStatus.FAILED
+            task.error = "; ".join(result.errors)
+            return
+        
+        estimated_cost = engine.estimate_cost(task)
+        
+        if not self.resource_optimizer.can_accept_task(estimated_cost):
+            result = EngineResult(
+                success=False,
+                task_id=task.task_id,
+                errors=["Resources unavailable"]
+            )
+            import asyncio
+            asyncio.run(self.scheduler.complete_task(task.task_id, success=False))
+            task.status = TaskStatus.FAILED
+            task.error = "; ".join(result.errors)
+            return
+        
+        self.resource_optimizer.allocate_resources(task, estimated_cost)
+        
+        try:
+            result = engine.execute(task)
+            
+            if result.success:
+                self.metrics.completed_tasks += 1
+                task.status = TaskStatus.COMPLETED
+                task.result = result.output
+            else:
+                self.metrics.failed_tasks += 1
+                task.status = TaskStatus.FAILED
+                task.error = "; ".join(result.errors)
+            
+            task.completed_at = time.time()
+            
+            # 异步缓存结果
+            import asyncio
+            asyncio.run(self.cache.put(task.task_id, result))
+            asyncio.run(self.scheduler.complete_task(task.task_id, success=result.success))
+        finally:
+            self.resource_optimizer.release_resources(task, estimated_cost)
+    
+    def _work_loop(self):
+        """工作循环 - 集成智能调度器"""
+        import asyncio
+        
+        while self.running:
+            # 使用智能调度器获取下一个任务
+            task_metadata = asyncio.run(
+                self.scheduler.get_next_task(self.resource_profile.max_concurrent_tasks)
+            )
+            
+            if task_metadata:
+                self._process_task(task_metadata)
+            else:
+                time.sleep(0.1)
+    
+    def start(self):
+        """启动引擎"""
+        if self.running:
+            return
+        
+        self.running = True
+        
+        # 启动智能调度器
+        import asyncio
+        asyncio.run(self.scheduler.start())
+        
+        self.work_thread = threading.Thread(target=self._work_loop, daemon=True)
+        self.work_thread.start()
+        logger.info("UnifiedIntelligentEngine started with adaptive scheduler")
+    
+    def stop(self):
+        """停止引擎"""
+        self.running = False
+        
+        # 停止智能调度器
+        import asyncio
+        asyncio.run(self.scheduler.stop())
+        
+        if self.work_thread:
+            self.work_thread.join(timeout=5.0)
+        logger.info("UnifiedIntelligentEngine stopped")
+    
+    def get_performance_metrics(self) -> PerformanceMetrics:
+        """获取性能指标 - 增强缓存效率统计"""
+        self.metrics.resource_utilization = self.resource_optimizer.get_current_utilization()
+        
+        # 获取高级缓存统计
+        cache_stats = self.cache.get_combined_stats()
+        
+        self.metrics.cache_hit_rate = cache_stats.get("hit_rate", 0.0)
+        self.metrics.cache_efficiency = cache_stats.get("l1_hit_rate", 0.0) / max(1, cache_stats.get("hit_rate", 1.0))
+        self.metrics.l1_hit_rate = cache_stats.get("l1_hit_rate", 0.0)
+        self.metrics.l2_hit_rate = cache_stats.get("l2_hit_rate", 0.0)
+        self.metrics.cache_size = cache_stats.get("l1_size", 0)
+        
+        return self.metrics
+    
+    def set_engine_mode(self, mode: EngineMode):
+        """设置引擎模式"""
+        self.resource_profile.max_concurrent_tasks = {
+            EngineMode.EFFICIENCY: 8,
+            EngineMode.QUALITY: 2,
+            EngineMode.BALANCED: 5,
+            EngineMode.ECO: 3,
+        }.get(mode, 5)
+        logger.info(f"Engine mode set to {mode}")
+    
+    def get_system_status(self) -> Dict[str, Any]:
+        """获取系统状态"""
+        return {
+            "running": self.running,
+            "scheduler": self.scheduler.get_stats(),
+            "metrics": self.get_performance_metrics(),
+            "resource_utilization": self.resource_optimizer.get_current_utilization(),
+        }
+
+
+def get_unified_engine() -> UnifiedIntelligentEngine:
+    """获取统一智能引擎单例"""
+    return UnifiedIntelligentEngine()

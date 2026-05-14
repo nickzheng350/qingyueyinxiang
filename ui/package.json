@@ -1,7 +1,7 @@
 {
   "name": "hydraflow-ui",
   "version": "1.1.0",
-  "description": "HydraFlow AI 前端界面",
+  "description": "清悦印象 \u524d\u7aef\u754c\u9762",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,7 +14,7 @@
     "pinia": "^2.1.0",
     "axios": "^1.6.0",
     "element-plus": "^2.5.0",
-    "element-plus-icons-vue": "^2.3.0",
+    "@element-plus/icons-vue": "^2.3.0",
     "echarts": "^5.4.0",
     "vue-echarts": "^6.6.0",
     "socket.io-client": "^4.6.0",
@@ -27,7 +27,8 @@
     "vite-plugin-pwa": "^0.17.0",
     "autoprefixer": "^10.4.0",
     "postcss": "^8.4.0",
-    "tailwindcss": "^3.4.0"
+    "tailwindcss": "^3.4.0",
+    "unplugin-vue-components": "^0.26.0"
   },
   "engines": {
     "node": ">=18.0.0",

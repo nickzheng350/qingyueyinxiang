@@ -13,23 +13,23 @@ const packageJson = require('../package.json');
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 
 program
-  .name('hydraflow')
-  .description('HydraFlow AI - 九头蛇生成式工作流平台')
+  .name('清悦印象')
+  .description('清悦印象 AI - 九头蛇生成式工作流平台')
   .version(packageJson.version);
 
 program
   .command('install')
   .description('一键安装所有依赖并配置项目')
   .action(async () => {
-    console.log(chalk.cyan.bold('\n🚀 HydraFlow AI 一键安装\n'));
+    console.log(chalk.cyan.bold('\n🚀 清悦印象 AI 一键安装\n'));
     
     try {
       await fullInstall();
       console.log(chalk.green.bold('\n✨ 安装完成！\n'));
       console.log(chalk.blue('快速开始:'));
-      console.log(chalk.gray('  1. 检查环境: hydraflow check'));
-      console.log(chalk.gray('  2. 启动 API: hydraflow api'));
-      console.log(chalk.gray('  3. 启动 UI: hydraflow ui'));
+      console.log(chalk.gray('  1. 检查环境: 清悦印象 check'));
+      console.log(chalk.gray('  2. 启动 API: 清悦印象 api'));
+      console.log(chalk.gray('  3. 启动 UI: 清悦印象 ui'));
       console.log();
     } catch (error) {
       console.error(chalk.red('\n✗ 安装失败:'), error.message);
@@ -58,7 +58,7 @@ program
   .option('--host <host>', '绑定主机地址', '0.0.0.0')
   .option('--reload', '启用热重载')
   .action(async (options) => {
-    console.log(chalk.cyan.bold('\n🚀 HydraFlow AI API 服务启动中...\n'));
+    console.log(chalk.cyan.bold('\n🚀 清悦印象 AI API 服务启动中...\n'));
     
     try {
       await ensureEnvironment();
@@ -76,7 +76,7 @@ program
   .option('--host <host>', '绑定主机地址', '0.0.0.0')
   .option('--api-url <url>', 'API 服务地址', 'http://localhost:8000')
   .action(async (options) => {
-    console.log(chalk.cyan.bold('\n🚀 HydraFlow AI UI 服务启动中...\n'));
+    console.log(chalk.cyan.bold('\n🚀 清悦印象 AI UI 服务启动中...\n'));
     
     try {
       await startUiService(options);
@@ -92,14 +92,14 @@ program
   .option('--api-port <port>', 'API 服务端口', '8000')
   .option('--ui-port <port>', 'UI 服务端口', '3000')
   .action(async (options) => {
-    console.log(chalk.cyan.bold('\n🔧 HydraFlow AI 开发模式启动中...\n'));
+    console.log(chalk.cyan.bold('\n🔧 清悦印象 AI 开发模式启动中...\n'));
     
     try {
       await ensureEnvironment();
       console.log(chalk.yellow('⚠ 注意: 同时启动 API 和 UI 服务需要两个终端'));
       console.log(chalk.blue('\n建议:'));
-      console.log(chalk.gray('  终端 1: hydraflow api --reload'));
-      console.log(chalk.gray('  终端 2: hydraflow ui'));
+      console.log(chalk.gray('  终端 1: 清悦印象 api --reload'));
+      console.log(chalk.gray('  终端 2: 清悦印象 ui'));
       console.log();
       
       const inquirer = require('inquirer');
@@ -202,7 +202,7 @@ async function ensureEnvironment() {
     await createDirectories();
     await createEnvFile();
   } catch (error) {
-    console.log(chalk.yellow('\n⚠  环境不完整，请先运行: hydraflow install\n'));
+    console.log(chalk.yellow('\n⚠  环境不完整，请先运行: 清悦印象 install\n'));
     throw error;
   }
 }

@@ -1,0 +1,100 @@
+# =============================================================================
+# Docker Build Context Exclusion
+# Exclude files that are not needed inside the image
+# =============================================================================
+
+# Git
+.git
+.gitignore
+.gitattributes
+.gitmodules
+
+# Python cache
+__pycache__
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info
+*.egg
+.eggs
+dist-packages/
+.venv/
+venv/
+.pip-deps-cache/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Documentation & non-essentials
+*.md
+docs/
+*.txt
+LICENSE
+!requirements.txt
+!dist/requirements.txt
+
+# Scripts & tooling
+scripts/
+bin/
+lib/
+tests/
+tests/
+*.sh
+*.bat
+install.sh
+install.bat
+install-core-extensions.sh
+install-extensions.sh
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+Jenkinsfile
+
+# Environment files (keep .env.example but not secrets)
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+server.log
+
+# Data (runtime volumes)
+data/
+
+# Node.js (not used in Python container)
+node_modules/
+package.json
+package-lock.json
+
+# Large assets
+*.zip
+*.tar.gz
+*.tar
+hydraflow-ai.zip
+
+# Configuration overrides that shouldn't be in image
+deploy/
+prompts/
+plugins/
+skills/
+config/
+!config/.gitkeep
+
+# Build artifacts
+build/
+dist/
+*.whl
+
+# OS
+Thumbs.db

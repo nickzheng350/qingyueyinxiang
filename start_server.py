@@ -20,7 +20,7 @@ def main():
     
     try:
         with socketserver.TCPServer(("", PORT), Handler) as httpd:
-            print(f"🚀 HydraFlow AI 服务器启动成功！")
+            print(f"🚀 清悦印象 AI 服务器启动成功！")
             print(f"📍 访问地址: http://localhost:{PORT}")
             print(f"📁 服务目录: {os.getcwd()}")
             print(f"\n按 Ctrl+C 停止服务器")

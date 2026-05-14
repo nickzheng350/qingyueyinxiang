@@ -1,4 +1,7 @@
-# HydraFlow AI
+# 清悦印象
+
+> 清新淡雅，悦己，给时间留下点印象。
+
 
 **版本**: 2.0.0 | 一个强大的 AI 工作流引擎，支持多模态内容生成、意图解析和技能系统。
 
@@ -12,7 +15,7 @@
 
 ### 开放与自由的理念
 
-HydraFlow AI 从设计之初就秉持**高度自由化**的理念。我们相信：
+清悦印象 从设计之初就秉持**高度自由化**的理念。我们相信：
 
 - **不设限的扩展方式** - 任何人都可以通过插件系统添加自己需要的功能模块
 - **理念性改变** - 不仅仅是代码修改，更是鼓励创新的使用场景和工作流
@@ -104,16 +107,16 @@ curl -X POST -H "Authorization: Bearer YOUR_TOKEN" \
 
 **Linux / macOS:**
 ```bash
-git clone https://github.com/yourusername/hydraflow-ai.git
-cd hydraflow-ai
+git clone https://github.com/yourusername/清悦印象-ai.git
+cd 清悦印象-ai
 chmod +x install.sh
 ./install.sh
 ```
 
 **Windows:**
 ```cmd
-git clone https://github.com/yourusername/hydraflow-ai.git
-cd hydraflow-ai
+git clone https://github.com/yourusername/清悦印象-ai.git
+cd 清悦印象-ai
 install.bat
 ```
 
@@ -121,8 +124,8 @@ install.bat
 
 ```bash
 # 克隆仓库
-git clone https://github.com/yourusername/hydraflow-ai.git
-cd hydraflow-ai
+git clone https://github.com/yourusername/清悦印象-ai.git
+cd 清悦印象-ai
 
 # 创建虚拟环境
 python -m venv .venv
@@ -189,7 +192,7 @@ curl -X POST http://localhost:8000/api/v1/generate \
 ## 项目结构
 
 ```
-hydraflow-ai/
+清悦印象-ai/
 ├── src/              # 核心源代码
 │   ├── api/          # API 路由
 │   ├── intent_parser/ # 意图解析模块

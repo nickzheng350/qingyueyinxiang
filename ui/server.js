@@ -35,7 +35,7 @@ app.post('/api/auth/login', (req, res) => {
       user: {
         username: 'admin',
         role: 'admin',
-        email: 'admin@hydraflow.ai'
+        email: 'admin@清悦印象.ai'
       }
     });
   } else {
@@ -72,7 +72,7 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, HOST, () => {
-  console.log(`\n  🎨 HydraFlow AI UI 已启动`);
+  console.log(`\n  🎨 清悦印象 AI UI 已启动`);
   console.log(`  访问: http://${HOST}:${PORT}`);
   console.log(`  API:  ${API_URL}\n`);
 });

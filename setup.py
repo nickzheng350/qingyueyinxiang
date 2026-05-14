@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""HydraFlow AI - 九头蛇生成式工作流平台"""
+"""清悦印象 AI - 九头蛇生成式工作流平台"""
 
 from setuptools import setup, find_packages
 
@@ -10,14 +10,14 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
     requirements = [line.strip() for line in fh if line.strip() and not line.startswith("#")]
 
 setup(
-    name="hydraflow-ai",
+    name="清悦印象-ai",
     version="1.1.0",
-    author="HydraFlow AI Team",
-    author_email="dev@hydraflow.ai",
+    author="清悦印象 AI Team",
+    author_email="dev@清悦印象.ai",
     description="九头蛇生成式工作流平台 - 多模态AI工作流编排引擎",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/hydraflow-ai/hydraflow",
+    url="https://github.com/清悦印象-ai/清悦印象",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     classifiers=[
@@ -53,13 +53,13 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "hydraflow=main:main",
+            "清悦印象=main:main",
         ],
     },
     include_package_data=True,
     package_data={
         "": ["*.json", "*.md"],
-        "hydraflow": [
+        "清悦印象": [
             "../config/*.json",
             "../prompts/templates/*.md",
             "../docs/*.md",

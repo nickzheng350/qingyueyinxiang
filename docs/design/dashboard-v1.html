@@ -1,0 +1,2580 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>天青仪表盘 - Dashboard V1</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600;900&family=Noto+Sans+SC:wght@300;400;500;600&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      /* ========== 天青色系 ========== */
+      --tianqing-1: #0D2137;
+      --tianqing-2: #1A3A5C;
+      --tianqing-3: #2A4A6C;
+      --tianqing-4: #4A7BB7;
+      --tianqing-5: #6A9BD1;
+      --tianqing-6: #9EC5E8;
+      --tianqing-7: #C5DFF0;
+      --tianqing-8: #E8F4F8;
+      --tianqing-9: #F5F9FC;
+
+      /* ========== 木簪子色系 ========== */
+      --mujian-1: #2D1F3D;
+      --mujian-2: #4A3060;
+      --mujian-3: #6B4580;
+      --mujian-4: #8B5FA0;
+      --mujian-5: #A87FC0;
+      --mujian-6: #C9A8E0;
+      --mujian-7: #E0C8F0;
+
+      /* ========== 竹黄色系 ========== */
+      --zhuhuang-1: #1A2D0F;
+      --zhuhuang-2: #2D5018;
+      --zhuhuang-3: #4A7A28;
+      --zhuhuang-4: #6A9D3A;
+      --zhuhuang-5: #89B854;
+      --zhuhuang-6: #A8D070;
+      --zhuhuang-7: #C5E088;
+
+      /* ========== 琥珀色系 ========== */
+      --hupo-1: #3D1F08;
+      --hupo-2: #6B3810;
+      --hupo-3: #9A5018;
+      --hupo-4: #C06820;
+      --hupo-5: #E08530;
+      --hupo-6: #F0A858;
+      --hupo-7: #F8C888;
+
+      /* ========== 藕色系 ========== */
+      --ousha-1: #3D2025;
+      --ousha-2: #6B3840;
+      --ousha-3: #9A5060;
+      --ousha-4: #C06878;
+      --ousha-5: #E08590;
+      --ousha-6: #F0A8B0;
+      --ousha-7: #F8C8D0;
+
+      /* ========== 水色色系 ========== */
+      --shuise-1: #0D2D3D;
+      --shuise-2: #1A4A60;
+      --shuise-3: #2A6A85;
+      --shuise-4: #4A8AA8;
+      --shuise-5: #6AAAC8;
+      --shuise-6: #98C8E0;
+      --shuise-7: #C5E0F0;
+    }
+
+    body {
+      font-family: 'Noto Sans SC', sans-serif;
+      background: var(--tianqing-8);
+      color: #2D3436;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ========== 整体布局 ========== */
+    .app-layout {
+      display: flex;
+      height: 100vh;
+    }
+
+    /* ========== 左侧导航 ========== */
+    .sidebar {
+      width: 220px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sidebar::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(
+        180deg,
+        var(--tianqing-1) 0%,
+        var(--tianqing-2) 20%,
+        var(--mujian-2) 50%,
+        var(--tianqing-3) 80%,
+        var(--tianqing-2) 100%
+      );
+      opacity: 0.95;
+    }
+
+    .sidebar-header {
+      padding: 20px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      position: relative;
+      z-index: 1;
+    }
+
+    .logo {
+      font-family: 'ZCOOL XiaoWei', serif;
+      font-size: 22px;
+      color: white;
+      letter-spacing: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--tianqing-5), var(--mujian-5));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .nav-group {
+      margin-bottom: 6px;
+    }
+
+    .nav-group-label {
+      padding: 10px 16px 4px;
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: rgba(255,255,255,0.35);
+      text-transform: uppercase;
+    }
+
+    .nav-item {
+      position: relative;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      text-decoration: none;
+      color: rgba(255,255,255,0.65);
+      font-size: 13px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .nav-link:hover {
+      background: rgba(255,255,255,0.06);
+      color: white;
+    }
+
+    .nav-link.active {
+      background: linear-gradient(90deg, var(--tianqing-4) 0%, transparent 100%);
+      color: white;
+      border-right: 3px solid var(--tianqing-5);
+    }
+
+    .nav-link .icon {
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    .nav-link .arrow {
+      margin-left: auto;
+      font-size: 8px;
+      transition: transform 0.2s;
+    }
+
+    .nav-item.expanded .arrow {
+      transform: rotate(90deg);
+    }
+
+    .nav-submenu {
+      background: rgba(0,0,0,0.15);
+      margin: 2px 10px;
+      border-radius: 6px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .nav-submenu.show {
+      display: block;
+    }
+
+    .nav-submenu .nav-link {
+      padding: 8px 16px 8px 40px;
+      font-size: 12px;
+      margin: 2px 0;
+    }
+
+    .nav-submenu .nav-link.active {
+      background: var(--tianqing-4);
+      border-right: none;
+    }
+
+    .sidebar-footer {
+      padding: 16px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      position: relative;
+      z-index: 1;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .user-avatar {
+      width: 34px;
+      height: 34px;
+      background: linear-gradient(135deg, var(--tianqing-5) 0%, var(--mujian-5) 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 13px;
+    }
+
+    .user-name {
+      color: rgba(255,255,255,0.9);
+      font-size: 12px;
+    }
+
+    .user-role {
+      color: rgba(255,255,255,0.4);
+      font-size: 10px;
+    }
+
+    /* ========== 主内容区 ========== */
+    .main-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .topbar {
+      height: 56px;
+      background: white;
+      border-bottom: 1px solid var(--tianqing-7);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 24px;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #7A8899;
+    }
+
+    .breadcrumb-sep {
+      color: var(--tianqing-7);
+    }
+
+    .breadcrumb-current {
+      color: var(--tianqing-4);
+      font-weight: 500;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .lang-switch {
+      display: flex;
+      gap: 2px;
+      background: var(--tianqing-8);
+      padding: 3px;
+      border-radius: 14px;
+    }
+
+    .lang-btn {
+      padding: 4px 10px;
+      border-radius: 12px;
+      border: none;
+      font-size: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: transparent;
+      color: #7A8899;
+      font-family: inherit;
+    }
+
+    .lang-btn.active {
+      background: white;
+      color: var(--tianqing-3);
+      box-shadow: 0 2px 5px rgba(106,155,209,0.2);
+    }
+
+    .topbar-icon {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+      color: #7A8899;
+      font-size: 16px;
+    }
+
+    .topbar-icon:hover {
+      background: var(--tianqing-8);
+      color: var(--tianqing-4);
+    }
+
+    .content-area {
+      flex: 1;
+      padding: 24px 28px;
+      overflow-y: auto;
+    }
+
+    .workspace-header {
+      margin-bottom: 24px;
+    }
+
+    .workspace-title {
+      font-family: 'ZCOOL XiaoWei', serif;
+      font-size: 24px;
+      color: var(--tianqing-2);
+      letter-spacing: 4px;
+      margin-bottom: 6px;
+    }
+
+    .workspace-desc {
+      font-size: 12px;
+      color: #7A8899;
+      line-height: 1.6;
+    }
+
+    /* ========== 页面隐藏/显示 ========== */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ========== 总览页 ========== */
+    .status-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .status-card {
+      background: white;
+      border-radius: 14px;
+      padding: 20px;
+      border: 1px solid var(--tianqing-7);
+      transition: transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+
+    .status-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(106,155,209,0.15);
+    }
+
+    .status-card .icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      margin-bottom: 12px;
+    }
+
+    .status-card .value {
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--tianqing-2);
+      margin-bottom: 4px;
+    }
+
+    .status-card .label {
+      font-size: 12px;
+      color: #7A8899;
+    }
+
+    .status-card .trend {
+      font-size: 11px;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .trend.up { color: #4CAF50; }
+    .trend.down { color: #F44336; }
+
+    /* 最近活动 */
+    .recent-section {
+      background: white;
+      border-radius: 14px;
+      padding: 20px;
+      border: 1px solid var(--tianqing-7);
+      margin-bottom: 24px;
+    }
+
+    .recent-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .recent-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--tianqing-2);
+    }
+
+    .recent-list {
+      list-style: none;
+    }
+
+    .recent-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--tianqing-8);
+    }
+
+    .recent-item:last-child {
+      border-bottom: none;
+    }
+
+    .recent-item .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--tianqing-4);
+    }
+
+    .recent-item .content {
+      flex: 1;
+    }
+
+    .recent-item .text {
+      font-size: 13px;
+      color: #2D3436;
+    }
+
+    .recent-item .time {
+      font-size: 11px;
+      color: #7A8899;
+      margin-top: 2px;
+    }
+
+    .recent-item .badge {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 10px;
+      background: var(--tianqing-8);
+      color: var(--tianqing-4);
+    }
+
+    /* 快捷操作 */
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .quick-btn {
+      background: white;
+      border: 1px solid var(--tianqing-7);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .quick-btn:hover {
+      background: var(--tianqing-9);
+      border-color: var(--tianqing-5);
+    }
+
+    .quick-btn .icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .quick-btn .info .name {
+      font-size: 13px;
+      color: var(--tianqing-2);
+      margin-bottom: 2px;
+    }
+
+    .quick-btn .info .desc {
+      font-size: 11px;
+      color: #7A8899;
+    }
+
+    /* ========== 黄金比例网格（技能中心/总览页复用） ========== */
+    .cards-section {
+      margin-bottom: 28px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      letter-spacing: 3px;
+      color: var(--tianqing-4);
+      margin-bottom: 16px;
+      text-transform: uppercase;
+    }
+
+    .golden-grid {
+      display: grid;
+      grid-template-columns: 100px 162px 162px 100px;
+      grid-template-rows: 100px 162px;
+      gap: 14px;
+    }
+
+    .golden-card {
+      border-radius: 14px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s, box-shadow 0.3s;
+      cursor: pointer;
+    }
+
+    .golden-card:hover {
+      transform: scale(1.02);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+    }
+
+    .golden-card.vertical { grid-row: span 2; }
+    .golden-card.horizontal { grid-column: span 2; }
+    .golden-card.square { grid-row: span 1; grid-column: span 1; }
+
+    .style-tianqing {
+      background: linear-gradient(135deg, var(--tianqing-3) 0%, var(--tianqing-5) 50%, var(--tianqing-6) 100%);
+    }
+
+    .style-tianqing::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -30%;
+      width: 120%;
+      height: 200%;
+      background: radial-gradient(ellipse, rgba(255,255,255,0.25) 0%, transparent 60%);
+    }
+
+    .style-mujian {
+      background: linear-gradient(135deg, var(--mujian-2) 0%, var(--mujian-4) 50%, var(--mujian-5) 100%);
+    }
+
+    .style-mujian::before {
+      content: '';
+      position: absolute;
+      top: -30%;
+      left: -30%;
+      width: 100%;
+      height: 150%;
+      background: radial-gradient(ellipse, rgba(255,255,255,0.2) 0%, transparent 60%);
+    }
+
+    .style-zhuhuang {
+      background: linear-gradient(135deg, var(--zhuhuang-2) 0%, var(--zhuhuang-4) 50%, var(--zhuhuang-5) 100%);
+    }
+
+    .style-zhuhuang::before {
+      content: '';
+      position: absolute;
+      bottom: -30%;
+      right: -20%;
+      width: 80%;
+      height: 120%;
+      background: radial-gradient(ellipse, rgba(255,255,255,0.2) 0%, transparent 60%);
+    }
+
+    .style-hupo {
+      background: linear-gradient(135deg, var(--hupo-2) 0%, var(--hupo-4) 50%, var(--hupo-5) 100%);
+    }
+
+    .style-hupo::before {
+      content: '';
+      position: absolute;
+      top: 20%;
+      left: 20%;
+      width: 60%;
+      height: 60%;
+      background: radial-gradient(ellipse, rgba(255,255,255,0.25) 0%, transparent 60%);
+    }
+
+    .style-ousha {
+      background: linear-gradient(135deg, var(--ousha-2) 0%, var(--ousha-4) 50%, var(--ousha-5) 100%);
+    }
+
+    .style-ousha::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+    }
+
+    .style-shuise {
+      background: linear-gradient(135deg, var(--shuise-2) 0%, var(--shuise-4) 50%, var(--shuise-5) 100%);
+    }
+
+    .style-shuise::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: 
+        radial-gradient(ellipse at 30% 30%, rgba(255,255,255,0.2) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 70%, rgba(255,255,255,0.1) 0%, transparent 50%);
+    }
+
+    .card-content {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 12px;
+      background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 100%);
+      color: white;
+    }
+
+    .card-content .title {
+      font-size: 13px;
+      letter-spacing: 2px;
+      font-weight: 500;
+    }
+
+    .card-content .sub {
+      font-size: 10px;
+      opacity: 0.7;
+      margin-top: 2px;
+    }
+
+    .card-content .i18n-zh,
+    .card-content .i18n-en { display: none; }
+    body.zh .card-content .i18n-zh { display: block; }
+    body.zh .card-content .i18n-en { display: none; }
+    body.en .card-content .i18n-zh { display: none; }
+    body.en .card-content .i18n-en { display: block; }
+
+    /* ========== 技能中心页 ========== */
+    .skills-header {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .search-box {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: white;
+      border: 1px solid var(--tianqing-7);
+      border-radius: 10px;
+      padding: 8px 14px;
+    }
+
+    .search-box input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 13px;
+      font-family: inherit;
+      background: transparent;
+    }
+
+    .search-box .icon {
+      color: #7A8899;
+      font-size: 14px;
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 6px;
+    }
+
+    .filter-tab {
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--tianqing-7);
+      background: white;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      color: #7A8899;
+    }
+
+    .filter-tab.active {
+      background: var(--tianqing-5);
+      color: white;
+      border-color: var(--tianqing-5);
+    }
+
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .skill-card {
+      background: white;
+      border-radius: 14px;
+      padding: 20px;
+      border: 1px solid var(--tianqing-7);
+      transition: transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+
+    .skill-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(106,155,209,0.15);
+    }
+
+    .skill-card .skill-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-bottom: 14px;
+    }
+
+    .skill-card .skill-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--tianqing-2);
+      margin-bottom: 6px;
+    }
+
+    .skill-card .skill-desc {
+      font-size: 11px;
+      color: #7A8899;
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+    .skill-card .skill-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .skill-card .skill-tag {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: var(--tianqing-8);
+      color: var(--tianqing-4);
+    }
+
+    .skill-card .skill-status {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .skill-card .skill-status.enabled { background: #4CAF50; }
+    .skill-card .skill-status.disabled { background: #BDBDBD; }
+
+    /* ========== 插件管理页 ========== */
+    .plugin-toggle {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 20px;
+    }
+
+    .toggle-btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--tianqing-7);
+      background: white;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      color: #7A8899;
+    }
+
+    .toggle-btn.active {
+      background: var(--tianqing-5);
+      color: white;
+      border-color: var(--tianqing-5);
+    }
+
+    .plugin-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .plugin-card {
+      background: white;
+      border-radius: 14px;
+      padding: 20px;
+      border: 1px solid var(--tianqing-7);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .plugin-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(106,155,209,0.15);
+    }
+
+    .plugin-card .plugin-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .plugin-card .plugin-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .plugin-card .plugin-info .name {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--tianqing-2);
+    }
+
+    .plugin-card .plugin-info .version {
+      font-size: 10px;
+      color: #7A8899;
+    }
+
+    .plugin-card .plugin-desc {
+      font-size: 12px;
+      color: #7A8899;
+      line-height: 1.5;
+      margin-bottom: 14px;
+    }
+
+    .plugin-card .plugin-toggle {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .toggle-switch {
+      width: 40px;
+      height: 22px;
+      border-radius: 11px;
+      background: #BDBDBD;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .toggle-switch.enabled {
+      background: var(--tianqing-5);
+    }
+
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: white;
+      top: 2px;
+      left: 2px;
+      transition: left 0.2s;
+    }
+
+    .toggle-switch.enabled::after {
+      left: 20px;
+    }
+
+    /* ========== 智能体页 ========== */
+    .agents-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .agent-card {
+      background: white;
+      border-radius: 14px;
+      padding: 20px;
+      border: 1px solid var(--tianqing-7);
+    }
+
+    .agent-card .agent-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .agent-card .agent-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+    .agent-card .agent-info .name {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--tianqing-2);
+    }
+
+    .agent-card .agent-info .status {
+      font-size: 11px;
+      margin-top: 2px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .status-dot.running { background: #4CAF50; }
+    .status-dot.idle { background: #FF9800; }
+    .status-dot.stopped { background: #BDBDBD; }
+
+    .agent-card .agent-stats {
+      display: flex;
+      gap: 20px;
+    }
+
+    .agent-card .stat {
+      text-align: center;
+    }
+
+    .agent-card .stat .value {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--tianqing-2);
+    }
+
+    .agent-card .stat .label {
+      font-size: 10px;
+      color: #7A8899;
+    }
+
+    /* 任务列表 */
+    .tasks-section {
+      background: white;
+      border-radius: 14px;
+      padding: 20px;
+      border: 1px solid var(--tianqing-7);
+    }
+
+    .tasks-header {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--tianqing-2);
+      margin-bottom: 16px;
+    }
+
+    .task-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--tianqing-8);
+    }
+
+    .task-item:last-child {
+      border-bottom: none;
+    }
+
+    .task-item .task-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .task-item .task-info {
+      flex: 1;
+    }
+
+    .task-item .task-name {
+      font-size: 13px;
+      color: #2D3436;
+    }
+
+    .task-item .task-time {
+      font-size: 10px;
+      color: #7A8899;
+      margin-top: 2px;
+    }
+
+    .task-item .task-badge {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    .task-badge.pending {
+      background: #FFF3E0;
+      color: #FF9800;
+    }
+
+    .task-badge.running {
+      background: #E8F5E9;
+      color: #4CAF50;
+    }
+
+    .task-badge.done {
+      background: var(--tianqing-8);
+      color: var(--tianqing-4);
+    }
+
+    /* ========== 设置页 ========== */
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 20px;
+    }
+
+    .settings-nav {
+      background: white;
+      border-radius: 14px;
+      padding: 16px;
+      border: 1px solid var(--tianqing-7);
+      height: fit-content;
+    }
+
+    .settings-nav-item {
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+      color: #7A8899;
+      margin-bottom: 4px;
+    }
+
+    .settings-nav-item:hover {
+      background: var(--tianqing-8);
+    }
+
+    .settings-nav-item.active {
+      background: var(--tianqing-5);
+      color: white;
+    }
+
+    .settings-panel {
+      background: white;
+      border-radius: 14px;
+      padding: 24px;
+      border: 1px solid var(--tianqing-7);
+    }
+
+    .settings-section {
+      margin-bottom: 28px;
+    }
+
+    .settings-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .settings-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--tianqing-2);
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--tianqing-8);
+    }
+
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+    }
+
+    .setting-row .label {
+      font-size: 13px;
+      color: #2D3436;
+    }
+
+    .setting-row .desc {
+      font-size: 11px;
+      color: #7A8899;
+      margin-top: 2px;
+    }
+
+    /* 主题预览 */
+    .theme-preview {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .theme-item {
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.2s;
+      border: 2px solid transparent;
+    }
+
+    .theme-item:hover {
+      transform: scale(1.05);
+    }
+
+    .theme-item.active {
+      border-color: var(--tianqing-4);
+    }
+
+    .theme-item .swatch {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      margin: 0 auto 8px;
+    }
+
+    .theme-item .name {
+      font-size: 10px;
+      color: #2D3436;
+    }
+
+    /* 语言选择预览 */
+    .lang-preview {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .lang-item {
+      flex: 1;
+      padding: 16px;
+      border-radius: 10px;
+      text-align: center;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .lang-item:hover {
+      transform: scale(1.02);
+    }
+
+    .lang-item.active {
+      border-color: var(--tianqing-4);
+    }
+
+    .lang-item .flag {
+      font-size: 24px;
+      margin-bottom: 6px;
+    }
+
+    .lang-item .name {
+      font-size: 12px;
+      color: #2D3436;
+    }
+
+    /* 配色展示 */
+    .color-systems {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+    }
+
+    .color-system-card {
+      background: white;
+      border-radius: 14px;
+      padding: 20px;
+      border: 1px solid var(--tianqing-7);
+    }
+
+    .color-system-name {
+      font-size: 12px;
+      letter-spacing: 2px;
+      margin-bottom: 14px;
+      color: var(--tianqing-3);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .color-system-name .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .color-scale {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .color-scale-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .color-scale-item .swatch {
+      width: 100%;
+      height: 24px;
+      border-radius: 6px;
+    }
+
+    .color-scale-item .label {
+      font-size: 9px;
+      color: #7A8899;
+      white-space: nowrap;
+    }
+
+    /* 混搭风格 */
+    .mix-section {
+      margin-top: 24px;
+    }
+
+    .mix-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .mix-card {
+      height: 100px;
+      border-radius: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .mix-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0; top: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.4), transparent);
+    }
+
+    .mix-card .name {
+      position: absolute;
+      bottom: 12px;
+      left: 14px;
+      color: white;
+      font-size: 12px;
+      letter-spacing: 2px;
+      z-index: 1;
+    }
+
+    /* i18n */
+    body.en .logo,
+    body.en .section-title { letter-spacing: 1px; }
+
+    .i18n-zh, .i18n-en { display: none; }
+    body.zh .i18n-zh { display: block; }
+    body.zh .i18n-en { display: none; }
+    body.en .i18n-zh { display: none; }
+    body.en .i18n-en { display: block; }
+  </style>
+</head>
+<body class="zh">
+
+<div class="app-layout">
+
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">☯</div>
+        <span class="i18n-zh">天青</span>
+        <span class="i18n-en">Tianqing</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-group">
+        <div class="nav-group-label">
+          <span class="i18n-zh">主导航</span>
+          <span class="i18n-en">Main</span>
+        </div>
+
+        <div class="nav-item expanded" data-page="overview">
+          <div class="nav-link active" data-nav="overview">
+            <span class="icon">◈</span>
+            <span class="i18n-zh" data-i18n="nav.overview">总览</span>
+            <span class="i18n-en" data-i18n="nav.overview">Overview</span>
+            <span class="arrow">▶</span>
+          </div>
+          <div class="nav-submenu show">
+            <div class="nav-link active" data-sub="system">
+              <span class="i18n-zh" data-i18n="nav.system">· 系统状态</span>
+              <span class="i18n-en" data-i18n="nav.system">· System Status</span>
+            </div>
+            <div class="nav-link" data-sub="dashboard">
+              <span class="i18n-zh" data-i18n="nav.dashboard">· 仪表盘</span>
+              <span class="i18n-en" data-i18n="nav.dashboard">· Dashboard</span>
+            </div>
+            <div class="nav-link" data-sub="quick">
+              <span class="i18n-zh" data-i18n="nav.quick">· 快速操作</span>
+              <span class="i18n-en" data-i18n="nav.quick">· Quick Actions</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-item" data-page="skills">
+          <div class="nav-link" data-nav="skills">
+            <span class="icon">◎</span>
+            <span class="i18n-zh" data-i18n="nav.skills">技能中心</span>
+            <span class="i18n-en" data-i18n="nav.skills">Skills</span>
+            <span class="arrow">▶</span>
+          </div>
+          <div class="nav-submenu">
+            <div class="nav-link" data-sub="installed">
+              <span class="i18n-zh" data-i18n="nav.installed">· 已安装</span>
+              <span class="i18n-en" data-i18n="nav.installed">· Installed</span>
+            </div>
+            <div class="nav-link" data-sub="market">
+              <span class="i18n-zh" data-i18n="nav.market">· 技能市场</span>
+              <span class="i18n-en" data-i18n="nav.market">· Market</span>
+            </div>
+            <div class="nav-link" data-sub="create">
+              <span class="i18n-zh" data-i18n="nav.create">· 我的创作</span>
+              <span class="i18n-en" data-i18n="nav.create">· My Creations</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-item" data-page="plugins">
+          <div class="nav-link" data-nav="plugins">
+            <span class="icon">◉</span>
+            <span class="i18n-zh" data-i18n="nav.plugins">插件</span>
+            <span class="i18n-en" data-i18n="nav.plugins">Plugins</span>
+            <span class="arrow">▶</span>
+          </div>
+          <div class="nav-submenu">
+            <div class="nav-link" data-sub="enabled">
+              <span class="i18n-zh" data-i18n="nav.enabled">· 已启用</span>
+              <span class="i18n-en" data-i18n="nav.enabled">· Enabled</span>
+            </div>
+            <div class="nav-link" data-sub="pluginMarket">
+              <span class="i18n-zh" data-i18n="nav.pluginMarket">· 插件市场</span>
+              <span class="i18n-en" data-i18n="nav.pluginMarket">· Plugin Market</span>
+            </div>
+            <div class="nav-link" data-sub="config">
+              <span class="i18n-zh" data-i18n="nav.config">· 配置</span>
+              <span class="i18n-en" data-i18n="nav.config">· Config</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-item" data-page="agents">
+          <div class="nav-link" data-nav="agents">
+            <span class="icon">◐</span>
+            <span class="i18n-zh" data-i18n="nav.agents">智能体</span>
+            <span class="i18n-en" data-i18n="nav.agents">Agents</span>
+            <span class="arrow">▶</span>
+          </div>
+          <div class="nav-submenu">
+            <div class="nav-link" data-sub="running">
+              <span class="i18n-zh" data-i18n="nav.running">· 运行中</span>
+              <span class="i18n-en" data-i18n="nav.running">· Running</span>
+            </div>
+            <div class="nav-link" data-sub="tasks">
+              <span class="i18n-zh" data-i18n="nav.tasks">· 任务</span>
+              <span class="i18n-en" data-i18n="nav.tasks">· Tasks</span>
+            </div>
+            <div class="nav-link" data-sub="logs">
+              <span class="i18n-zh" data-i18n="nav.logs">· 日志</span>
+              <span class="i18n-en" data-i18n="nav.logs">· Logs</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">
+          <span class="i18n-zh">系统</span>
+          <span class="i18n-en">System</span>
+        </div>
+
+        <div class="nav-item" data-page="settings">
+          <div class="nav-link" data-nav="settings">
+            <span class="icon">⚙</span>
+            <span class="i18n-zh" data-i18n="nav.settings">设置</span>
+            <span class="i18n-en" data-i18n="nav.settings">Settings</span>
+            <span class="arrow">▶</span>
+          </div>
+          <div class="nav-submenu">
+            <div class="nav-link" data-sub="basic">
+              <span class="i18n-zh" data-i18n="nav.basic">· 基本配置</span>
+              <span class="i18n-en" data-i18n="nav.basic">· Basic</span>
+            </div>
+            <div class="nav-link" data-sub="ui">
+              <span class="i18n-zh" data-i18n="nav.ui">· 界面</span>
+              <span class="i18n-en" data-i18n="nav.ui">· Interface</span>
+            </div>
+            <div class="nav-link" data-sub="lang">
+              <span class="i18n-zh" data-i18n="nav.lang">· 语言</span>
+              <span class="i18n-en" data-i18n="nav.lang">· Language</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-item" data-page="status">
+          <div class="nav-link" data-nav="status">
+            <span class="icon">⏻</span>
+            <span class="i18n-zh" data-i18n="nav.status">状态</span>
+            <span class="i18n-en" data-i18n="nav.status">Status</span>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar">N</div>
+        <div>
+          <div class="user-name">Nick</div>
+          <div class="user-role">Administrator</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ========== 主内容区 ========== -->
+  <div class="main-area">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="breadcrumb">
+          <span class="i18n-zh" data-i18n="nav.home">首页</span>
+          <span class="i18n-en" data-i18n="nav.home">Home</span>
+          <span class="breadcrumb-sep">/</span>
+          <span class="breadcrumb-current" id="breadcrumb-current">
+            <span class="i18n-zh" data-i18n="nav.overview">总览</span>
+            <span class="i18n-en" data-i18n="nav.overview">Overview</span>
+          </span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="lang-switch">
+          <button class="lang-btn active" data-lang="zh">中文</button>
+          <button class="lang-btn" data-lang="en">EN</button>
+        </div>
+        <div class="topbar-icon">🔔</div>
+        <div class="topbar-icon">⚙</div>
+      </div>
+    </header>
+
+    <div class="content-area">
+
+      <!-- ========== 总览页 ========== -->
+      <div class="page active" id="page-overview">
+        <div class="workspace-header">
+          <h1 class="workspace-title" data-i18n="overview.title">系统总览</h1>
+          <p class="workspace-desc" data-i18n="overview.desc">实时监控智能体运行状态与资源使用情况</p>
+        </div>
+
+        <div class="status-cards">
+          <div class="status-card">
+            <div class="icon" style="background: var(--tianqing-8);">◈</div>
+            <div class="value">12</div>
+            <div class="label">
+              <span class="i18n-zh" data-i18n="status.skills">技能总数</span>
+              <span class="i18n-en" data-i18n="status.skills">Total Skills</span>
+            </div>
+            <div class="trend up">
+              <span class="i18n-zh">↑ 3 本月新增</span>
+              <span class="i18n-en">↑ 3 added this month</span>
+            </div>
+          </div>
+          <div class="status-card">
+            <div class="icon" style="background: var(--mujian-7);">◉</div>
+            <div class="value">8</div>
+            <div class="label">
+              <span class="i18n-zh" data-i18n="status.plugins">插件总数</span>
+              <span class="i18n-en" data-i18n="status.plugins">Total Plugins</span>
+            </div>
+            <div class="trend up">
+              <span class="i18n-zh">↑ 2 本月新增</span>
+              <span class="i18n-en">↑ 2 added this month</span>
+            </div>
+          </div>
+          <div class="status-card">
+            <div class="icon" style="background: var(--zhuhuang-7);">◐</div>
+            <div class="value">5</div>
+            <div class="label">
+              <span class="i18n-zh" data-i18n="status.agents">在线智能体</span>
+              <span class="i18n-en" data-i18n="status.agents">Active Agents</span>
+            </div>
+            <div class="trend up">
+              <span class="i18n-zh">↑ 1 本周活跃</span>
+              <span class="i18n-en">↑ 1 active this week</span>
+            </div>
+          </div>
+          <div class="status-card">
+            <div class="icon" style="background: var(--hupo-7);">⚙</div>
+            <div class="value">99.9%</div>
+            <div class="label">
+              <span class="i18n-zh" data-i18n="status.uptime">运行时间</span>
+              <span class="i18n-en" data-i18n="status.uptime">Uptime</span>
+            </div>
+            <div class="trend up">
+              <span class="i18n-zh">↑ 系统健康</span>
+              <span class="i18n-en">↑ System Healthy</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="recent-section">
+          <div class="recent-header">
+            <div class="recent-title">
+              <span class="i18n-zh" data-i18n="overview.recent">最近活动</span>
+              <span class="i18n-en" data-i18n="overview.recent">Recent Activity</span>
+            </div>
+          </div>
+          <ul class="recent-list">
+            <li class="recent-item">
+              <div class="dot" style="background: var(--zhuhuang-4);"></div>
+              <div class="content">
+                <div class="text">
+                  <span class="i18n-zh">技能「网页搜索」更新至 v2.1</span>
+                  <span class="i18n-en">Skill "Web Search" updated to v2.1</span>
+                </div>
+                <div class="time">15:32</div>
+              </div>
+              <div class="badge">
+                <span class="i18n-zh">更新</span>
+                <span class="i18n-en">Update</span>
+              </div>
+            </li>
+            <li class="recent-item">
+              <div class="dot" style="background: var(--tianqing-4);"></div>
+              <div class="content">
+                <div class="text">
+                  <span class="i18n-zh">插件「记忆库」启用成功</span>
+                  <span class="i18n-en">Plugin "Memory" enabled successfully</span>
+                </div>
+                <div class="time">14:18</div>
+              </div>
+              <div class="badge">
+                <span class="i18n-zh">启用</span>
+                <span class="i18n-en">Enable</span>
+              </div>
+            </li>
+            <li class="recent-item">
+              <div class="dot" style="background: var(--mujian-4);"></div>
+              <div class="content">
+                <div class="text">
+                  <span class="i18n-zh">智能体「清雅」完成任务：天气查询</span>
+                  <span class="i18n-en">Agent "Qingya" completed task: Weather Query</span>
+                </div>
+                <div class="time">13:45</div>
+              </div>
+              <div class="badge">
+                <span class="i18n-zh">完成</span>
+                <span class="i18n-en">Done</span>
+              </div>
+            </li>
+            <li class="recent-item">
+              <div class="dot" style="background: var(--hupo-4);"></div>
+              <div class="content">
+                <div class="text">
+                  <span class="i18n-zh">系统完成每日备份</span>
+                  <span class="i18n-en">System completed daily backup</span>
+                </div>
+                <div class="time">12:00</div>
+              </div>
+              <div class="badge">
+                <span class="i18n-zh">备份</span>
+                <span class="i18n-en">Backup</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="quick-actions">
+          <div class="quick-btn" data-action="new-skill">
+            <div class="icon" style="background: var(--tianqing-8); color: var(--tianqing-5);">◎</div>
+            <div class="info">
+              <div class="name">
+                <span class="i18n-zh" data-i18n="quick.newSkill">新建技能</span>
+                <span class="i18n-en" data-i18n="quick.newSkill">New Skill</span>
+              </div>
+              <div class="desc">
+                <span class="i18n-zh">创建一个自定义技能</span>
+                <span class="i18n-en">Create a custom skill</span>
+              </div>
+            </div>
+          </div>
+          <div class="quick-btn" data-action="install-plugin">
+            <div class="icon" style="background: var(--mujian-7); color: var(--mujian-3);">◉</div>
+            <div class="info">
+              <div class="name">
+                <span class="i18n-zh" data-i18n="quick.install">安装插件</span>
+                <span class="i18n-en" data-i18n="quick.install">Install Plugin</span>
+              </div>
+              <div class="desc">
+                <span class="i18n-zh">从市场安装新插件</span>
+                <span class="i18n-en">Install from market</span>
+              </div>
+            </div>
+          </div>
+          <div class="quick-btn" data-action="restart">
+            <div class="icon" style="background: var(--hupo-7); color: var(--hupo-3);">⏻</div>
+            <div class="info">
+              <div class="name">
+                <span class="i18n-zh" data-i18n="quick.restart">重启系统</span>
+                <span class="i18n-en" data-i18n="quick.restart">Restart System</span>
+              </div>
+              <div class="desc">
+                <span class="i18n-zh">重启 Gateway 服务</span>
+                <span class="i18n-en">Restart Gateway service</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== 技能中心页 ========== -->
+      <div class="page" id="page-skills">
+        <div class="workspace-header">
+          <h1 class="workspace-title" data-i18n="skills.title">技能中心</h1>
+          <p class="workspace-desc" data-i18n="skills.desc">管理你的智能体技能库</p>
+        </div>
+
+        <div class="skills-header">
+          <div class="search-box">
+            <span class="icon">🔍</span>
+            <input type="text" id="skill-search" data-i18n-placeholder="skills.search" placeholder="搜索技能...">
+          </div>
+          <div class="filter-tabs">
+            <button class="filter-tab active" data-filter="all">
+              <span class="i18n-zh">全部</span>
+              <span class="i18n-en">All</span>
+            </button>
+            <button class="filter-tab" data-filter="enabled">
+              <span class="i18n-zh">已启用</span>
+              <span class="i18n-en">Enabled</span>
+            </button>
+            <button class="filter-tab" data-filter="disabled">
+              <span class="i18n-zh">已禁用</span>
+              <span class="i18n-en">Disabled</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="skills-grid" id="skills-grid">
+          <!-- Skills will be populated by JS -->
+        </div>
+      </div>
+
+      <!-- ========== 插件管理页 ========== -->
+      <div class="page" id="page-plugins">
+        <div class="workspace-header">
+          <h1 class="workspace-title" data-i18n="plugins.title">插件管理</h1>
+          <p class="workspace-desc" data-i18n="plugins.desc">管理已安装的插件</p>
+        </div>
+
+        <div class="plugin-toggle">
+          <button class="toggle-btn active" data-toggle="all">
+            <span class="i18n-zh">全部</span>
+            <span class="i18n-en">All</span>
+          </button>
+          <button class="toggle-btn" data-toggle="enabled">
+            <span class="i18n-zh">已启用</span>
+            <span class="i18n-en">Enabled</span>
+          </button>
+          <button class="toggle-btn" data-toggle="disabled">
+            <span class="i18n-zh">已禁用</span>
+            <span class="i18n-en">Disabled</span>
+          </button>
+        </div>
+
+        <div class="plugin-grid" id="plugin-grid">
+          <!-- Plugins will be populated by JS -->
+        </div>
+      </div>
+
+      <!-- ========== 智能体页 ========== -->
+      <div class="page" id="page-agents">
+        <div class="workspace-header">
+          <h1 class="workspace-title" data-i18n="agents.title">智能体</h1>
+          <p class="workspace-desc" data-i18n="agents.desc">监控和管理运行中的智能体</p>
+        </div>
+
+        <div class="agents-grid" id="agents-grid">
+          <!-- Agents will be populated by JS -->
+        </div>
+
+        <div class="tasks-section">
+          <div class="tasks-header" data-i18n="agents.tasks">当前任务</div>
+          <div id="tasks-list">
+            <!-- Tasks will be populated by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== 设置页 ========== -->
+      <div class="page" id="page-settings">
+        <div class="workspace-header">
+          <h1 class="workspace-title" data-i18n="settings.title">设置</h1>
+          <p class="workspace-desc" data-i18n="settings.desc">配置系统参数与偏好设置</p>
+        </div>
+
+        <div class="settings-grid">
+          <div class="settings-nav">
+            <div class="settings-nav-item active" data-settings="basic">
+              <span class="i18n-zh" data-i18n="settings.basic">基本配置</span>
+              <span class="i18n-en" data-i18n="settings.basic">Basic</span>
+            </div>
+            <div class="settings-nav-item" data-settings="ui">
+              <span class="i18n-zh" data-i18n="settings.ui">界面</span>
+              <span class="i18n-en" data-i18n="settings.ui">Interface</span>
+            </div>
+            <div class="settings-nav-item" data-settings="lang">
+              <span class="i18n-zh" data-i18n="settings.lang">语言</span>
+              <span class="i18n-en" data-i18n="settings.lang">Language</span>
+            </div>
+          </div>
+
+          <div class="settings-panel" id="settings-panel-basic">
+            <div class="settings-section">
+              <div class="settings-title" data-i18n="settings.system">系统信息</div>
+              <div class="setting-row">
+                <div>
+                  <div class="label">
+                    <span class="i18n-zh" data-i18n="settings.version">版本号</span>
+                    <span class="i18n-en" data-i18n="settings.version">Version</span>
+                  </div>
+                  <div class="desc">OpenClaw Gateway v1.0.0</div>
+                </div>
+              </div>
+              <div class="setting-row">
+                <div>
+                  <div class="label">
+                    <span class="i18n-zh" data-i18n="settings.nodeId">节点ID</span>
+                    <span class="i18n-en" data-i18n="settings.nodeId">Node ID</span>
+                  </div>
+                  <div class="desc">qingya-All-Series</div>
+                </div>
+              </div>
+            </div>
+            <div class="settings-section">
+              <div class="settings-title">
+                <span class="i18n-zh" data-i18n="settings.notifications">通知设置</span>
+                <span class="i18n-en" data-i18n="settings.notifications">Notifications</span>
+              </div>
+              <div class="setting-row">
+                <div>
+                  <div class="label">
+                    <span class="i18n-zh" data-i18n="settings.enableNotif">启用通知</span>
+                    <span class="i18n-en" data-i18n="settings.enableNotif">Enable Notifications</span>
+                  </div>
+                  <div class="desc">
+                    <span class="i18n-zh">接收系统事件推送</span>
+                    <span class="i18n-en">Receive system event push</span>
+                  </div>
+                </div>
+                <div class="toggle-switch enabled" data-toggle="notifications"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-panel" id="settings-panel-ui" style="display:none;">
+            <div class="settings-section">
+              <div class="settings-title">
+                <span class="i18n-zh" data-i18n="settings.theme">主题配色</span>
+                <span class="i18n-en" data-i18n="settings.theme">Theme Colors</span>
+              </div>
+              <div class="theme-preview">
+                <div class="theme-item active" data-theme="tianqing" style="background: var(--tianqing-8);">
+                  <div class="swatch" style="background: linear-gradient(135deg, var(--tianqing-3), var(--tianqing-5));"></div>
+                  <div class="name">
+                    <span class="i18n-zh">天青</span>
+                    <span class="i18n-en">Tianqing</span>
+                  </div>
+                </div>
+                <div class="theme-item" data-theme="mujian" style="background: var(--tianqing-8);">
+                  <div class="swatch" style="background: linear-gradient(135deg, var(--mujian-2), var(--mujian-4));"></div>
+                  <div class="name">
+                    <span class="i18n-zh">木簪</span>
+                    <span class="i18n-en">Mujian</span>
+                  </div>
+                </div>
+                <div class="theme-item" data-theme="zhuhuang" style="background: var(--tianqing-8);">
+                  <div class="swatch" style="background: linear-gradient(135deg, var(--zhuhuang-2), var(--zhuhuang-4));"></div>
+                  <div class="name">
+                    <span class="i18n-zh">竹黄</span>
+                    <span class="i18n-en">Zhuhuang</span>
+                  </div>
+                </div>
+                <div class="theme-item" data-theme="hupo" style="background: var(--tianqing-8);">
+                  <div class="swatch" style="background: linear-gradient(135deg, var(--hupo-2), var(--hupo-4));"></div>
+                  <div class="name">
+                    <span class="i18n-zh">琥珀</span>
+                    <span class="i18n-en">Hupo</span>
+                  </div>
+                </div>
+                <div class="theme-item" data-theme="ousha" style="background: var(--tianqing-8);">
+                  <div class="swatch" style="background: linear-gradient(135deg, var(--ousha-2), var(--ousha-4));"></div>
+                  <div class="name">
+                    <span class="i18n-zh">藕色</span>
+                    <span class="i18n-en">Ousha</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="settings-section">
+              <div class="settings-title">
+                <span class="i18n-zh" data-i18n="settings.colorSystems">配色体系</span>
+                <span class="i18n-en" data-i18n="settings.colorSystems">Color Systems</span>
+              </div>
+              <div class="color-systems">
+                <div class="color-system-card">
+                  <div class="color-system-name">
+                    <div class="dot" style="background: var(--tianqing-3);"></div>
+                    <span class="i18n-zh" data-i18n="color.tianqing">天青</span>
+                    <span class="i18n-en" data-i18n="color.tianqing">Tianqing</span>
+                  </div>
+                  <div class="color-scale">
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--tianqing-1);"></div><span class="label">#0D2137</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--tianqing-2);"></div><span class="label">#1A3A5C</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--tianqing-3);"></div><span class="label">#2A4A6C</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--tianqing-4);"></div><span class="label">#4A7BB7</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--tianqing-5);"></div><span class="label">#6A9BD1</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--tianqing-6);"></div><span class="label">#9EC5E8</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--tianqing-7);"></div><span class="label">#C5DFF0</span></div>
+                  </div>
+                </div>
+                <div class="color-system-card">
+                  <div class="color-system-name">
+                    <div class="dot" style="background: var(--mujian-4);"></div>
+                    <span class="i18n-zh" data-i18n="color.mujian">木簪子</span>
+                    <span class="i18n-en" data-i18n="color.mujian">Mujian</span>
+                  </div>
+                  <div class="color-scale">
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--mujian-1);"></div><span class="label">#2D1F3D</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--mujian-2);"></div><span class="label">#4A3060</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--mujian-3);"></div><span class="label">#6B4580</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--mujian-4);"></div><span class="label">#8B5FA0</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--mujian-5);"></div><span class="label">#A87FC0</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--mujian-6);"></div><span class="label">#C9A8E0</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--mujian-7);"></div><span class="label">#E0C8F0</span></div>
+                  </div>
+                </div>
+                <div class="color-system-card">
+                  <div class="color-system-name">
+                    <div class="dot" style="background: var(--zhuhuang-4);"></div>
+                    <span class="i18n-zh" data-i18n="color.zhuhuang">竹黄</span>
+                    <span class="i18n-en" data-i18n="color.zhuhuang">Zhuhuang</span>
+                  </div>
+                  <div class="color-scale">
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--zhuhuang-1);"></div><span class="label">#1A2D0F</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--zhuhuang-2);"></div><span class="label">#2D5018</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--zhuhuang-3);"></div><span class="label">#4A7A28</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--zhuhuang-4);"></div><span class="label">#6A9D3A</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--zhuhuang-5);"></div><span class="label">#89B854</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--zhuhuang-6);"></div><span class="label">#A8D070</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--zhuhuang-7);"></div><span class="label">#C5E088</span></div>
+                  </div>
+                </div>
+                <div class="color-system-card">
+                  <div class="color-system-name">
+                    <div class="dot" style="background: var(--hupo-4);"></div>
+                    <span class="i18n-zh" data-i18n="color.hupo">琥珀</span>
+                    <span class="i18n-en" data-i18n="color.hupo">Hupo</span>
+                  </div>
+                  <div class="color-scale">
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--hupo-1);"></div><span class="label">#3D1F08</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--hupo-2);"></div><span class="label">#6B3810</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--hupo-3);"></div><span class="label">#9A5018</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--hupo-4);"></div><span class="label">#C06820</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--hupo-5);"></div><span class="label">#E08530</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--hupo-6);"></div><span class="label">#F0A858</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--hupo-7);"></div><span class="label">#F8C888</span></div>
+                  </div>
+                </div>
+                <div class="color-system-card">
+                  <div class="color-system-name">
+                    <div class="dot" style="background: var(--ousha-4);"></div>
+                    <span class="i18n-zh" data-i18n="color.ousha">藕色</span>
+                    <span class="i18n-en" data-i18n="color.ousha">Ousha</span>
+                  </div>
+                  <div class="color-scale">
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--ousha-1);"></div><span class="label">#3D2025</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--ousha-2);"></div><span class="label">#6B3840</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--ousha-3);"></div><span class="label">#9A5060</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--ousha-4);"></div><span class="label">#C06878</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--ousha-5);"></div><span class="label">#E08590</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--ousha-6);"></div><span class="label">#F0A8B0</span></div>
+                    <div class="color-scale-item"><div class="swatch" style="background: var(--ousha-7);"></div><span class="label">#F8C8D0</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-panel" id="settings-panel-lang" style="display:none;">
+            <div class="settings-section">
+              <div class="settings-title">
+                <span class="i18n-zh" data-i18n="settings.selectLang">选择语言</span>
+                <span class="i18n-en" data-i18n="settings.selectLang">Select Language</span>
+              </div>
+              <div class="lang-preview">
+                <div class="lang-item active" data-lang-select="zh" style="background: var(--tianqing-8);">
+                  <div class="flag">🇨🇳</div>
+                  <div class="name">中文</div>
+                </div>
+                <div class="lang-item" data-lang-select="en" style="background: var(--tianqing-8);">
+                  <div class="flag">🇺🇸</div>
+                  <div class="name">English</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== 状态页 ========== -->
+      <div class="page" id="page-status">
+        <div class="workspace-header">
+          <h1 class="workspace-title" data-i18n="status.title">系统状态</h1>
+          <p class="workspace-desc" data-i18n="status.desc">查看完整的系统健康状态</p>
+        </div>
+
+        <div class="status-cards">
+          <div class="status-card">
+            <div class="icon" style="background: var(--tianqing-8);">◈</div>
+            <div class="value" id="status-cpu">23%</div>
+            <div class="label">
+              <span class="i18n-zh" data-i18n="status.cpu">CPU 使用率</span>
+              <span class="i18n-en" data-i18n="status.cpu">CPU Usage</span>
+            </div>
+          </div>
+          <div class="status-card">
+            <div class="icon" style="background: var(--mujian-7);">◉</div>
+            <div class="value" id="status-memory">4.2 GB</div>
+            <div class="label">
+              <span class="i18n-zh" data-i18n="status.memory">内存使用</span>
+              <span class="i18n-en" data-i18n="status.memory">Memory Used</span>
+            </div>
+          </div>
+          <div class="status-card">
+            <div class="icon" style="background: var(--zhuhuang-7);">◐</div>
+            <div class="value" id="status-disk">67%</div>
+            <div class="label">
+              <span class="i18n-zh" data-i18n="status.disk">磁盘使用</span>
+              <span class="i18n-en" data-i18n="status.disk">Disk Used</span>
+            </div>
+          </div>
+          <div class="status-card">
+            <div class="icon" style="background: var(--hupo-7);">⏻</div>
+            <div class="value">🟢</div>
+            <div class="label">
+              <span class="i18n-zh" data-i18n="status.health">健康状态</span>
+              <span class="i18n-en" data-i18n="status.health">Health</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="recent-section">
+          <div class="recent-header">
+            <div class="recent-title">
+              <span class="i18n-zh" data-i18n="status.services">服务状态</span>
+              <span class="i18n-en" data-i18n="status.services">Service Status</span>
+            </div>
+          </div>
+          <ul class="recent-list" id="services-list">
+            <!-- Services will be populated by JS -->
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== 数据 ====================
+const skillsData = [
+  { name: '网页搜索', nameEn: 'Web Search', icon: '🔍', desc: '搜索互联网信息，获取最新资讯', descEn: 'Search the internet for latest info', tag: '工具', tagEn: 'Tool', enabled: true, color: 'tianqing' },
+  { name: '技能创建器', nameEn: 'Skill Creator', icon: '⚙', desc: '创建和管理自定义技能', descEn: 'Create and manage custom skills', tag: '开发', tagEn: 'Dev', enabled: true, color: 'mujian' },
+  { name: '天气查询', nameEn: 'Weather', icon: '🌤️', desc: '查询全球城市天气信息', descEn: 'Query city weather worldwide', tag: '工具', tagEn: 'Tool', enabled: true, color: 'zhuhuang' },
+  { name: '记忆库', nameEn: 'Memory', icon: '🧠', desc: '持久化记忆存储与管理', descEn: 'Persistent memory storage', tag: '系统', tagEn: 'System', enabled: true, color: 'hupo' },
+  { name: 'PDF处理', nameEn: 'PDF', icon: '📄', desc: '提取和创建PDF文档', descEn: 'Extract and create PDF docs', tag: '工具', tagEn: 'Tool', enabled: false, color: 'ousha' },
+  { name: '图片生成', nameEn: 'Image Gen', icon: '🎨', desc: 'AI驱动的图像生成', descEn: 'AI-powered image generation', tag: 'AI', tagEn: 'AI', enabled: true, color: 'tianqing' },
+  { name: '翻译', nameEn: 'Translate', icon: '🌐', desc: '多语言互译功能', descEn: 'Multi-language translation', tag: '工具', tagEn: 'Tool', enabled: false, color: 'mujian' },
+  { name: '代码审查', nameEn: 'Code Review', icon: '🔍', desc: '自动审查代码质量和安全', descEn: 'Auto review code quality', tag: '开发', tagEn: 'Dev', enabled: true, color: 'zhuhuang' },
+];
+
+const pluginsData = [
+  { name: 'GitHub', nameEn: 'GitHub', icon: '🐙', desc: '集成GitHub Issues和PR管理', descEn: 'GitHub Issues & PR management', version: 'v2.1', enabled: true, bg: 'var(--tianqing-8)', color: 'var(--tianqing-5)' },
+  { name: '日历', nameEn: 'Calendar', icon: '📅', desc: '日历事件同步与管理', descEn: 'Calendar sync & management', version: 'v1.5', enabled: true, bg: 'var(--mujian-7)', color: 'var(--mujian-4)' },
+  { name: '邮件', nameEn: 'Email', icon: '📧', desc: '邮件发送和接收', descEn: 'Send and receive emails', version: 'v2.0', enabled: false, bg: 'var(--zhuhuang-7)', color: 'var(--zhuhuang-4)' },
+  { name: 'Obsidian', nameEn: 'Obsidian', icon: '📓', desc: 'Obsidian知识库同步', descEn: 'Obsidian vault sync', version: 'v1.2', enabled: true, bg: 'var(--hupo-7)', color: 'var(--hupo-4)' },
+  { name: 'Tavily', nameEn: 'Tavily', icon: '🔎', desc: '深度网络搜索', descEn: 'Deep web search', version: 'v1.8', enabled: true, bg: 'var(--ousha-7)', color: 'var(--ousha-4)' },
+  { name: '天气', nameEn: 'Weather', icon: '🌤️', desc: '天气数据集成', descEn: 'Weather data integration', version: 'v1.0', enabled: false, bg: 'var(--tianqing-8)', color: 'var(--tianqing-4)' },
+];
+
+const agentsData = [
+  { name: '清雅', nameEn: 'Qingya', avatar: '✨', status: 'running', statusText: '运行中', statusTextEn: 'Running', bg: 'var(--tianqing-8)', color: 'var(--tianqing-5)', tasks: 128, uptime: '7d' },
+  { name: '助手', nameEn: 'Assistant', avatar: '🤖', status: 'idle', statusText: '空闲', statusTextEn: 'Idle', bg: 'var(--mujian-7)', color: 'var(--mujian-4)', tasks: 45, uptime: '3d' },
+  { name: '开发者', nameEn: 'Developer', avatar: '🔧', status: 'running', statusText: '运行中', statusTextEn: 'Running', bg: 'var(--zhuhuang-7)', color: 'var(--zhuhuang-4)', tasks: 89, uptime: '5d' },
+  { name: '分析师', nameEn: 'Analyst', avatar: '📊', status: 'stopped', statusText: '已停止', statusTextEn: 'Stopped', bg: 'var(--hupo-7)', color: 'var(--hupo-4)', tasks: 12, uptime: '-' },
+];
+
+const tasksData = [
+  { name: '网页搜索：最新AI新闻', nameEn: 'Web Search: Latest AI News', icon: '🔍', time: '2分钟前', badge: 'running', badgeText: '运行中', badgeTextEn: 'Running' },
+  { name: '生成每周报告', nameEn: 'Generate Weekly Report', icon: '📊', time: '5分钟前', badge: 'running', badgeText: '运行中', badgeTextEn: 'Running' },
+  { name: '技能更新检查', nameEn: 'Skill Update Check', icon: '⚙', time: '30分钟前', badge: 'done', badgeText: '完成', badgeTextEn: 'Done' },
+  { name: '记忆库备份', nameEn: 'Memory Backup', icon: '🧠', time: '1小时前', badge: 'done', badgeText: '完成', badgeTextEn: 'Done' },
+  { name: '天气查询：北京', nameEn: 'Weather Query: Beijing', icon: '🌤️', time: '2小时前', badge: 'pending', badgeText: '等待', badgeTextEn: 'Pending' },
+];
+
+const servicesData = [
+  { name: 'Gateway', nameEn: 'Gateway', status: 'running', nameText: '网关服务', nameTextEn: 'Gateway Service' },
+  { name: 'Skills Engine', nameEn: 'Skills Engine', status: 'running', nameText: '技能引擎', nameTextEn: 'Skills Engine' },
+  { name: 'Plugin Manager', nameEn: 'Plugin Manager', status: 'running', nameText: '插件管理', nameTextEn: 'Plugin Manager' },
+  { name: 'Memory Store', nameEn: 'Memory Store', status: 'running', nameText: '记忆存储', nameTextEn: 'Memory Store' },
+  { name: 'Scheduler', nameEn: 'Scheduler', status: 'idle', nameText: '调度器', nameTextEn: 'Scheduler' },
+];
+
+// ==================== 翻译 ====================
+const translations = {
+  'zh': {
+    'nav.home': '首页',
+    'nav.overview': '总览',
+    'nav.system': '系统状态',
+    'nav.dashboard': '仪表盘',
+    'nav.quick': '快速操作',
+    'nav.skills': '技能中心',
+    'nav.installed': '已安装',
+    'nav.market': '技能市场',
+    'nav.create': '我的创作',
+    'nav.plugins': '插件',
+    'nav.enabled': '已启用',
+    'nav.pluginMarket': '插件市场',
+    'nav.config': '配置',
+    'nav.agents': '智能体',
+    'nav.running': '运行中',
+    'nav.tasks': '任务',
+    'nav.logs': '日志',
+    'nav.settings': '设置',
+    'nav.basic': '基本配置',
+    'nav.ui': '界面',
+    'nav.lang': '语言',
+    'nav.status': '状态',
+    'overview.title': '系统总览',
+    'overview.desc': '实时监控智能体运行状态与资源使用情况',
+    'overview.recent': '最近活动',
+    'quick.newSkill': '新建技能',
+    'quick.install': '安装插件',
+    'quick.restart': '重启系统',
+    'skills.title': '技能中心',
+    'skills.desc': '管理你的智能体技能库',
+    'skills.search': '搜索技能...',
+    'plugins.title': '插件管理',
+    'plugins.desc': '管理已安装的插件',
+    'agents.title': '智能体',
+    'agents.desc': '监控和管理运行中的智能体',
+    'agents.tasks': '当前任务',
+    'settings.title': '设置',
+    'settings.desc': '配置系统参数与偏好设置',
+    'settings.basic': '基本配置',
+    'settings.ui': '界面',
+    'settings.lang': '语言',
+    'settings.system': '系统信息',
+    'settings.version': '版本号',
+    'settings.nodeId': '节点ID',
+    'settings.notifications': '通知设置',
+    'settings.enableNotif': '启用通知',
+    'settings.theme': '主题配色',
+    'settings.colorSystems': '配色体系',
+    'settings.selectLang': '选择语言',
+    'status.title': '系统状态',
+    'status.desc': '查看完整的系统健康状态',
+    'status.skills': '技能总数',
+    'status.plugins': '插件总数',
+    'status.agents': '在线智能体',
+    'status.uptime': '运行时间',
+    'status.cpu': 'CPU 使用率',
+    'status.memory': '内存使用',
+    'status.disk': '磁盘使用',
+    'status.health': '健康状态',
+    'status.services': '服务状态',
+    'color.tianqing': '天青',
+    'color.mujian': '木簪子',
+    'color.zhuhuang': '竹黄',
+    'color.hupo': '琥珀',
+    'color.ousha': '藕色',
+  },
+  'en': {
+    'nav.home': 'Home',
+    'nav.overview': 'Overview',
+    'nav.system': 'System Status',
+    'nav.dashboard': 'Dashboard',
+    'nav.quick': 'Quick Actions',
+    'nav.skills': 'Skills',
+    'nav.installed': 'Installed',
+    'nav.market': 'Market',
+    'nav.create': 'My Creations',
+    'nav.plugins': 'Plugins',
+    'nav.enabled': 'Enabled',
+    'nav.pluginMarket': 'Plugin Market',
+    'nav.config': 'Config',
+    'nav.agents': 'Agents',
+    'nav.running': 'Running',
+    'nav.tasks': 'Tasks',
+    'nav.logs': 'Logs',
+    'nav.settings': 'Settings',
+    'nav.basic': 'Basic',
+    'nav.ui': 'Interface',
+    'nav.lang': 'Language',
+    'nav.status': 'Status',
+    'overview.title': 'System Overview',
+    'overview.desc': 'Real-time monitoring of agent status and resource usage',
+    'overview.recent': 'Recent Activity',
+    'quick.newSkill': 'New Skill',
+    'quick.install': 'Install Plugin',
+    'quick.restart': 'Restart System',
+    'skills.title': 'Skills',
+    'skills.desc': 'Manage your agent skill library',
+    'skills.search': 'Search skills...',
+    'plugins.title': 'Plugins',
+    'plugins.desc': 'Manage installed plugins',
+    'agents.title': 'Agents',
+    'agents.desc': 'Monitor and manage running agents',
+    'agents.tasks': 'Current Tasks',
+    'settings.title': 'Settings',
+    'settings.desc': 'Configure system parameters and preferences',
+    'settings.basic': 'Basic',
+    'settings.ui': 'Interface',
+    'settings.lang': 'Language',
+    'settings.system': 'System Info',
+    'settings.version': 'Version',
+    'settings.nodeId': 'Node ID',
+    'settings.notifications': 'Notifications',
+    'settings.enableNotif': 'Enable Notifications',
+    'settings.theme': 'Theme Colors',
+    'settings.colorSystems': 'Color Systems',
+    'settings.selectLang': 'Select Language',
+    'status.title': 'System Status',
+    'status.desc': 'View complete system health status',
+    'status.skills': 'Total Skills',
+    'status.plugins': 'Total Plugins',
+    'status.agents': 'Active Agents',
+    'status.uptime': 'Uptime',
+    'status.cpu': 'CPU Usage',
+    'status.memory': 'Memory Used',
+    'status.disk': 'Disk Used',
+    'status.health': 'Health',
+    'status.services': 'Services',
+    'color.tianqing': 'Tianqing',
+    'color.mujian': 'Mujian',
+    'color.zhuhuang': 'Zhuhuang',
+    'color.hupo': 'Hupo',
+    'color.ousha': 'Ousha',
+  }
+};
+
+// ==================== 状态 ====================
+let currentLang = 'zh';
+let currentPage = 'overview';
+let currentSub = 'system';
+
+// ==================== 初始化 ====================
+function init() {
+  renderSkills();
+  renderPlugins();
+  renderAgents();
+  renderTasks();
+  renderServices();
+  setupEventListeners();
+}
+
+// ==================== 渲染函数 ====================
+function renderSkills(filter = 'all') {
+  const grid = document.getElementById('skills-grid');
+  const lang = currentLang;
+  let filtered = skillsData;
+  
+  if (filter === 'enabled') filtered = skillsData.filter(s => s.enabled);
+  else if (filter === 'disabled') filtered = skillsData.filter(s => !s.enabled);
+  
+  const searchTerm = document.getElementById('skill-search')?.value.toLowerCase() || '';
+  if (searchTerm) {
+    filtered = filtered.filter(s => 
+      s.name.toLowerCase().includes(searchTerm) || 
+      s.nameEn.toLowerCase().includes(searchTerm)
+    );
+  }
+  
+  grid.innerHTML = filtered.map(skill => `
+    <div class="skill-card">
+      <div class="skill-icon" style="background: var(--${skill.color}-8); color: var(--${skill.color}-5);">${skill.icon}</div>
+      <div class="skill-name">${lang === 'zh' ? skill.name : skill.nameEn}</div>
+      <div class="skill-desc">${lang === 'zh' ? skill.desc : skill.descEn}</div>
+      <div class="skill-footer">
+        <div class="skill-tag">${lang === 'zh' ? skill.tag : skill.tagEn}</div>
+        <div class="skill-status ${skill.enabled ? 'enabled' : 'disabled'}"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderPlugins(filter = 'all') {
+  const grid = document.getElementById('plugin-grid');
+  const lang = currentLang;
+  let filtered = pluginsData;
+  
+  if (filter === 'enabled') filtered = pluginsData.filter(p => p.enabled);
+  else if (filter === 'disabled') filtered = pluginsData.filter(p => !p.enabled);
+  
+  grid.innerHTML = filtered.map(plugin => `
+    <div class="plugin-card">
+      <div class="plugin-header">
+        <div class="plugin-icon" style="background: ${plugin.bg}; color: ${plugin.color};">${plugin.icon}</div>
+        <div class="plugin-info">
+          <div class="name">${lang === 'zh' ? plugin.name : plugin.nameEn}</div>
+          <div class="version">${plugin.version}</div>
+        </div>
+      </div>
+      <div class="plugin-desc">${lang === 'zh' ? plugin.desc : plugin.descEn}</div>
+      <div class="plugin-toggle">
+        <div></div>
+        <div class="toggle-switch ${plugin.enabled ? 'enabled' : ''}" data-plugin-toggle="${plugin.name}"></div>
+      </div>
+    </div>
+  `).join('');
+  
+  // Re-bind toggle events
+  document.querySelectorAll('[data-plugin-toggle]').forEach(toggle => {
+    toggle.addEventListener('click', () => {
+      toggle.classList.toggle('enabled');
+      const name = toggle.dataset.pluginToggle;
+      const plugin = pluginsData.find(p => p.name === name);
+      if (plugin) plugin.enabled = !plugin.enabled;
+    });
+  });
+}
+
+function renderAgents() {
+  const grid = document.getElementById('agents-grid');
+  const lang = currentLang;
+  
+  grid.innerHTML = agentsData.map(agent => `
+    <div class="agent-card">
+      <div class="agent-header">
+        <div class="agent-avatar" style="background: ${agent.bg}; color: ${agent.color};">${agent.avatar}</div>
+        <div class="agent-info">
+          <div class="name">${lang === 'zh' ? agent.name : agent.nameEn}</div>
+          <div class="status">
+            <div class="status-dot ${agent.status}"></div>
+            ${lang === 'zh' ? agent.statusText : agent.statusTextEn}
+          </div>
+        </div>
+      </div>
+      <div class="agent-stats">
+        <div class="stat">
+          <div class="value">${agent.tasks}</div>
+          <div class="label">${lang === 'zh' ? '任务数' : 'Tasks'}</div>
+        </div>
+        <div class="stat">
+          <div class="value">${agent.uptime}</div>
+          <div class="label">${lang === 'zh' ? '运行时长' : 'Uptime'}</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderTasks() {
+  const list = document.getElementById('tasks-list');
+  const lang = currentLang;
+  
+  list.innerHTML = tasksData.map(task => `
+    <div class="task-item">
+      <div class="task-icon" style="background: var(--tianqing-8); color: var(--tianqing-5);">${task.icon}</div>
+      <div class="task-info">
+        <div class="task-name">${lang === 'zh' ? task.name : task.nameEn}</div>
+        <div class="task-time">${task.time}</div>
+      </div>
+      <div class="task-badge ${task.badge}">${lang === 'zh' ? task.badgeText : task.badgeTextEn}</div>
+    </div>
+  `).join('');
+}
+
+function renderServices() {
+  const list = document.getElementById('services-list');
+  const lang = currentLang;
+  
+  list.innerHTML = servicesData.map(service => `
+    <li class="recent-item">
+      <div class="dot" style="background: ${service.status === 'running' ? 'var(--zhuhuang-4)' : 'var(--hupo-4)'};"></div>
+      <div class="content">
+        <div class="text">${lang === 'zh' ? service.nameText : service.nameTextEn}</div>
+        <div class="time">${service.nameEn} - ${service.status === 'running' ? (lang === 'zh' ? '运行中' : 'Running') : (lang === 'zh' ? '空闲' : 'Idle')}</div>
+      </div>
+    </li>
+  `).join('');
+}
+
+// ==================== 事件绑定 ====================
+function setupEventListeners() {
+  // 左侧导航 - 子菜单展开/收起
+  document.querySelectorAll('.nav-item > .nav-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      const navItem = link.parentElement;
+      const submenu = navItem.querySelector('.nav-submenu');
+      if (submenu) {
+        e.preventDefault();
+        navItem.classList.toggle('expanded');
+        submenu.classList.toggle('show');
+      }
+    });
+  });
+
+  // 左侧导航 - 页面切换
+  document.querySelectorAll('[data-nav]').forEach(link => {
+    link.addEventListener('click', () => {
+      const page = link.parentElement.dataset.page;
+      if (page) switchPage(page);
+    });
+  });
+
+  // 子菜单项点击
+  document.querySelectorAll('[data-sub]').forEach(link => {
+    link.addEventListener('click', () => {
+      const sub = link.dataset.sub;
+      const page = link.closest('.nav-item').dataset.page;
+      currentSub = sub;
+      
+      // Update active state for submenu
+      link.closest('.nav-submenu').querySelectorAll('[data-sub]').forEach(l => l.classList.remove('active'));
+      link.classList.add('active');
+      
+      // Switch page if different
+      if (page && page !== currentPage) switchPage(page);
+      
+      // Update breadcrumb
+      updateBreadcrumb(page, sub);
+    });
+  });
+
+  // 语言切换
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchLanguage(btn.dataset.lang));
+  });
+
+  // 设置页导航
+  document.querySelectorAll('[data-settings]').forEach(item => {
+    item.addEventListener('click', () => {
+      const panel = item.dataset.settings;
+      document.querySelectorAll('[data-settings]').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      
+      document.querySelectorAll('.settings-panel').forEach(p => p.style.display = 'none');
+      const panelEl = document.getElementById('settings-panel-' + panel);
+      if (panelEl) panelEl.style.display = 'block';
+    });
+  });
+
+  // 设置页语言选择
+  document.querySelectorAll('[data-lang-select]').forEach(item => {
+    item.addEventListener('click', () => {
+      const lang = item.dataset.langSelect;
+      document.querySelectorAll('[data-lang-select]').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      switchLanguage(lang);
+    });
+  });
+
+  // 技能搜索
+  document.getElementById('skill-search').addEventListener('input', (e) => {
+    const filter = document.querySelector('.filter-tab.active').dataset.filter;
+    renderSkills(filter);
+  });
+
+  // 技能筛选
+  document.querySelectorAll('.filter-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      renderSkills(tab.dataset.filter);
+    });
+  });
+
+  // 插件筛选
+  document.querySelectorAll('[data-toggle]').forEach(btn => {
+    if (btn.classList.contains('toggle-btn')) {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-toggle]').forEach(b => {
+          if (b.classList.contains('toggle-btn')) b.classList.remove('active');
+        });
+        btn.classList.add('active');
+        renderPlugins(btn.dataset.toggle);
+      });
+    }
+  });
+
+  // 快捷操作
+  document.querySelectorAll('[data-action]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const action = btn.dataset.action;
+      if (action === 'new-skill') switchPage('skills');
+      else if (action === 'install-plugin') switchPage('plugins');
+    });
+  });
+
+  // 设置页通知开关
+  document.querySelectorAll('[data-toggle="notifications"]').forEach(toggle => {
+    toggle.addEventListener('click', () => {
+      toggle.classList.toggle('enabled');
+    });
+  });
+
+  // 主题切换
+  document.querySelectorAll('[data-theme]').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('[data-theme]').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+    });
+  });
+}
+
+// ==================== 页面切换 ====================
+function switchPage(page) {
+  currentPage = page;
+  
+  // Hide all pages
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  
+  // Show target page
+  const pageEl = document.getElementById('page-' + page);
+  if (pageEl) pageEl.classList.add('active');
+  
+  // Update nav active state
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  const navLink = document.querySelector(`[data-nav="${page}"]`);
+  if (navLink) {
+    navLink.classList.add('active');
+  }
+  
+  // Update breadcrumb
+  updateBreadcrumb(page, currentSub);
+  
+  // Re-render dynamic content
+  if (page === 'skills') renderSkills();
+  if (page === 'plugins') renderPlugins();
+  if (page === 'agents') { renderAgents(); renderTasks(); }
+  if (page === 'status') renderServices();
+}
+
+// ==================== 面包屑更新 ====================
+function updateBreadcrumb(page, sub) {
+  const el = document.getElementById('breadcrumb-current');
+  const pageNames = {
+    overview: { zh: '总览', en: 'Overview' },
+    skills: { zh: '技能中心', en: 'Skills' },
+    plugins: { zh: '插件', en: 'Plugins' },
+    agents: { zh: '智能体', en: 'Agents' },
+    settings: { zh: '设置', en: 'Settings' },
+    status: { zh: '状态', en: 'Status' },
+  };
+  
+  let text = pageNames[page]?.[currentLang] || pageNames[overview]?.[currentLang] || 'Overview';
+  
+  if (sub && page === 'overview') {
+    const subNames = {
+      system: { zh: '系统状态', en: 'System Status' },
+      dashboard: { zh: '仪表盘', en: 'Dashboard' },
+      quick: { zh: '快速操作', en: 'Quick Actions' },
+    };
+    text = subNames[sub]?.[currentLang] || text;
+  }
+  
+  el.innerHTML = `<span class="i18n-zh">${text}</span><span class="i18n-en">${text}</span>`;
+  el.setAttribute('data-i18n', `nav.${sub || page}`);
+}
+
+// ==================== 语言切换 ====================
+function switchLanguage(lang) {
+  currentLang = lang;
+  
+  document.body.classList.toggle('zh', lang === 'zh');
+  document.body.classList.toggle('en', lang === 'en');
+  
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === lang);
+  });
+  
+  // Update lang selection in settings
+  document.querySelectorAll('[data-lang-select]').forEach(item => {
+    item.classList.toggle('active', item.dataset.langSelect === lang);
+  });
+  
+  // Re-render all dynamic content
+  renderSkills(document.querySelector('.filter-tab.active')?.dataset.filter || 'all');
+  renderPlugins(document.querySelector('.toggle-btn.active')?.dataset.toggle || 'all');
+  renderAgents();
+  renderTasks();
+  renderServices();
+  updateBreadcrumb(currentPage, currentSub);
+}
+
+// ==================== 启动 ====================
+document.addEventListener('DOMContentLoaded', init);
+</script>
+
+</body>
+</html>

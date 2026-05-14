@@ -1,16 +1,16 @@
 {
-  "name": "hydraflow-ai",
+  "name": "qingyueyinxiang",
   "version": "1.1.0",
-  "description": "九头蛇生成式工作流平台 - HydraFlow AI",
+  "description": "清新淡雅，悦己，给时间留下点印象。",
   "main": "lib/index.js",
   "bin": {
-    "hydraflow": "bin/hydraflow.js"
+    "qingyueyinxiang": "bin/qingyueyinxiang.js"
   },
   "scripts": {
     "postinstall": "node scripts/postinstall.js",
-    "start": "hydraflow api",
-    "dev": "hydraflow dev",
-    "check": "hydraflow check"
+    "start": "qingyueyinxiang api",
+    "dev": "qingyueyinxiang dev",
+    "check": "qingyueyinxiang check"
   },
   "keywords": [
     "ai",
@@ -18,9 +18,9 @@
     "image-generation",
     "stable-diffusion",
     "llm",
-    "hydraflow"
+    "qingyueyinxiang"
   ],
-  "author": "HydraFlow AI",
+  "author": "清悦印象",
   "license": "MIT",
   "dependencies": {
     "chalk": "^4.1.2",

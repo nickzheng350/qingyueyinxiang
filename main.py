@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""HydraFlow AI - 主入口文件"""
+"""清悦印象 - 主入口文件"""
 
 import argparse
 import sys
@@ -17,7 +17,7 @@ def setup_logging(level: str = "INFO") -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="HydraFlow AI - 九头蛇生成式工作流平台")
+    parser = argparse.ArgumentParser(description="清悦印象 - 九头蛇生成式工作流平台")
     subparsers = parser.add_subparsers(title="命令", dest="command")
 
     api_parser = subparsers.add_parser("api", help="启动 API 服务")
@@ -37,8 +37,8 @@ def main() -> None:
 
     if args.command == "api":
         setup_logging(args.log_level)
-        logger = logging.getLogger("hydraflow")
-        logger.info(f"启动 HydraFlow AI API 服务: {args.host}:{args.port}")
+        logger = logging.getLogger("清悦印象")
+        logger.info(f"启动 清悦印象 API 服务: {args.host}:{args.port}")
 
         import uvicorn
 
@@ -56,7 +56,7 @@ def main() -> None:
 
     elif args.command == "diagnose":
         setup_logging("DEBUG")
-        print("=== HydraFlow AI 系统诊断 ===")
+        print("=== 清悦印象 系统诊断 ===")
         print()
 
         from src.core.config import get_config
@@ -127,7 +127,7 @@ def main() -> None:
 
     elif args.command == "repair":
         setup_logging("INFO")
-        print("=== HydraFlow AI 自我修复 ===")
+        print("=== 清悦印象 自我修复 ===")
         print()
 
         import os
