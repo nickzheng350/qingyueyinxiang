@@ -6,8 +6,8 @@
         <div class="card-subtitle">{{ lang === 'zh' ? '管理AI模型和API设置' : 'Manage AI models and API settings' }}</div>
       </div>
       <div style="display: flex; gap: 0.5rem;">
-        <button class="btn-primary" @click="showAddModelDialog = true">➕ {{ lang === 'zh' ? '添加模型' : 'Add Model' }}</button>
-        <button class="btn-secondary" @click="fetchModels">🔄 {{ lang === 'zh' ? '刷新' : 'Refresh' }}</button>
+        <button class="btn btn-primary" @click="showAddModelDialog = true">➕ {{ lang === 'zh' ? '添加模型' : 'Add Model' }}</button>
+        <button class="btn btn-secondary" @click="fetchModels">🔄 {{ lang === 'zh' ? '刷新' : 'Refresh' }}</button>
       </div>
     </div>
 
