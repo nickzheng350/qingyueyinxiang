@@ -35,78 +35,120 @@
     <main class="dialogue-main glass-card">
       <!-- 顶部Tab栏 -->
       <div class="module-tabs">
-        <div class="module-tab active">
+        <div 
+          class="module-tab" 
+          :class="{ active: activeTab === 'chat' }"
+          @click="switchTab('chat')"
+        >
           <span>💬</span>
           <span>{{ lang === 'zh' ? '对话' : 'Chat' }}</span>
         </div>
-        <div class="module-tab">
+        <div 
+          class="module-tab" 
+          :class="{ active: activeTab === 'history' }"
+          @click="switchTab('history')"
+        >
           <span>📜</span>
           <span>{{ lang === 'zh' ? '历史记录' : 'History' }}</span>
         </div>
       </div>
 
-      <!-- 欢迎状态 -->
-      <div v-if="!currentDialogue" class="welcome-state">
-        <div class="welcome-icon">✨</div>
-        <h2>{{ lang === 'zh' ? '欢迎使用清悦印象' : 'Welcome to QingYue YinXiang' }}</h2>
-        <p>{{ lang === 'zh' ? '选择对话或创建新对话开始' : 'Select a dialogue or create a new one to start' }}</p>
-        <button class="start-btn" @click="createNewDialogue">
-          <span>🚀</span>
-          {{ lang === 'zh' ? '开始新对话' : 'Start New Chat' }}
-        </button>
-      </div>
+      <!-- 对话Tab内容 -->
+      <div v-if="activeTab === 'chat'">
+        <!-- 欢迎状态 -->
+        <div v-if="!dialogueStore.currentDialogue" class="welcome-state">
+          <div class="welcome-icon">✨</div>
+          <h2>{{ lang === 'zh' ? '欢迎使用清悦印象' : 'Welcome to QingYue YinXiang' }}</h2>
+          <p>{{ lang === 'zh' ? '选择对话或创建新对话开始' : 'Select a dialogue or create a new one to start' }}</p>
+          <button class="start-btn" @click="createNewDialogue">
+            <span>🚀</span>
+            {{ lang === 'zh' ? '开始新对话' : 'Start New Chat' }}
+          </button>
+        </div>
 
-      <!-- 对话区域 -->
-      <div v-else class="chat-area">
-        <div class="messages-container">
-          <div
-            v-for="(msg, idx) in currentDialogue.messages"
-            :key="idx"
-            class="message"
-            :class="msg.role"
-          >
-            <div class="message-avatar">{{ getAvatar(msg.role) }}</div>
-            <div class="message-bubble">
-              <div class="message-role">{{ getRoleLabel(msg.role) }}</div>
-              <div class="message-text">{{ msg.content }}</div>
-              <div class="message-time">{{ formatTime(msg.timestamp) }}</div>
+        <!-- 对话区域 -->
+        <div v-else class="chat-area">
+          <div class="messages-container">
+            <div
+              v-for="(msg, idx) in dialogueStore.currentDialogue?.messages || []"
+              :key="msg.id || idx"
+              class="message"
+              :class="msg.role"
+            >
+              <div class="message-avatar">{{ getAvatar(msg.role) }}</div>
+              <div class="message-bubble">
+                <div class="message-role">{{ getRoleLabel(msg.role) }}</div>
+                <div class="message-text">{{ msg.content }}</div>
+                <div class="message-time">{{ formatTime(msg.timestamp) }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 输入区域 -->
+          <div class="input-area">
+            <!-- 功能开关 -->
+            <div class="feature-tags">
+              <span class="tag" :class="{ active: smartRouting }" @click="smartRouting = !smartRouting">
+                🔀 {{ lang === 'zh' ? '智能路由' : 'Smart' }}
+              </span>
+              <span class="tag" :class="{ active: contextEnabled }" @click="contextEnabled = !contextEnabled">
+                📎 {{ lang === 'zh' ? '上下文' : 'Context' }}
+              </span>
+              <span class="tag" :class="{ active: processInsert }" @click="processInsert = !processInsert">
+                ⚙️ {{ lang === 'zh' ? '进程' : 'Process' }}
+              </span>
+            </div>
+
+            <!-- 输入框 -->
+            <div class="input-row">
+              <div class="input-wrapper">
+                <textarea
+                  v-model="inputText"
+                  class="input-box"
+                  :placeholder="lang === 'zh' ? '输入消息...' : 'Type a message...'"
+                  @keydown.enter.exact.prevent="sendMessage"
+                  rows="1"
+                ></textarea>
+              </div>
+              <button class="voice-btn" @click="toggleVoice" :class="{ recording: isRecording }">
+                <span v-if="isRecording">⏹️</span>
+                <span v-else>🎤</span>
+              </button>
+              <button class="send-btn" @click="sendMessage" :disabled="!inputText.trim()">
+                <span>➤</span>
+              </button>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- 输入区域 -->
-        <div class="input-area">
-          <!-- 功能开关 -->
-          <div class="feature-tags">
-            <span class="tag" :class="{ active: smartRouting }" @click="smartRouting = !smartRouting">
-              🔀 {{ lang === 'zh' ? '智能路由' : 'Smart' }}
-            </span>
-            <span class="tag" :class="{ active: contextEnabled }" @click="contextEnabled = !contextEnabled">
-              📎 {{ lang === 'zh' ? '上下文' : 'Context' }}
-            </span>
-            <span class="tag" :class="{ active: processInsert }" @click="processInsert = !processInsert">
-              ⚙️ {{ lang === 'zh' ? '进程' : 'Process' }}
-            </span>
+      <!-- 历史记录Tab内容 -->
+      <div v-if="activeTab === 'history'">
+        <div class="history-area">
+          <div class="history-header">
+            <h3>{{ lang === 'zh' ? '对话历史记录' : 'Dialogue History' }}</h3>
           </div>
-
-          <!-- 输入框 -->
-          <div class="input-row">
-            <div class="input-wrapper">
-              <textarea
-                v-model="inputText"
-                class="input-box"
-                :placeholder="lang === 'zh' ? '输入消息...' : 'Type a message...'"
-                @keydown.enter.exact.prevent="sendMessage"
-                rows="1"
-              />
+          <div class="history-list">
+            <div
+              v-for="dialogue in optimizedDialogues"
+              :key="dialogue.id"
+              class="history-item"
+              @click="selectDialogue(dialogue.id)"
+            >
+              <div class="history-icon">📋</div>
+              <div class="history-info">
+                <div class="history-title">{{ dialogue.title }}</div>
+                <div class="history-meta">
+                  <span>{{ dialogue.messages.length }} {{ lang === 'zh' ? '条消息' : 'messages' }}</span>
+                  <span>{{ shouldOptimizeFormatting ? dialogue.formattedTime : formatTime(dialogue.updatedAt) }}</span>
+                </div>
+              </div>
+              <div class="history-preview">{{ dialogue.messages[0]?.content.slice(0, 30) }}...</div>
             </div>
-            <button class="voice-btn" @click="toggleVoice" :class="{ recording: isRecording }">
-              <span v-if="isRecording">⏹️</span>
-              <span v-else>🎤</span>
-            </button>
-            <button class="send-btn" @click="sendMessage" :disabled="!inputText.trim()">
-              <span>➤</span>
-            </button>
+            <div v-if="dialogueStore.dialogues.length === 0" class="empty-history">
+              <span>📭</span>
+              <p>{{ lang === 'zh' ? '暂无历史记录' : 'No history yet' }}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -115,13 +157,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useDialogueStore } from '@/stores/dialogueStore'
 import { useThemeStore } from '@/stores/theme'
 import { storeToRefs } from 'pinia'
 
 const dialogueStore = useDialogueStore()
 const themeStore = useThemeStore()
+const router = useRouter()
+const route = useRoute()
 const { dialogues, currentDialogue } = storeToRefs(dialogueStore)
 const { language: lang } = storeToRefs(themeStore)
 
@@ -130,6 +175,57 @@ const isRecording = ref(false)
 const smartRouting = ref(true)
 const contextEnabled = ref(true)
 const processInsert = ref(false)
+// 根据当前路由初始化 activeTab
+const activeTab = ref<'chat' | 'history'>('chat')
+// 标志位：防止路由监听覆盖手动设置
+const isManualTabChange = ref(false)
+// 防抖标志：防止快速连续点击
+const isSelecting = ref(false)
+
+// 性能监控：数据量超过阈值时自动优化
+const shouldOptimizeFormatting = computed(() => {
+  const count = dialogueStore.dialogues.length
+  // 当数据量超过 100 条时启用优化
+  if (count > 100) {
+    console.warn(`[Performance] Dialogue count exceeds 100 (${count}), automatic optimization enabled`)
+  }
+  return count > 100
+})
+
+// 优化后的对话列表，缓存格式化时间
+const optimizedDialogues = computed(() => {
+  if (!shouldOptimizeFormatting.value) {
+    return dialogueStore.dialogues
+  }
+  return dialogueStore.dialogues.map(dialogue => ({
+    ...dialogue,
+    formattedTime: formatTime(dialogue.updatedAt)
+  }))
+})
+
+// 初始化 activeTab
+function updateActiveTabFromRoute() {
+  const shouldBeHistory = route.path.includes('history')
+  activeTab.value = shouldBeHistory ? 'history' : 'chat'
+}
+
+// 根据路由自动切换Tab
+watch(() => route.path, (newPath) => {
+  if (!isManualTabChange.value) {
+    updateActiveTabFromRoute()
+  } else {
+    isManualTabChange.value = false
+  }
+}, { immediate: true })
+
+function switchTab(tab: 'chat' | 'history') {
+  activeTab.value = tab
+  if (tab === 'chat') {
+    router.push('/dialogue')
+  } else {
+    router.push('/dialogue/history')
+  }
+}
 
 function getAvatar(role: string) {
   const avatars: Record<string, string> = {
@@ -166,7 +262,26 @@ function createNewDialogue() {
 }
 
 function selectDialogue(id: string) {
+  // 防止快速连续点击
+  if (isSelecting.value) return
+  isSelecting.value = true
+  
+  // 设置标志位，防止路由监听覆盖手动设置
+  isManualTabChange.value = true
+  
+  // 切换到聊天视图
+  activeTab.value = 'chat'
+  
+  // 选择对话
   dialogueStore.selectDialogue(id)
+  
+  // 跳转到对话路由
+  router.replace({ name: 'Dialogue' })
+  
+  // 重置防抖标志
+  setTimeout(() => {
+    isSelecting.value = false
+  }, 300)
 }
 
 function deleteDialogue(id: string) {
@@ -193,8 +308,8 @@ function toggleVoice() {
   isRecording.value = !isRecording.value
 }
 
-onMounted(() => {
-  dialogueStore.fetchDialogues()
+onMounted(async () => {
+  await dialogueStore.fetchDialogues()
 })
 </script>
 

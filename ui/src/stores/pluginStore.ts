@@ -31,15 +31,15 @@ export const usePluginStore = defineStore('plugin', () => {
   const activeTab = ref<'enabled' | 'disabled' | 'mcp'>('enabled')
 
   const mockEnabledPlugins: Plugin[] = [
-    { id: 'p1', name: '代码执行', nameEn: 'Code Execution', description: '安全执行Python/JS代码片段', version: '1.2.0', author: 'HydraFlow Team', enabled: true, dependencies: [], category: 'core', installedAt: new Date().toISOString() },
-    { id: 'p2', name: '文件处理', nameEn: 'File Processing', description: '文件的读取、写入、压缩、解压', version: '1.1.5', author: 'HydraFlow Team', enabled: true, dependencies: ['p1'], category: 'core', installedAt: new Date().toISOString() },
-    { id: 'p3', name: '网页搜索', nameEn: 'Web Search', description: '搜索互联网内容', version: '2.0.0', author: 'HydraFlow Team', enabled: true, dependencies: [], category: 'web', installedAt: new Date(Date.now() - 86400000).toISOString() },
-    { id: 'p4', name: '图像处理', nameEn: 'Image Processing', description: '图像识别、生成、编辑', version: '1.5.0', author: 'HydraFlow Team', enabled: true, dependencies: ['p2'], category: 'ai', installedAt: new Date(Date.now() - 172800000).toISOString() },
+    { id: 'p1', name: '代码执行', nameEn: 'Code Execution', description: '安全执行Python/JS代码片段', version: '1.2.0', author: '清悦印象团队', enabled: true, dependencies: [], category: 'core', installedAt: new Date().toISOString() },
+    { id: 'p2', name: '文件处理', nameEn: 'File Processing', description: '文件的读取、写入、压缩、解压', version: '1.1.5', author: '清悦印象团队', enabled: true, dependencies: ['p1'], category: 'core', installedAt: new Date().toISOString() },
+    { id: 'p3', name: '网页搜索', nameEn: 'Web Search', description: '搜索互联网内容', version: '2.0.0', author: '清悦印象团队', enabled: true, dependencies: [], category: 'web', installedAt: new Date(Date.now() - 86400000).toISOString() },
+    { id: 'p4', name: '图像处理', nameEn: 'Image Processing', description: '图像识别、生成、编辑', version: '1.5.0', author: '清悦印象团队', enabled: true, dependencies: ['p2'], category: 'ai', installedAt: new Date(Date.now() - 172800000).toISOString() },
   ]
 
   const mockDisabledPlugins: Plugin[] = [
-    { id: 'p5', name: '视频处理', nameEn: 'Video Processing', description: '视频剪辑、转码、特效', version: '1.0.0', author: 'HydraFlow Team', enabled: false, dependencies: ['p4'], category: 'media', installedAt: new Date(Date.now() - 259200000).toISOString() },
-    { id: 'p6', name: '音频处理', nameEn: 'Audio Processing', description: '音频剪辑、转码、分析', version: '1.0.0', author: 'HydraFlow Team', enabled: false, dependencies: [], category: 'media', installedAt: new Date(Date.now() - 259200000).toISOString() },
+    { id: 'p5', name: '视频处理', nameEn: 'Video Processing', description: '视频剪辑、转码、特效', version: '1.0.0', author: '清悦印象团队', enabled: false, dependencies: ['p4'], category: 'media', installedAt: new Date(Date.now() - 259200000).toISOString() },
+    { id: 'p6', name: '音频处理', nameEn: 'Audio Processing', description: '音频剪辑、转码、分析', version: '1.0.0', author: '清悦印象团队', enabled: false, dependencies: [], category: 'media', installedAt: new Date(Date.now() - 259200000).toISOString() },
     { id: 'p7', name: '数据可视化', nameEn: 'Data Visualization', description: '图表生成、数据看板', version: '0.9.0', author: 'Community', enabled: false, dependencies: ['p1', 'p2'], category: 'analytics', installedAt: new Date(Date.now() - 345600000).toISOString() },
   ]
 

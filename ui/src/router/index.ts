@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 
 const routes: RouteRecordRaw[] = [
@@ -8,6 +8,7 @@ const routes: RouteRecordRaw[] = [
     children: [
       // 顶部Tab 1: 对话
       { path: 'dialogue', name: 'Dialogue', component: () => import('@/views/DialogueView.vue') },
+      { path: 'dialogue/history', name: 'DialogueHistory', component: () => import('@/views/DialogueView.vue') },
       // 顶部Tab 2: 记忆
       { path: 'memory', name: 'Memory', component: () => import('@/views/MemoryView.vue') },
       // 顶部Tab 3: 技能
@@ -32,12 +33,13 @@ const routes: RouteRecordRaw[] = [
       { path: 'api', name: 'Api', component: () => import('@/views/ApiView.vue') },
       { path: 'system', name: 'System', component: () => import('@/views/SystemView.vue') },
       { path: 'buttons', name: 'Buttons', component: () => import('@/views/ButtonTestView.vue') },
+      { path: 'wasm-test', name: 'WasmTest', component: () => import('@/views/WasmTestView.vue') },
     ]
   }
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory(),
   routes,
 })
 

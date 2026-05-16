@@ -1,5 +1,7 @@
 """API 路由定义"""
 
+import os
+import logging
 from typing import Optional, get_type_hints
 
 try:
@@ -40,6 +42,7 @@ from src.intent_parser.factory import IntentParserFactory
 from src.prompt_engine.engine import PromptEngine
 from src.model_dispatcher.dispatcher import ModelDispatcher
 from src.skills.skill_manager import SkillManager
+from src.core.exceptions import SkillNotFoundError
 from src.core.config import get_config
 from src.core.stability import get_stability_manager
 from src.task_engine import get_task_executor, TaskType
@@ -359,8 +362,8 @@ async def system_info():
     dispatcher = ModelDispatcher()
     skill_manager = SkillManager()
     return {
-        "version": "1.1.0",
-        "name": "HydraFlow AI",
+        "version": "2.0.0",
+        "name": "清悦印象 AI",
         "health_score": stability.get_health_score(),
         "error_statistics": stability.get_error_statistics(),
         "models": dispatcher.get_statistics(),
@@ -538,6 +541,126 @@ async def get_skill(skill_id: str):
         return skill
     except (ValueError, FileNotFoundError, KeyError) as e:
         raise HTTPException(status_code=404, detail=f"技能未找到：{skill_id}")
+
+
+@api_router.get("/skills/{skill_id}/download")
+async def download_skill(skill_id: str):
+    """下载技能包（返回ZIP文件）"""
+    skill_manager = SkillManager()
+    config = get_config()
+    
+    try:
+        # 先检查是否已安装
+        try:
+            skill = skill_manager.get_skill(skill_id)
+            # 如果已安装，打包技能目录
+            skill_path = Path(skill.get("path"))
+            if skill_path.exists() and skill_path.is_dir():
+                import zipfile
+                import io
+                
+                # 创建内存中的ZIP文件
+                zip_buffer = io.BytesIO()
+                with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                    for root, dirs, files in os.walk(skill_path):
+                        for file in files:
+                            file_path = Path(root) / file
+                            arcname = file_path.relative_to(skill_path)
+                            zipf.write(file_path, arcname)
+                
+                zip_buffer.seek(0)
+                
+                from fastapi.responses import StreamingResponse
+                return StreamingResponse(
+                    iter([zip_buffer.getvalue()]),
+                    media_type="application/zip",
+                    headers={
+                        "Content-Disposition": f"attachment; filename={skill_id}.zip",
+                        "Content-Type": "application/zip"
+                    }
+                )
+            else:
+                raise HTTPException(status_code=404, detail=f"技能文件不存在")
+        except SkillNotFoundError:
+            # 技能未安装，从市场搜索
+            market_skills = skill_manager.search_market_skills(query=skill_id)
+            if not market_skills:
+                raise HTTPException(status_code=404, detail=f"技能 {skill_id} 未找到")
+            
+            market_skill = market_skills[0]
+            if market_skill.get("url"):
+                # 从URL下载
+                import httpx
+                response = httpx.get(market_skill["url"], follow_redirects=True, timeout=60)
+                response.raise_for_status()
+                
+                from fastapi.responses import StreamingResponse
+                return StreamingResponse(
+                    iter([response.content]),
+                    media_type="application/zip",
+                    headers={
+                        "Content-Disposition": f"attachment; filename={skill_id}.zip",
+                        "Content-Type": "application/zip"
+                    }
+                )
+            else:
+                raise HTTPException(status_code=400, detail=f"技能 {skill_id} 没有下载URL")
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"下载失败: {str(e)}")
+
+
+@api_router.post("/skills/{skill_id}/install")
+async def install_skill_from_market(skill_id: str):
+    """从市场安装技能"""
+    logger = logging.getLogger("hydraflow.api")
+    logger.info(f"=== API: 开始安装技能 ===")
+    logger.info(f"技能ID: {skill_id}")
+    
+    skill_manager = SkillManager()
+    
+    try:
+        # 检查是否已安装
+        logger.info(f"检查技能是否已安装...")
+        try:
+            skill = skill_manager.get_skill(skill_id)
+            logger.info(f"技能 {skill_id} 已安装，跳过安装")
+            return {"status": "success", "message": f"技能 {skill_id} 已安装"}
+        except SkillNotFoundError:
+            logger.info(f"技能 {skill_id} 未安装，继续安装流程")
+        
+        # 从市场搜索技能
+        logger.info(f"从市场搜索技能: {skill_id}")
+        market_skills = skill_manager.search_market_skills(query=skill_id)
+        if not market_skills:
+            logger.error(f"技能 {skill_id} 在市场中未找到")
+            raise HTTPException(status_code=404, detail=f"技能 {skill_id} 在市场中未找到")
+        
+        market_skill = market_skills[0]
+        logger.info(f"找到市场技能: {market_skill.get('name')}")
+        
+        if not market_skill.get("url"):
+            logger.error(f"技能 {skill_id} 没有下载URL")
+            raise HTTPException(status_code=400, detail=f"技能 {skill_id} 没有下载URL")
+        
+        logger.info(f"下载URL: {market_skill.get('url')}")
+        
+        # 使用 URL 安装
+        logger.info(f"开始从URL安装...")
+        result = skill_manager.install_skill_from_url(market_skill["url"], "downloaded")
+        
+        if result["status"] == "error":
+            logger.error(f"安装失败: {result['message']}")
+            raise HTTPException(status_code=400, detail=result["message"])
+        
+        logger.info(f"安装成功: {result}")
+        return result
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"安装异常: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"安装失败: {str(e)}")
 
 
 # ============ 用户认证端点 ============

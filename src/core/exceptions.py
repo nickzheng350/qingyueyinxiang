@@ -1,4 +1,4 @@
-"""HydraFlow AI 异常模块 - 完整的异常层次结构"""
+"""清悦印象 AI 异常模块 - 完整的异常层次结构"""
 
 from typing import Any, Optional
 from dataclasses import dataclass, field
@@ -28,7 +28,7 @@ class ErrorResponse:
         return result
 
 
-class HydraFlowError(Exception):
+class QingYueYinXiangError(Exception):
     """基础异常 - 所有自定义异常的基类"""
 
     status_code: int = 500
@@ -63,28 +63,28 @@ class HydraFlowError(Exception):
         )
 
 
-class AuthenticationError(HydraFlowError):
+class AuthenticationError(QingYueYinXiangError):
     """认证错误 - 用户身份验证失败"""
     status_code = 401
     error_code = "AUTHENTICATION_ERROR"
     detail = "Authentication failed"
 
 
-class AuthorizationError(HydraFlowError):
+class AuthorizationError(QingYueYinXiangError):
     """授权错误 - 用户权限不足"""
     status_code = 403
     error_code = "AUTHORIZATION_ERROR"
     detail = "Insufficient permissions"
 
 
-class ValidationError(HydraFlowError):
+class ValidationError(QingYueYinXiangError):
     """验证错误 - 输入数据验证失败"""
     status_code = 422
     error_code = "VALIDATION_ERROR"
     detail = "Request validation failed"
 
 
-class NotFoundError(HydraFlowError):
+class NotFoundError(QingYueYinXiangError):
     """未找到错误 - 请求的资源不存在"""
     status_code = 404
     error_code = "NOT_FOUND"
@@ -96,7 +96,7 @@ class ResourceNotFoundError(NotFoundError):
     pass
 
 
-class TaskError(HydraFlowError):
+class TaskError(QingYueYinXiangError):
     """任务错误 - 任务执行相关错误"""
     status_code = 500
     error_code = "TASK_ERROR"
@@ -109,7 +109,7 @@ class TaskNotFoundError(ResourceNotFoundError):
     detail = "Task not found"
 
 
-class ModelError(HydraFlowError):
+class ModelError(QingYueYinXiangError):
     """模型错误 - 模型加载或调用错误"""
     status_code = 500
     error_code = "MODEL_ERROR"
@@ -122,28 +122,28 @@ class ModelNotFoundError(ResourceNotFoundError):
     detail = "Model not found"
 
 
-class StorageError(HydraFlowError):
+class StorageError(QingYueYinXiangError):
     """存储错误 - 文件存储或数据库错误"""
     status_code = 500
     error_code = "STORAGE_ERROR"
     detail = "Storage operation failed"
 
 
-class ConfigurationError(HydraFlowError):
+class ConfigurationError(QingYueYinXiangError):
     """配置错误 - 系统配置问题"""
     status_code = 500
     error_code = "CONFIGURATION_ERROR"
     detail = "Configuration error"
 
 
-class DependencyError(HydraFlowError):
+class DependencyError(QingYueYinXiangError):
     """依赖错误 - 依赖服务或模块问题"""
     status_code = 503
     error_code = "DEPENDENCY_ERROR"
     detail = "Dependency service unavailable"
 
 
-class NetworkError(HydraFlowError):
+class NetworkError(QingYueYinXiangError):
     """网络错误 - 网络请求失败"""
     status_code = 503
     error_code = "NETWORK_ERROR"
@@ -161,21 +161,21 @@ class SkillNotFoundError(ResourceNotFoundError):
     detail = "Skill not found"
 
 
-class IntentParseError(HydraFlowError):
+class IntentParseError(QingYueYinXiangError):
     """意图解析错误 - 解析用户意图失败"""
     status_code = 500
     error_code = "INTENT_PARSE_ERROR"
     detail = "Failed to parse intent"
 
 
-class GenerationError(HydraFlowError):
+class GenerationError(QingYueYinXiangError):
     """生成错误 - 内容生成失败"""
     status_code = 500
     error_code = "GENERATION_ERROR"
     detail = "Content generation failed"
 
 
-class RateLimitError(HydraFlowError):
+class RateLimitError(QingYueYinXiangError):
     """限流错误 - 请求频率超限"""
     status_code = 429
     error_code = "RATE_LIMIT_ERROR"
@@ -194,7 +194,7 @@ class StyleNotFoundError(ResourceNotFoundError):
     detail = "Style not found"
 
 
-class CacheError(HydraFlowError):
+class CacheError(QingYueYinXiangError):
     """缓存错误 - 缓存操作失败"""
     status_code = 500
     error_code = "CACHE_ERROR"

@@ -327,9 +327,13 @@ function addNewModel() {
 
 onMounted(() => {
   try {
+    if (models.value.length === 0) {
+      console.log('[ModelView] No models loaded, triggering fetch...')
+      modelStore.fetchModels()
+    }
     modelStore.fetchModels()
   } catch (e) {
-    console.error('[Model] Error fetching models:', e)
+    console.error('[ModelView] Error in onMounted:', e)
   }
 })
 </script>

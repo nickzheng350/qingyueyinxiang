@@ -1,4 +1,4 @@
-"""HydraFlow AI 配置管理器 - 使用 pydantic-settings"""
+"""清悦印象 AI 配置管理器 - 使用 pydantic-settings"""
 
 import json
 import os

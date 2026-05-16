@@ -252,14 +252,14 @@ export const useThemeStore = defineStore('theme', () => {
     applyTheme(name)
     console.log(`[Theme] ✅ applyTheme completed for: ${name}`)
     
-    localStorage.setItem('hydraflow_theme', name)
-    console.log(`[Theme] 💾 Saved to localStorage: hydraflow_theme = ${name}`)
+    localStorage.setItem('qingyue-yinxiang_theme', name)
+    console.log(`[Theme] 💾 Saved to localStorage: qingyue-yinxiang_theme = ${name}`)
   }
 
   function setLanguage(lang: 'zh' | 'en') {
     console.log(`[Theme] 🌍 setLanguage called: ${lang}`)
     language.value = lang
-    localStorage.setItem('hydraflow_language', lang)
+    localStorage.setItem('qingyue-yinxiang_language', lang)
   }
 
   function applyTheme(name: ThemeName) {
@@ -296,11 +296,11 @@ export const useThemeStore = defineStore('theme', () => {
 
   function init() {
     console.log(`[Theme] 🚀 init() called`)
-    const savedTheme = localStorage.getItem('hydraflow_theme') as ThemeName | null
-    const savedLang = localStorage.getItem('hydraflow_language') as 'zh' | 'en' | null
+    const savedTheme = localStorage.getItem('qingyue-yinxiang_theme') as ThemeName | null
+    const savedLang = localStorage.getItem('qingyue-yinxiang_language') as 'zh' | 'en' | null
     
-    console.log(`[Theme] 📦 localStorage hydraflow_theme = ${savedTheme}`)
-    console.log(`[Theme] 📦 localStorage hydraflow_language = ${savedLang}`)
+    console.log(`[Theme] 📦 localStorage qingyue-yinxiang_theme = ${savedTheme}`)
+    console.log(`[Theme] 📦 localStorage qingyue-yinxiang_language = ${savedLang}`)
     
     if (savedTheme && themes[savedTheme]) {
       console.log(`[Theme] 📂 Loading saved theme: ${savedTheme}`)

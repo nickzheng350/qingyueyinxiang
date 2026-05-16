@@ -52,8 +52,19 @@ function search() {
 }
 
 async function install(skill: any) {
-  skill.installed = true
-  ElMessage.success(`${skill.name} 安装成功`)
+  try {
+    // 调用后端安装接口
+    const response = await client.post(`/skills/${skill.id}/install`)
+    
+    if (response.status === 'success') {
+      skill.installed = true
+      ElMessage.success(response.message || `${skill.name} 安装成功`)
+    } else {
+      ElMessage.error(response.message || `${skill.name} 安装失败`)
+    }
+  } catch (error: any) {
+    ElMessage.error(error.message || `${skill.name} 安装失败`)
+  }
 }
 
 onMounted(fetchMarket)

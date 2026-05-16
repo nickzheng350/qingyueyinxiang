@@ -45,5 +45,7 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['vue', 'vue-router', 'pinia', 'element-plus', 'axios', 'echarts'],
+    exclude: ['@/wasm/skill_engine_bg.wasm']
   },
+  assetsInclude: ['**/*.wasm']
 })

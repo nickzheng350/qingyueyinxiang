@@ -1,10 +1,10 @@
 <template>
   <aside class="sidebar">
     <div class="sidebar-header">
-      <div class="sidebar-logo">H</div>
+      <div class="sidebar-logo">Q</div>
       <div class="sidebar-title-wrapper">
         <div class="sidebar-title">清悦印象</div>
-        <div class="sidebar-subtitle">清新淡雅，悦己，留下印象</div>
+        <div class="sidebar-subtitle">清新淡雅，悦己，给时间留下点印象</div>
       </div>
     </div>
 

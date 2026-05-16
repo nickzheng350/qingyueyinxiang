@@ -3,14 +3,14 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "hydraflow-ai"
-version = "1.1.0"
-description = "九头蛇生成式工作流平台 - 多模态AI工作流编排引擎"
+name = "qingyue-yinxiang-ai"
+version = "2.0.0"
+description = "清悦印象 - 企业级智能工作流引擎"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {file = "LICENSE"}
 authors = [
-    {name = "HydraFlow AI Team", email = "dev@hydraflow.ai"}
+    {name = "清悦印象开发团队"}
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -28,12 +28,11 @@ classifiers = [
 keywords = ["AI", "workflow", "multimodal", "prompt-engineering", "LLM"]
 
 [project.scripts]
-hydraflow = "main:main"
+qingyue-yinxiang = "main:main"
 
 [project.urls]
-"Homepage" = "https://github.com/hydraflow-ai/hydraflow"
-"Documentation" = "https://docs.hydraflow.ai"
-"Issues" = "https://github.com/hydraflow-ai/hydraflow/issues"
+"Homepage" = "https://github.com/qingyue-yinxiang/qingyue-yinxiang-ai"
+"Issues" = "https://github.com/qingyue-yinxiang/qingyue-yinxiang-ai/issues"
 
 [project.optional-dependencies]
 dev = [
@@ -93,7 +92,7 @@ files = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
-addopts = "--cov=src --cov-report=term-missing"
+addopts = "-v"
 
 [tool.flake8]
 max-line-length = 88

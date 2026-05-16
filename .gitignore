@@ -71,6 +71,26 @@ node_modules/
 package-lock.json
 yarn.lock
 
+# Rust build
+*/target/
+Cargo.lock
+
+# gRPC generated files
+grpc-python/skill_pb2.py
+grpc-python/skill_pb2_grpc.py
+grpc-python/*_pb2*.py
+
+# WASM build artifacts
+*.wasm
+!rust-skill-engine/src/*.wasm
+ui/src/wasm/*.wasm
+ui/src/wasm/skill_engine_bg.wasm
+
+# Build outputs
+ui/dist/
+dist/
+build/
+
 # 数据库
 *.db
 *.sqlite

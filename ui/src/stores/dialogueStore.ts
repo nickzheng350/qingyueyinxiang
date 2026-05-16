@@ -65,9 +65,12 @@ export const useDialogueStore = defineStore('dialogue', () => {
   async function fetchDialogues() {
     loading.value = true
     try {
+      // 开发环境直接使用 mock 数据（注释掉下面一行以启用真实 API）
+      throw new Error('Using mock data for development')
       const data = await client.get('/dialogues')
       dialogues.value = data.dialogues || []
-    } catch {
+    } catch (error) {
+      console.log('📦 Using mock data:', error.message)
       dialogues.value = mockDialogues
     } finally {
       loading.value = false

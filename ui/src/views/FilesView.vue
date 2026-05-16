@@ -24,8 +24,8 @@
       <el-table-column prop="time" label="修改时间" width="160" />
       <el-table-column label="操作" width="120">
         <template #default="{ row }">
-          <button class="btn btn-text btn-sm">下载</button>
-          <button class="btn btn-danger btn-sm">删除</button>
+          <button class="btn btn-text btn-sm" @click="downloadFile(row)">下载</button>
+          <button class="btn btn-danger btn-sm" @click="deleteFile(row)">删除</button>
         </template>
       </el-table-column>
     </el-table>
@@ -44,6 +44,8 @@ import { ref } from 'vue'
 const files = ref<any[]>([])
 const uploadVisible = ref(false)
 function fetchFiles() { files.value = [] }
+function downloadFile(row: any) { console.log('下载文件:', row) }
+function deleteFile(row: any) { console.log('删除文件:', row) }
 </script>
 
 <style scoped>

@@ -25,7 +25,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-const form = ref({ name: 'HydraFlow AI', env: 'development', debug: true, port: 8080, workers: 4, logLevel: 'INFO' })
+const form = ref({ name: '清悦印象 AI', env: 'development', debug: true, port: 8080, workers: 4, logLevel: 'INFO' })
 function saveSystemSettings() { console.log('save', form.value) }
 </script>
 

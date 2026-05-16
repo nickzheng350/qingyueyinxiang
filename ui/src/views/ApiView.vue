@@ -55,19 +55,19 @@ async function analyzeAndConnect() {
 }
 
 function saveSettings() {
-  localStorage.setItem('hydraflow_api_settings', JSON.stringify({ apiKey: apiKey.value, apiUrl: apiUrl.value }))
+  localStorage.setItem('qingyue-yinxiang_api_settings', JSON.stringify({ apiKey: apiKey.value, apiUrl: apiUrl.value }))
   statusMessage.value = '✅ 设置已保存'
   statusType.value = 'success'
 }
 
 function loadSettings() {
-  const raw = localStorage.getItem('hydraflow_api_settings')
+  const raw = localStorage.getItem('qingyue-yinxiang_api_settings')
   if (raw) { const s = JSON.parse(raw); apiKey.value = s.apiKey || ''; apiUrl.value = s.apiUrl || 'https://api.openai.com/v1'; statusMessage.value = '✅ 已加载设置' }
   else statusMessage.value = '无可用设置'
   statusType.value = 'success'
 }
 
-function clearSettings() { localStorage.removeItem('hydraflow_api_settings'); apiKey.value = ''; apiUrl.value = 'https://api.openai.com/v1'; analysisResult.value = null; statusMessage.value = '✅ 已清除' }
+function clearSettings() { localStorage.removeItem('qingyue-yinxiang_api_settings'); apiKey.value = ''; apiUrl.value = 'https://api.openai.com/v1'; analysisResult.value = null; statusMessage.value = '✅ 已清除' }
 </script>
 
 <style scoped>

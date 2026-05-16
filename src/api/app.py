@@ -31,7 +31,7 @@ except ImportError:
 
 from src.core.config import get_config
 from src.core.stability import get_stability_manager
-from src.core.exceptions import HydraFlowError, ErrorResponse
+from src.core.exceptions import QingYueYinXiangError, ErrorResponse
 from src.api.api_routes import api_router
 from src.api.routes_plugins import router as plugins_router
 from src.api.security import (
@@ -43,14 +43,14 @@ from src.ws.manager import get_ws_manager
 from src.ws.routes import WebSocketRoutes
 from src.plugins.manager import PluginManager
 
-logger = logging.getLogger("hydraflow.api")
+logger = logging.getLogger("qingyue-yinxiang.api")
 
 _start_time = time.time()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("HydraFlow AI API 服务启动")
+    logger.info("清悦印象 AI API 服务启动")
 
     # 初始化插件系统
     plugin_manager = PluginManager()
@@ -71,7 +71,7 @@ async def lifespan(app: FastAPI):
                 logger.info(f"注册插件端点: {plugin_name}")
 
     yield
-    logger.info("HydraFlow AI API 服务关闭")
+    logger.info("清悦印象 AI API 服务关闭")
 
 
 def create_app() -> FastAPI:
@@ -79,9 +79,9 @@ def create_app() -> FastAPI:
     api_config = {"docs_enabled": config.api.docs_enabled, "cors_origins": config.auth.cors_origins}
 
     app = FastAPI(
-        title="HydraFlow AI",
-        description="九头蛇生成式工作流平台 API",
-        version="1.1.0",
+        title="清悦印象 AI",
+        description="清悦印象 - 企业级智能工作流平台 API",
+        version="2.0.0",
         lifespan=lifespan,
         docs_url="/docs" if api_config.get("docs_enabled", True) else None,
     )
@@ -97,7 +97,7 @@ def create_app() -> FastAPI:
         response.headers["X-Request-ID"] = request_id
         return response
 
-    app.add_exception_handler(HydraFlowError, hydraflow_exception_handler)
+    app.add_exception_handler(QingYueYinXiangError, qingyue_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
     app.add_exception_handler(ValidationError, pydantic_validation_exception_handler)
 
@@ -121,6 +121,7 @@ def create_app() -> FastAPI:
     ws_routes.register_routes(app)
 
     app.mount("/ui", StaticFiles(directory="ui/public", html=True), name="ui")
+    app.mount("/test_skills", StaticFiles(directory="test_skills"), name="test_skills")
 
     @app.get("/")
     async def root():
@@ -131,7 +132,7 @@ def create_app() -> FastAPI:
         stability = get_stability_manager()
         return {
             "status": "healthy",
-            "version": "1.1.0",
+            "version": "2.0.0",
             "uptime": time.time() - _start_time,
             "health_score": stability.get_health_score(),
         }
@@ -139,12 +140,12 @@ def create_app() -> FastAPI:
     return app
 
 
-async def hydraflow_exception_handler(
-    request: Request, exc: HydraFlowError
+async def qingyue_exception_handler(
+    request: Request, exc: QingYueYinXiangError
 ) -> JSONResponse:
     request_id = getattr(request.state, "request_id", None)
     logger.error(
-        f"HydraFlow error: {exc.error_code} - {exc.detail}",
+        f"清悦印象 error: {exc.error_code} - {exc.detail}",
         extra={"request_id": request_id, "path": str(request.url)},
     )
     error_response = exc.to_error_response(request_id)

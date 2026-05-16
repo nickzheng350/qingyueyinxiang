@@ -13,7 +13,7 @@ export const useAuthStore = defineStore('auth', () => {
   const settings = ref<ApiSettings | null>(null)
 
   function loadSettings() {
-    const raw = localStorage.getItem('hydraflow_api_settings')
+    const raw = localStorage.getItem('qingyue-yinxiang_api_settings')
     if (raw) {
       settings.value = JSON.parse(raw)
     }
@@ -21,12 +21,12 @@ export const useAuthStore = defineStore('auth', () => {
 
   function saveSettings(data: ApiSettings) {
     settings.value = data
-    localStorage.setItem('hydraflow_api_settings', JSON.stringify(data))
+    localStorage.setItem('qingyue-yinxiang_api_settings', JSON.stringify(data))
   }
 
   function clearSettings() {
     settings.value = null
-    localStorage.removeItem('hydraflow_api_settings')
+    localStorage.removeItem('qingyue-yinxiang_api_settings')
   }
 
   loadSettings()

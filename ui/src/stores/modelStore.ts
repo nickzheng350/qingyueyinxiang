@@ -61,8 +61,14 @@ export const useModelStore = defineStore('model', () => {
     loading.value = true
     try {
       const data = await client.get('/models')
-      models.value = data.models || []
-    } catch {
+      if (data && data.models && data.models.length > 0) {
+        models.value = data.models
+      } else {
+        console.log('[Model] API returned empty, using mock data')
+        models.value = mockModels
+      }
+    } catch (error) {
+      console.warn('[Model] API fetch failed, using mock data:', error)
       models.value = mockModels
     } finally {
       loading.value = false
