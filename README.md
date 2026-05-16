@@ -1,6 +1,80 @@
-# HydraFlow AI
+# 清悦印象
+
+> 清新淡雅，悦己，给时间留下点印象。
+
 
 **版本**: 2.0.0 | 一个强大的 AI 工作流引擎，支持多模态内容生成、意图解析和技能系统。
+
+---
+
+## 📢 开发声明与邀请
+
+### 关于作者
+
+本人文凭有限，创作这个程序纯属个人爱好，希望各位不要介意使用中碰到的各类问题。想着设计一个基础，也可以开放程序的自由度理念性的改变使用方式和改造。我在努力中，有兴趣的可以加入。
+
+### 开放与自由的理念
+
+清悦印象 从设计之初就秉持**高度自由化**的理念。我们相信：
+
+- **不设限的扩展方式** - 任何人都可以通过插件系统添加自己需要的功能模块
+- **理念性改变** - 不仅仅是代码修改，更是鼓励创新的使用场景和工作流
+- **社区驱动** - 每个人都可以贡献自己的想法、代码和创意
+
+### 🛠️ 模块添加入口
+
+我们提供了完整的插件系统，让管理员和开发者可以轻松添加自定义模块：
+
+#### 方式一：通过 API 管理插件
+
+```bash
+# 列出所有插件
+curl -H "Authorization: Bearer YOUR_TOKEN" http://localhost:8000/api/v1/plugins
+
+# 加载插件
+curl -X POST -H "Authorization: Bearer YOUR_TOKEN" \
+  http://localhost:8000/api/v1/plugins/load/PluginName
+
+# 上传安装插件
+curl -X POST -H "Authorization: Bearer YOUR_TOKEN" \
+  -F "file=@your-plugin.zip" \
+  http://localhost:8000/api/v1/plugins/install/upload
+```
+
+#### 方式二：开发自己的插件
+
+1. 在 `plugins/` 目录创建插件文件夹
+2. 继承 `BasePlugin` 并实现接口
+3. 使用 `@plugin` 装饰器注册
+4. 启动服务自动加载
+
+详细开发指南请查看：[插件开发文档](./docs/PLUGIN_DEVELOPMENT.md)
+
+#### 方式三：使用示例插件
+
+项目包含 `plugins/example_hello/` 示例插件，演示如何：
+- 添加 API 端点
+- 提供 CLI 命令
+- 自定义配置
+- 声明依赖关系
+
+### 🤝 加入我们
+
+无论您是：
+- 🐍 Python 开发者
+- 🎨 创意工作者
+- 📚 文档编写者
+- 💡 有想法的用户
+
+都欢迎加入！您可以：
+- 创建 Issue 分享想法
+- 提交 Pull Request 贡献代码
+- 开发自己的插件模块
+- 改进文档和使用体验
+
+让我们一起把这个基础变得更强大！🚀
+
+---
 
 ## 功能特性
 
@@ -33,16 +107,16 @@
 
 **Linux / macOS:**
 ```bash
-git clone https://github.com/yourusername/hydraflow-ai.git
-cd hydraflow-ai
+git clone https://github.com/yourusername/清悦印象-ai.git
+cd 清悦印象-ai
 chmod +x install.sh
 ./install.sh
 ```
 
 **Windows:**
 ```cmd
-git clone https://github.com/yourusername/hydraflow-ai.git
-cd hydraflow-ai
+git clone https://github.com/yourusername/清悦印象-ai.git
+cd 清悦印象-ai
 install.bat
 ```
 
@@ -50,8 +124,8 @@ install.bat
 
 ```bash
 # 克隆仓库
-git clone https://github.com/yourusername/hydraflow-ai.git
-cd hydraflow-ai
+git clone https://github.com/yourusername/清悦印象-ai.git
+cd 清悦印象-ai
 
 # 创建虚拟环境
 python -m venv .venv
@@ -118,7 +192,7 @@ curl -X POST http://localhost:8000/api/v1/generate \
 ## 项目结构
 
 ```
-hydraflow-ai/
+清悦印象-ai/
 ├── src/              # 核心源代码
 │   ├── api/          # API 路由
 │   ├── intent_parser/ # 意图解析模块

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS变量调试工具</title>
+    <style>
+        :root {
+            --primary: #6A9BD1;
+            --bg-dark: #0F1419;
+            --text-primary: #F1F5F9;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            padding: 20px;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+        }
+
+        .test-card {
+            padding: 20px;
+            background: var(--bg-card, #1A1F2E);
+            border: 1px solid var(--border, #2D3436);
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        .test-btn {
+            padding: 10px 20px;
+            background: var(--primary);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .info {
+            padding: 15px;
+            background: rgba(106, 155, 209, 0.2);
+            border-left: 4px solid var(--primary);
+            margin: 10px 0;
+        }
+
+        .error {
+            padding: 15px;
+            background: rgba(244, 121, 131, 0.2);
+            border-left: 4px solid #F47983;
+            margin: 10px 0;
+        }
+
+        pre {
+            background: #121212;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+
+        #css-vars-display {
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 CSS变量调试工具</h1>
+
+    <div class="test-card">
+        <h3>当前CSS变量值</h3>
+        <div id="css-vars-display">
+            <p>--primary: <span id="var-primary">加载中...</span></p>
+            <p>--bg-dark: <span id="var-bg-dark">加载中...</span></p>
+            <p>--text-primary: <span id="var-text-primary">加载中...</span></p>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h3>测试按钮</h3>
+        <button class="test-btn" onclick="testSetTheme()">测试主题切换</button>
+        <button class="test-btn" onclick="checkComputedStyle()">检查计算样式</button>
+    </div>
+
+    <div class="test-card">
+        <h3>控制台日志</h3>
+        <pre id="log-output">等待操作...</pre>
+    </div>
+
+    <script>
+        function log(message, isError = false) {
+            const output = document.getElementById('log-output');
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = isError ? '❌' : '✅';
+            output.textContent = `${timestamp} ${prefix} ${message}\n` + output.textContent;
+            console.log(`[Debug] ${message}`);
+        }
+
+        function updateDisplay() {
+            const root = document.documentElement;
+            const style = getComputedStyle(root);
+
+            document.getElementById('var-primary').textContent = style.getPropertyValue('--primary') || '(未设置)';
+            document.getElementById('var-bg-dark').textContent = style.getPropertyValue('--bg-dark') || '(未设置)';
+            document.getElementById('var-text-primary').textContent = style.getPropertyValue('--text-primary') || '(未设置)';
+
+            log(`读取到 --primary = ${style.getPropertyValue('--primary')}`);
+        }
+
+        function testSetTheme() {
+            const root = document.documentElement;
+            const themes = {
+                tianqing: { primary: '#6A9BD1', bgDark: '#0F1419', textPrimary: '#F1F5F9' },
+                mujianzi: { primary: '#8B7BA8', bgDark: '#141018', textPrimary: '#F5F0F6' },
+                zhuhuang: { primary: '#789262', bgDark: '#0F140D', textPrimary: '#F0F4EE' },
+                hupo: { primary: '#CA6924', bgDark: '#181008', textPrimary: '#FAF5F0' },
+                qianhongsha: { primary: '#F47983', bgDark: '#180F12', textPrimary: '#FAF0F2' },
+                shuise: { primary: '#7FB3D3', bgDark: '#0D1418', textPrimary: '#EEF5F9' },
+                baimu: { primary: '#E8D5C4', bgDark: '#1A1510', textPrimary: '#FAF5F0' },
+                mogu: { primary: '#4A5568', bgDark: '#0A0A0A', textPrimary: '#E2E8F0' },
+                tanhuang: { primary: '#E6B85C', bgDark: '#181408', textPrimary: '#FAF8F0' },
+            };
+
+            const themeName = prompt('输入主题名称 (tianqing/mujianzi/zhuhuang/hupo/qianhongsha/shuise/baimu/mogu/tanhuang):', 'tianqing');
+            const theme = themes[themeName];
+
+            if (!theme) {
+                log(`未知主题: ${themeName}`, true);
+                return;
+            }
+
+            log(`设置主题: ${themeName}`);
+            log(`--primary: ${theme.primary} -> 设置中...`);
+
+            root.style.setProperty('--primary', theme.primary);
+            root.style.setProperty('--bg-dark', theme.bgDark);
+            root.style.setProperty('--text-primary', theme.textPrimary);
+
+            log(`--primary: ${theme.primary} -> 已设置!`);
+            log(`--bg-dark: ${theme.bgDark} -> 已设置!`);
+            log(`--text-primary: ${theme.textPrimary} -> 已设置!`);
+
+            localStorage.setItem('hydraflow_theme', themeName);
+            log(`已保存到 localStorage: hydraflow_theme = ${themeName}`);
+
+            updateDisplay();
+        }
+
+        function checkComputedStyle() {
+            const root = document.documentElement;
+            const computed = getComputedStyle(root);
+
+            log('--- 计算样式检查 ---');
+            log(`HTML元素内联样式: ${root.getAttribute('style') || '(无)'}`);
+            log(`--primary 计算值: "${computed.getPropertyValue('--primary').trim()}"`);
+            log(`--bg-dark 计算值: "${computed.getPropertyValue('--bg-dark').trim()}"`);
+            log(`body背景: ${getComputedStyle(document.body).background}`);
+
+            updateDisplay();
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            log('页面加载完成，开始检查...');
+            updateDisplay();
+
+            const savedTheme = localStorage.getItem('hydraflow_theme');
+            if (savedTheme) {
+                log(`发现保存的主题: ${savedTheme}`);
+            } else {
+                log('未发现保存的主题，使用默认');
+            }
+        });
+    </script>
+</body>
+</html>

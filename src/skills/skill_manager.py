@@ -4,8 +4,11 @@ import json
 import shutil
 import zipfile
 import logging
+import tempfile
 from pathlib import Path
 from typing import Any
+
+import httpx
 
 from src.core.config import get_config
 from src.core.exceptions import SkillNotFoundError
@@ -35,18 +38,32 @@ class SkillManager:
     def _load_skills(self) -> None:
         if not self._skills_dir.exists():
             return
-        for skill_dir in self._skills_dir.iterdir():
-            if skill_dir.is_dir():
-                manifest = skill_dir / "manifest.json"
+        # Support both flat layout (skills/*/manifest.json) and typed layout (skills/{type}/{skill}/manifest.json)
+        for entry in self._skills_dir.iterdir():
+            if entry.is_dir():
+                # Check if this is a skill directory (has manifest.json directly)
+                manifest = entry / "manifest.json"
                 if manifest.exists():
-                    try:
-                        with open(manifest, "r", encoding="utf-8") as f:
-                            data = json.load(f)
-                        data["type"] = data.get("type", "local")
-                        data["path"] = str(skill_dir)
-                        self._skills[data.get("skill_id", skill_dir.name)] = data
-                    except (json.JSONDecodeError, OSError) as e:
-                        logger.error(f"加载技能失败 {skill_dir}: {e}")
+                    self._load_skill_dir(entry, entry.name)
+                else:
+                    # Assume it's a type directory containing skills
+                    skill_type = entry.name
+                    for skill_dir in entry.iterdir():
+                        if skill_dir.is_dir():
+                            self._load_skill_dir(skill_dir, skill_type)
+
+    def _load_skill_dir(self, skill_dir: Path, skill_type: str) -> None:
+        manifest = skill_dir / "manifest.json"
+        if not manifest.exists():
+            return
+        try:
+            with open(manifest, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            data["type"] = data.get("type", skill_type)
+            data["path"] = str(skill_dir)
+            self._skills[data.get("skill_id", skill_dir.name)] = data
+        except (json.JSONDecodeError, OSError) as e:
+            logger.error(f"加载技能失败 {skill_dir}: {e}")
 
     def list_skills(self) -> list[dict[str, Any]]:
         return list(self._skills.values())
@@ -70,21 +87,36 @@ class SkillManager:
         return {"status": "error", "message": f"不支持的路径类型: {path}"}
 
     def _install_from_zip(self, zip_path: Path, skill_type: str) -> dict[str, Any]:
+        logger.info(f"=== 开始从ZIP安装技能 ===")
+        logger.info(f"ZIP路径: {zip_path}")
+        logger.info(f"技能类型: {skill_type}")
+        
         target_dir = self._skills_dir / skill_type
         target_dir.mkdir(parents=True, exist_ok=True)
+        logger.info(f"目标目录: {target_dir}")
+        
         try:
             with zipfile.ZipFile(zip_path, "r") as zf:
                 skill_name = zip_path.stem
                 extract_dir = target_dir / skill_name
+                logger.info(f"解压到: {extract_dir}")
+                
                 zf.extractall(extract_dir)
+                logger.info(f"解压完成")
+                
                 manifest = extract_dir / "manifest.json"
                 if manifest.exists():
+                    logger.info(f"找到 manifest.json: {manifest}")
                     with open(manifest, "r", encoding="utf-8") as f:
                         data = json.load(f)
+                    logger.info(f"manifest内容: {json.dumps(data, ensure_ascii=False)}")
+                    
                     skill_id = data.get("skill_id", skill_name)
                     data["type"] = skill_type
                     data["path"] = str(extract_dir)
                     self._skills[skill_id] = data
+                    
+                    logger.info(f"技能 {skill_id} 已注册到技能管理器")
                     return {
                         "status": "success",
                         "message": f"技能安装成功: {data.get('name', skill_id)}",
@@ -92,8 +124,11 @@ class SkillManager:
                         "name": data.get("name", skill_id),
                         "path": str(extract_dir),
                     }
-                return {"status": "error", "message": "ZIP 中缺少 manifest.json"}
+                else:
+                    logger.error(f"ZIP 中缺少 manifest.json")
+                    return {"status": "error", "message": "ZIP 中缺少 manifest.json"}
         except (zipfile.BadZipFile, OSError) as e:
+            logger.error(f"解压失败: {e}", exc_info=True)
             return {"status": "error", "message": f"解压失败: {e}"}
 
     def _install_from_directory(self, source_dir: Path, skill_type: str) -> dict[str, Any]:
@@ -123,10 +158,87 @@ class SkillManager:
         except (json.JSONDecodeError, OSError) as e:
             return {"status": "error", "message": f"安装失败: {e}"}
 
+    def install_skill_from_url(self, url: str, skill_type: str = "downloaded") -> dict[str, Any]:
+        """从URL下载并安装技能"""
+        logger.info(f"=== 开始从URL安装技能 ===")
+        logger.info(f"URL: {url}")
+        logger.info(f"技能类型: {skill_type}")
+        
+        try:
+            # 获取项目根目录
+            config = get_config()
+            
+            # 检测是否是本地URL（localhost或127.0.0.1）
+            if url.startswith("http://localhost") or url.startswith("http://127.0.0.1"):
+                logger.info(f"检测到本地URL，尝试直接文件系统访问")
+                
+                # 提取路径部分
+                path_part = url.replace("http://localhost:8000/", "").replace("http://127.0.0.1:8000/", "")
+                local_path = config.project_root / path_part
+                
+                logger.info(f"本地路径: {local_path}")
+                
+                if local_path.exists():
+                    logger.info(f"本地文件存在，直接安装")
+                    return self.install_skill_from_path(str(local_path), skill_type)
+                else:
+                    logger.error(f"本地文件不存在: {local_path}")
+                    return {"status": "error", "message": f"本地文件不存在: {local_path}"}
+            
+            # 创建临时目录
+            with tempfile.TemporaryDirectory() as temp_dir:
+                temp_path = Path(temp_dir)
+                logger.info(f"临时目录: {temp_path}")
+                
+                # 下载文件
+                logger.info(f"开始下载文件...")
+                logger.info(f"超时时间: 120秒")
+                response = httpx.get(url, follow_redirects=True, timeout=120)
+                response.raise_for_status()
+                logger.info(f"下载完成，文件大小: {len(response.content)} bytes")
+                
+                # 根据URL推断文件名
+                filename = url.split("/")[-1] if "/" in url else "skill.zip"
+                logger.info(f"文件名: {filename}")
+                
+                # 如果是ZIP文件
+                if url.lower().endswith(".zip") or filename.lower().endswith(".zip"):
+                    zip_path = temp_path / filename
+                    with open(zip_path, "wb") as f:
+                        f.write(response.content)
+                    logger.info(f"ZIP文件已保存到: {zip_path}")
+                    result = self._install_from_zip(zip_path, skill_type)
+                    logger.info(f"从ZIP安装结果: {result}")
+                    return result
+                
+                # 如果是JSON配置
+                elif url.lower().endswith(".json") or filename.lower().endswith(".json"):
+                    # 创建临时目录并写入manifest
+                    skill_dir = temp_path / "skill"
+                    skill_dir.mkdir()
+                    manifest = skill_dir / "manifest.json"
+                    with open(manifest, "wb") as f:
+                        f.write(response.content)
+                    logger.info(f"JSON配置已保存到: {manifest}")
+                    result = self._install_from_directory(skill_dir, skill_type)
+                    logger.info(f"从目录安装结果: {result}")
+                    return result
+                
+                else:
+                    logger.warning(f"不支持的文件类型: {url}")
+                    return {"status": "error", "message": f"不支持的文件类型: {url}"}
+            
+        except httpx.HTTPError as e:
+            logger.error(f"HTTP下载失败: {str(e)}")
+            return {"status": "error", "message": f"下载失败: {str(e)}"}
+        except Exception as e:
+            logger.error(f"从URL安装技能失败: {e}", exc_info=True)
+            return {"status": "error", "message": f"安装失败: {str(e)}"}
+
     def install_skill_from_market(self, skill_id: str) -> dict[str, Any]:
         return {
             "status": "error",
-            "message": f"市场安装功能暂未实现 (skill_id: {skill_id})。请使用 install_skill_from_path 从本地安装。",
+            "message": f"市场安装功能暂未实现 (skill_id: {skill_id})。请使用 install_skill_from_url 从URL安装。",
         }
 
     def uninstall_skill(self, skill_id: str) -> dict[str, Any]:
@@ -141,17 +253,164 @@ class SkillManager:
         del self._skills[skill_id]
         return {"status": "success", "message": f"技能已卸载: {skill_id}"}
 
+    def toggle_skill(self, skill_id: str) -> dict[str, Any]:
+        """切换技能启用/禁用状态"""
+        if skill_id not in self._skills:
+            raise SkillNotFoundError(skill_id)
+        
+        skill = self._skills[skill_id]
+        current_state = skill.get("enabled", True)
+        skill["enabled"] = not current_state
+        
+        action = "启用" if skill["enabled"] else "禁用"
+        return {
+            "status": "success",
+            "message": f"技能已{action}: {skill.get('name', skill_id)}",
+            "skill_id": skill_id,
+            "enabled": skill["enabled"]
+        }
+
     def search_market_skills(
         self, query: str = "", category: str = "", limit: int = 10
     ) -> list[dict[str, Any]]:
-        return []
+        """模拟技能市场搜索"""
+        logger.info(f"搜索技能市场: query={query}, category={category}, limit={limit}")
+        
+        # 获取项目根目录，构造本地测试URL
+        config = get_config()
+        local_skill_path = config.project_root / "test_skills"
+        base_url = f"http://localhost:8000/test_skills"
+        
+        mock_skills = [
+            {
+                "skill_id": "web_search",
+                "name": "网页搜索",
+                "description": "使用搜索引擎获取最新信息",
+                "version": "1.0.0",
+                "author": "HydraFlow",
+                "category": "工具",
+                "type": "market",
+                "url": f"{base_url}/web_search.zip",
+                "popularity": 95,
+                "rating": 4.8,
+            },
+            {
+                "skill_id": "weather",
+                "name": "天气查询",
+                "description": "查询全球天气信息",
+                "version": "1.1.0",
+                "author": "HydraFlow",
+                "category": "生活",
+                "type": "market",
+                "url": "https://example.com/skills/weather.zip",
+                "popularity": 88,
+                "rating": 4.6,
+            },
+            {
+                "skill_id": "news",
+                "name": "新闻资讯",
+                "description": "获取最新新闻资讯",
+                "version": "1.0.0",
+                "author": "HydraFlow",
+                "category": "资讯",
+                "type": "market",
+                "url": "https://example.com/skills/news.zip",
+                "popularity": 82,
+                "rating": 4.5,
+            },
+            {
+                "skill_id": "calculator",
+                "name": "计算器",
+                "description": "数学计算工具",
+                "version": "2.0.0",
+                "author": "HydraFlow",
+                "category": "工具",
+                "type": "market",
+                "url": "https://example.com/skills/calculator.zip",
+                "popularity": 92,
+                "rating": 4.9,
+            },
+            {
+                "skill_id": "translator",
+                "name": "翻译助手",
+                "description": "多语言翻译工具",
+                "version": "1.2.0",
+                "author": "HydraFlow",
+                "category": "工具",
+                "type": "market",
+                "url": "https://example.com/skills/translator.zip",
+                "popularity": 87,
+                "rating": 4.7,
+            },
+            {
+                "skill_id": "stock",
+                "name": "股票查询",
+                "description": "实时股票行情查询",
+                "version": "1.0.0",
+                "author": "HydraFlow",
+                "category": "财经",
+                "type": "market",
+                "url": "https://example.com/skills/stock.zip",
+                "popularity": 78,
+                "rating": 4.4,
+            },
+            {
+                "skill_id": "timer",
+                "name": "计时器",
+                "description": "倒计时和定时工具",
+                "version": "1.1.0",
+                "author": "HydraFlow",
+                "category": "生活",
+                "type": "market",
+                "url": "https://example.com/skills/timer.zip",
+                "popularity": 75,
+                "rating": 4.3,
+            },
+            {
+                "skill_id": "notebook",
+                "name": "笔记助手",
+                "description": "快速记录和整理笔记",
+                "version": "1.0.0",
+                "author": "HydraFlow",
+                "category": "办公",
+                "type": "market",
+                "url": "https://example.com/skills/notebook.zip",
+                "popularity": 80,
+                "rating": 4.5,
+            },
+        ]
+        
+        results = mock_skills
+        
+        if query:
+            query_lower = query.lower()
+            results = [s for s in results if query_lower in s["name"].lower() or 
+                      query_lower in s["description"].lower() or
+                      query_lower in s["skill_id"].lower()]
+        
+        if category and category != "all":
+            results = [s for s in results if s["category"] == category]
+        
+        results.sort(key=lambda x: (-x["popularity"], -x["rating"]))
+        
+        return results[:limit]
 
     def get_market_categories(self) -> dict[str, Any]:
-        config = get_config()
-        return config.categories_config
+        """获取技能市场分类"""
+        return {
+            "categories": [
+                {"id": "all", "name": "全部", "count": 8},
+                {"id": "工具", "name": "工具", "count": 3},
+                {"id": "生活", "name": "生活", "count": 2},
+                {"id": "资讯", "name": "资讯", "count": 1},
+                {"id": "财经", "name": "财经", "count": 1},
+                {"id": "办公", "name": "办公", "count": 1},
+            ]
+        }
 
     def get_featured_skills(self, limit: int = 5) -> list[dict[str, Any]]:
-        return []
+        """获取推荐技能"""
+        return self.search_market_skills(limit=limit)
 
     def get_statistics(self) -> dict[str, Any]:
         by_type: dict[str, int] = {}

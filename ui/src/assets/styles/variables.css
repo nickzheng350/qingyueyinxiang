@@ -1,0 +1,21 @@
+/* 中国传统色主题系统 - CSS变量定义（由JavaScript动态控制） */
+
+/* 默认主题变量（天青） */
+:root {
+  --primary: #6A9BD1;
+  --primary-dark: #4A7BB7;
+  --primary-light: #9EC5E8;
+  --secondary: #8B7BA8;
+  --accent: #7FB3D3;
+  --success: #789262;
+  --warning: #CA6924;
+  --danger: #F47983;
+  --info: #6A9BD1;
+  --bg-dark: #0F1419;
+  --bg-card: #1A1F2E;
+  --bg-hover: #252B3B;
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --border: #2D3436;
+}

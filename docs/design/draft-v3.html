@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>功能页面 - 草案 V3</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600;900&family=Noto+Sans+SC:wght@300;400;500;600&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      /* ========== 天青色系 ========== */
+      --tianqing-1: #0D2137;   /* 最深 */
+      --tianqing-2: #1A3A5C;   /* 深 */
+      --tianqing-3: #2A4A6C;   /* 中深 */
+      --tianqing-4: #4A7BB7;   /* 中 */
+      --tianqing-5: #6A9BD1;   /* 标准 */
+      --tianqing-6: #9EC5E8;   /* 浅 */
+      --tianqing-7: #C5DFF0;   /* 更浅 */
+      --tianqing-8: #E8F4F8;   /* 极浅 */
+      --tianqing-9: #F5F9FC;   /* 最浅 */
+
+      /* ========== 木簪子色系 ========== */
+      --mujian-1: #2D1F3D;
+      --mujian-2: #4A3060;
+      --mujian-3: #6B4580;
+      --mujian-4: #8B5FA0;
+      --mujian-5: #A87FC0;
+      --mujian-6: #C9A8E0;
+      --mujian-7: #E0C8F0;
+
+      /* ========== 竹黄色系 ========== */
+      --zhuhuang-1: #1A2D0F;
+      --zhuhuang-2: #2D5018;
+      --zhuhuang-3: #4A7A28;
+      --zhuhuang-4: #6A9D3A;
+      --zhuhuang-5: #89B854;
+      --zhuhuang-6: #A8D070;
+      --zhuhuang-7: #C5E088;
+
+      /* ========== 琥珀色系 ========== */
+      --hupo-1: #3D1F08;
+      --hupo-2: #6B3810;
+      --hupo-3: #9A5018;
+      --hupo-4: #C06820;
+      --hupo-5: #E08530;
+      --hupo-6: #F0A858;
+      --hupo-7: #F8C888;
+
+      /* ========== 藕色系 ========== */
+      --ousha-1: #3D2025;
+      --ousha-2: #6B3840;
+      --ousha-3: #9A5060;
+      --ousha-4: #C06878;
+      --ousha-5: #E08590;
+      --ousha-6: #F0A8B0;
+      --ousha-7: #F8C8D0;
+
+      /* ========== 水色色系 ========== */
+      --shuise-1: #0D2D3D;
+      --shuise-2: #1A4A60;
+      --shuise-3: #2A6A85;
+      --shuise-4: #4A8AA8;
+      --shuise-5: #6AAAC8;
+      --shuise-6: #98C8E0;
+      --shuise-7: #C5E0F0;
+    }
+
+    body {
+      font-family: 'Noto Sans SC', sans-serif;
+      background: var(--tianqing-8);
+      color: #2D3436;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ========== 整体布局 ========== */
+    .app-layout {
+      display: flex;
+      height: 100vh;
+    }
+
+    /* ========== 左侧导航 - 缩减30% ========== */
+    .sidebar {
+      width: 196px;  /* 280 * 0.7 = 196 */
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* 多彩渐变侧边栏 */
+    .sidebar::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(
+        180deg,
+        var(--tianqing-1) 0%,
+        var(--tianqing-2) 20%,
+        var(--mujian-2) 50%,
+        var(--tianqing-3) 80%,
+        var(--tianqing-2) 100%
+      );
+      opacity: 0.95;
+    }
+
+    .sidebar-header {
+      padding: 20px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      position: relative;
+      z-index: 1;
+    }
+
+    .logo {
+      font-family: 'ZCOOL XiaoWei', serif;
+      font-size: 22px;
+      color: white;
+      letter-spacing: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--tianqing-5), var(--mujian-5));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    /* 导航主体 */
+    .sidebar-nav {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .nav-group {
+      margin-bottom: 6px;
+    }
+
+    .nav-group-label {
+      padding: 10px 16px 4px;
+      font-size: 9px;
+      letter-spacing: 2px;
+      color: rgba(255,255,255,0.35);
+      text-transform: uppercase;
+    }
+
+    .nav-item {
+      position: relative;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      text-decoration: none;
+      color: rgba(255,255,255,0.65);
+      font-size: 13px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .nav-link:hover {
+      background: rgba(255,255,255,0.06);
+      color: white;
+    }
+
+    .nav-link.active {
+      background: linear-gradient(90deg, var(--tianqing-4) 0%, transparent 100%);
+      color: white;
+      border-right: 3px solid var(--tianqing-5);
+    }
+
+    .nav-link .icon {
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    .nav-link .arrow {
+      margin-left: auto;
+      font-size: 8px;
+      transition: transform 0.2s;
+    }
+
+    .nav-item.expanded .arrow {
+      transform: rotate(90deg);
+    }
+
+    /* 子菜单 */
+    .nav-submenu {
+      background: rgba(0,0,0,0.15);
+      margin: 2px 10px;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .nav-submenu .nav-link {
+      padding: 8px 16px 8px 40px;
+      font-size: 12px;
+      margin: 2px 0;
+    }
+
+    .nav-submenu .nav-link.active {
+      background: var(--tianqing-4);
+      border-right: none;
+    }
+
+    /* 侧边栏底部 */
+    .sidebar-footer {
+      padding: 16px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      position: relative;
+      z-index: 1;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .user-avatar {
+      width: 34px;
+      height: 34px;
+      background: linear-gradient(135deg, var(--tianqing-5) 0%, var(--mujian-5) 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 13px;
+    }
+
+    .user-name {
+      color: rgba(255,255,255,0.9);
+      font-size: 12px;
+    }
+
+    .user-role {
+      color: rgba(255,255,255,0.4);
+      font-size: 10px;
+    }
+
+    /* ========== 主内容区 ========== */
+    .main-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* 顶部栏 */
+    .topbar {
+      height: 56px;
+      background: white;
+      border-bottom: 1px solid var(--tianqing-7);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 24px;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #7A8899;
+    }
+
+    .breadcrumb span {
+      color: var(--tianqing-4);
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .lang-switch {
+      display: flex;
+      gap: 2px;
+      background: var(--tianqing-8);
+      padding: 3px;
+      border-radius: 14px;
+    }
+
+    .lang-btn {
+      padding: 4px 10px;
+      border-radius: 12px;
+      border: none;
+      font-size: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: transparent;
+      color: #7A8899;
+      font-family: inherit;
+    }
+
+    .lang-btn.active {
+      background: white;
+      color: var(--tianqing-3);
+      box-shadow: 0 2px 5px rgba(106,155,209,0.2);
+    }
+
+    .topbar-icon {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+      color: #7A8899;
+      font-size: 16px;
+    }
+
+    .topbar-icon:hover {
+      background: var(--tianqing-8);
+      color: var(--tianqing-4);
+    }
+
+    /* 内容区 */
+    .content-area {
+      flex: 1;
+      padding: 24px 28px;
+      overflow-y: auto;
+    }
+
+    /* 标题区 */
+    .workspace-header {
+      margin-bottom: 24px;
+    }
+
+    .workspace-title {
+      font-family: 'ZCOOL XiaoWei', serif;
+      font-size: 24px;
+      color: var(--tianqing-2);
+      letter-spacing: 4px;
+      margin-bottom: 6px;
+    }
+
+    .workspace-desc {
+      font-size: 12px;
+      color: #7A8899;
+      line-height: 1.6;
+    }
+
+    /* ========== 黄金比例卡片网格 ========== */
+    /* 黄金比例: 1 : 1.618 */
+    /* 基础单元 ≈ 61.8px */
+    
+    .cards-section {
+      margin-bottom: 28px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      letter-spacing: 3px;
+      color: var(--tianqing-4);
+      margin-bottom: 16px;
+      text-transform: uppercase;
+    }
+
+    /* 黄金比例网格: 左侧小卡片 100px，右侧大卡片 162px */
+    .golden-grid {
+      display: grid;
+      grid-template-columns: 100px 162px 162px 100px;
+      grid-template-rows: 100px 162px;
+      gap: 14px;
+    }
+
+    .golden-card {
+      border-radius: 14px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s, box-shadow 0.3s;
+      cursor: pointer;
+    }
+
+    .golden-card:hover {
+      transform: scale(1.02);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+    }
+
+    .golden-card.vertical { grid-row: span 2; }
+    .golden-card.horizontal { grid-column: span 2; }
+    .golden-card.square { grid-row: span 1; grid-column: span 1; }
+
+    /* 天青风格 */
+    .style-tianqing {
+      background: linear-gradient(135deg, var(--tianqing-3) 0%, var(--tianqing-5) 50%, var(--tianqing-6) 100%);
+    }
+
+    .style-tianqing::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -30%;
+      width: 120%;
+      height: 200%;
+      background: radial-gradient(ellipse, rgba(255,255,255,0.25) 0%, transparent 60%);
+    }
+
+    /* 木簪子风格 */
+    .style-mujian {
+      background: linear-gradient(135deg, var(--mujian-2) 0%, var(--mujian-4) 50%, var(--mujian-5) 100%);
+    }
+
+    .style-mujian::before {
+      content: '';
+      position: absolute;
+      top: -30%;
+      left: -30%;
+      width: 100%;
+      height: 150%;
+      background: radial-gradient(ellipse, rgba(255,255,255,0.2) 0%, transparent 60%);
+    }
+
+    /* 竹黄风格 */
+    .style-zhuhuang {
+      background: linear-gradient(135deg, var(--zhuhuang-2) 0%, var(--zhuhuang-4) 50%, var(--zhuhuang-5) 100%);
+    }
+
+    .style-zhuhuang::before {
+      content: '';
+      position: absolute;
+      bottom: -30%;
+      right: -20%;
+      width: 80%;
+      height: 120%;
+      background: radial-gradient(ellipse, rgba(255,255,255,0.2) 0%, transparent 60%);
+    }
+
+    /* 琥珀风格 */
+    .style-hupo {
+      background: linear-gradient(135deg, var(--hupo-2) 0%, var(--hupo-4) 50%, var(--hupo-5) 100%);
+    }
+
+    .style-hupo::before {
+      content: '';
+      position: absolute;
+      top: 20%;
+      left: 20%;
+      width: 60%;
+      height: 60%;
+      background: radial-gradient(ellipse, rgba(255,255,255,0.25) 0%, transparent 60%);
+    }
+
+    /* 藕色风格 */
+    .style-ousha {
+      background: linear-gradient(135deg, var(--ousha-2) 0%, var(--ousha-4) 50%, var(--ousha-5) 100%);
+    }
+
+    .style-ousha::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+    }
+
+    /* 水色风格 */
+    .style-shuise {
+      background: linear-gradient(135deg, var(--shuise-2) 0%, var(--shuise-4) 50%, var(--shuise-5) 100%);
+    }
+
+    .style-shuise::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: 
+        radial-gradient(ellipse at 30% 30%, rgba(255,255,255,0.2) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 70%, rgba(255,255,255,0.1) 0%, transparent 50%);
+    }
+
+    /* 卡片内容 */
+    .card-content {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 12px;
+      background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 100%);
+      color: white;
+    }
+
+    .card-content .title {
+      font-size: 13px;
+      letter-spacing: 2px;
+      font-weight: 500;
+    }
+
+    .card-content .sub {
+      font-size: 10px;
+      opacity: 0.7;
+      margin-top: 2px;
+    }
+
+    .card-content .i18n-zh,
+    .card-content .i18n-en { display: none; }
+    body.zh .card-content .i18n-zh { display: block; }
+    body.zh .card-content .i18n-en { display: none; }
+    body.en .card-content .i18n-zh { display: none; }
+    body.en .card-content .i18n-en { display: block; }
+
+    /* 混搭风格 */
+    .style-mix-tianqing-mujian {
+      background: linear-gradient(135deg, var(--tianqing-3) 0%, var(--mujian-3) 50%, var(--tianqing-5) 100%);
+    }
+
+    .style-mix-zhuhuang-hupo {
+      background: linear-gradient(135deg, var(--zhuhuang-3) 0%, var(--hupo-3) 50%, var(--zhuhuang-5) 100%);
+    }
+
+    .style-mix-ousha-shuise {
+      background: linear-gradient(135deg, var(--ousha-3) 0%, var(--shuise-3) 50%, var(--ousha-5) 100%);
+    }
+
+    /* ========== 配色体系展示 ========== */
+    .color-systems {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .color-system-card {
+      background: white;
+      border-radius: 14px;
+      padding: 20px;
+      border: 1px solid var(--tianqing-7);
+    }
+
+    .color-system-name {
+      font-size: 12px;
+      letter-spacing: 2px;
+      margin-bottom: 14px;
+      color: var(--tianqing-3);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .color-system-name .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .color-scale {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .color-scale-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .color-scale-item .swatch {
+      width: 100%;
+      height: 24px;
+      border-radius: 6px;
+    }
+
+    .color-scale-item .label {
+      font-size: 9px;
+      color: #7A8899;
+      white-space: nowrap;
+    }
+
+    /* 混搭展示 */
+    .mix-section {
+      margin-top: 24px;
+    }
+
+    .mix-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .mix-card {
+      height: 100px;
+      border-radius: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .mix-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0; top: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.4), transparent);
+    }
+
+    .mix-card .name {
+      position: absolute;
+      bottom: 12px;
+      left: 14px;
+      color: white;
+      font-size: 12px;
+      letter-spacing: 2px;
+      z-index: 1;
+    }
+
+    /* 语言切换 */
+    body.en .logo,
+    body.en .section-title { letter-spacing: 1px; }
+  </style>
+</head>
+<body class="zh">
+
+<div class="app-layout">
+
+  <!-- ========== 左侧导航 ========== -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">☯</div>
+        <span>天青</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-group">
+        <div class="nav-group-label">主导航</div>
+
+        <div class="nav-item expanded">
+          <div class="nav-link active">
+            <span class="icon">◈</span>
+            <span data-i18n="nav.overview">总览</span>
+            <span class="arrow">▶</span>
+          </div>
+          <div class="nav-submenu">
+            <div class="nav-link active" data-i18n="nav.system">· 系统状态</div>
+            <div class="nav-link" data-i18n="nav.dashboard">· 仪表盘</div>
+            <div class="nav-link" data-i18n="nav.quick">· 快速操作</div>
+          </div>
+        </div>
+
+        <div class="nav-item">
+          <div class="nav-link">
+            <span class="icon">◎</span>
+            <span data-i18n="nav.skills">技能中心</span>
+            <span class="arrow">▶</span>
+          </div>
+          <div class="nav-submenu" style="display:none;">
+            <div class="nav-link" data-i18n="nav.installed">· 已安装</div>
+            <div class="nav-link" data-i18n="nav.market">· 技能市场</div>
+            <div class="nav-link" data-i18n="nav.create">· 我的创作</div>
+          </div>
+        </div>
+
+        <div class="nav-item">
+          <div class="nav-link">
+            <span class="icon">◉</span>
+            <span data-i18n="nav.plugins">插件</span>
+            <span class="arrow">▶</span>
+          </div>
+          <div class="nav-submenu" style="display:none;">
+            <div class="nav-link" data-i18n="nav.enabled">· 已启用</div>
+            <div class="nav-link" data-i18n="nav.pluginMarket">· 插件市场</div>
+            <div class="nav-link" data-i18n="nav.config">· 配置</div>
+          </div>
+        </div>
+
+        <div class="nav-item">
+          <div class="nav-link">
+            <span class="icon">◐</span>
+            <span data-i18n="nav.agents">智能体</span>
+            <span class="arrow">▶</span>
+          </div>
+          <div class="nav-submenu" style="display:none;">
+            <div class="nav-link" data-i18n="nav.running">· 运行中</div>
+            <div class="nav-link" data-i18n="nav.tasks">· 任务</div>
+            <div class="nav-link" data-i18n="nav.logs">· 日志</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-label">系统</div>
+
+        <div class="nav-item">
+          <div class="nav-link">
+            <span class="icon">⚙</span>
+            <span data-i18n="nav.settings">设置</span>
+            <span class="arrow">▶</span>
+          </div>
+          <div class="nav-submenu" style="display:none;">
+            <div class="nav-link" data-i18n="nav.basic">· 基本配置</div>
+            <div class="nav-link" data-i18n="nav.ui">· 界面</div>
+            <div class="nav-link" data-i18n="nav.lang">· 语言</div>
+          </div>
+        </div>
+
+        <div class="nav-item">
+          <div class="nav-link">
+            <span class="icon">⏻</span>
+            <span data-i18n="nav.status">状态</span>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar">N</div>
+        <div>
+          <div class="user-name">Nick</div>
+          <div class="user-role">Administrator</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ========== 主内容区 ========== -->
+  <div class="main-area">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="breadcrumb">
+          <span data-i18n="nav.home">首页</span> / <span data-i18n="nav.overview">总览</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="lang-switch">
+          <button class="lang-btn active" data-lang="zh">中文</button>
+          <button class="lang-btn" data-lang="en">EN</button>
+        </div>
+        <div class="topbar-icon">🔔</div>
+        <div class="topbar-icon">⚙</div>
+      </div>
+    </header>
+
+    <div class="content-area">
+      <div class="workspace-header">
+        <h1 class="workspace-title" data-i18n="workspace.title">功能创作区</h1>
+        <p class="workspace-desc" data-i18n="workspace.desc">创建和管理你的智能体技能、插件和工作流</p>
+      </div>
+
+      <!-- 黄金比例网格 -->
+      <div class="cards-section">
+        <div class="section-title" data-i18n="section.style">主题风格 · 黄金构图</div>
+        
+        <div class="golden-grid">
+          <!-- 天青风格 - 大竖卡 -->
+          <div class="golden-card vertical style-tianqing">
+            <div class="card-content">
+              <div class="title">
+                <span class="i18n-zh">天青</span>
+                <span class="i18n-en">Tianqing</span>
+              </div>
+              <div class="sub">清雅 / 宁静</div>
+            </div>
+          </div>
+
+          <!-- 木簪子 + 竹黄 -->
+          <div class="golden-card square style-mujian">
+            <div class="card-content">
+              <div class="title">
+                <span class="i18n-zh">木簪</span>
+                <span class="i18n-en">Mujian</span>
+              </div>
+              <div class="sub">柔婉</div>
+            </div>
+          </div>
+
+          <div class="golden-card square style-zhuhuang">
+            <div class="card-content">
+              <div class="title">
+                <span class="i18n-zh">竹黄</span>
+                <span class="i18n-en">Zhuhuang</span>
+              </div>
+              <div class="sub">生机</div>
+            </div>
+          </div>
+
+          <!-- 琥珀 - 横卡 -->
+          <div class="golden-card horizontal style-hupo">
+            <div class="card-content">
+              <div class="title">
+                <span class="i18n-zh">琥珀</span>
+                <span class="i18n-en">Hupo</span>
+              </div>
+              <div class="sub">温暖 / 活力</div>
+            </div>
+          </div>
+
+          <!-- 藕色 + 水色 -->
+          <div class="golden-card square style-ousha">
+            <div class="card-content">
+              <div class="title">
+                <span class="i18n-zh">藕色</span>
+                <span class="i18n-en">Ousha</span>
+              </div>
+              <div class="sub">少女</div>
+            </div>
+          </div>
+
+          <div class="golden-card square style-shuise">
+            <div class="card-content">
+              <div class="title">
+                <span class="i18n-zh">水色</span>
+                <span class="i18n-en">Shuise</span>
+              </div>
+              <div class="sub">通透</div>
+            </div>
+          </div>
+
+          <!-- 天青横卡 -->
+          <div class="golden-card horizontal style-tianqing">
+            <div class="card-content">
+              <div class="title">
+                <span class="i18n-zh">天青·韵</span>
+                <span class="i18n-en">Tianqing·Yun</span>
+              </div>
+              <div class="sub">主色系延展</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 单色系详细展示 -->
+      <div class="color-systems">
+        <div class="color-system-card">
+          <div class="color-system-name">
+            <div class="dot" style="background: var(--tianqing-3);"></div>
+            <span data-i18n="color.tianqing">天青</span>
+          </div>
+          <div class="color-scale">
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--tianqing-1);"></div>
+              <span class="label">#0D2137</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--tianqing-2);"></div>
+              <span class="label">#1A3A5C</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--tianqing-3);"></div>
+              <span class="label">#2A4A6C</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--tianqing-4);"></div>
+              <span class="label">#4A7BB7</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--tianqing-5);"></div>
+              <span class="label">#6A9BD1</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--tianqing-6);"></div>
+              <span class="label">#9EC5E8</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--tianqing-7);"></div>
+              <span class="label">#C5DFF0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="color-system-card">
+          <div class="color-system-name">
+            <div class="dot" style="background: var(--mujian-4);"></div>
+            <span data-i18n="color.mujian">木簪子</span>
+          </div>
+          <div class="color-scale">
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--mujian-1);"></div>
+              <span class="label">#2D1F3D</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--mujian-2);"></div>
+              <span class="label">#4A3060</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--mujian-3);"></div>
+              <span class="label">#6B4580</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--mujian-4);"></div>
+              <span class="label">#8B5FA0</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--mujian-5);"></div>
+              <span class="label">#A87FC0</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--mujian-6);"></div>
+              <span class="label">#C9A8E0</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--mujian-7);"></div>
+              <span class="label">#E0C8F0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="color-system-card">
+          <div class="color-system-name">
+            <div class="dot" style="background: var(--zhuhuang-4);"></div>
+            <span data-i18n="color.zhuhuang">竹黄</span>
+          </div>
+          <div class="color-scale">
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--zhuhuang-1);"></div>
+              <span class="label">#1A2D0F</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--zhuhuang-2);"></div>
+              <span class="label">#2D5018</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--zhuhuang-3);"></div>
+              <span class="label">#4A7A28</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--zhuhuang-4);"></div>
+              <span class="label">#6A9D3A</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--zhuhuang-5);"></div>
+              <span class="label">#89B854</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--zhuhuang-6);"></div>
+              <span class="label">#A8D070</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--zhuhuang-7);"></div>
+              <span class="label">#C5E088</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="color-system-card">
+          <div class="color-system-name">
+            <div class="dot" style="background: var(--hupo-4);"></div>
+            <span data-i18n="color.hupo">琥珀</span>
+          </div>
+          <div class="color-scale">
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--hupo-1);"></div>
+              <span class="label">#3D1F08</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--hupo-2);"></div>
+              <span class="label">#6B3810</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--hupo-3);"></div>
+              <span class="label">#9A5018</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--hupo-4);"></div>
+              <span class="label">#C06820</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--hupo-5);"></div>
+              <span class="label">#E08530</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--hupo-6);"></div>
+              <span class="label">#F0A858</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--hupo-7);"></div>
+              <span class="label">#F8C888</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="color-system-card">
+          <div class="color-system-name">
+            <div class="dot" style="background: var(--ousha-4);"></div>
+            <span data-i18n="color.ousha">藕色</span>
+          </div>
+          <div class="color-scale">
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--ousha-1);"></div>
+              <span class="label">#3D2025</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--ousha-2);"></div>
+              <span class="label">#6B3840</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--ousha-3);"></div>
+              <span class="label">#9A5060</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--ousha-4);"></div>
+              <span class="label">#C06878</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--ousha-5);"></div>
+              <span class="label">#E08590</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--ousha-6);"></div>
+              <span class="label">#F0A8B0</span>
+            </div>
+            <div class="color-scale-item">
+              <div class="swatch" style="background: var(--ousha-7);"></div>
+              <span class="label">#F8C8D0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 混搭风格 -->
+      <div class="mix-section">
+        <div class="section-title" data-i18n="section.mix">混搭风格</div>
+        <div class="mix-grid">
+          <div class="mix-card style-mix-tianqing-mujian">
+            <div class="name">
+              <span class="i18n-zh">天青 × 木簪</span>
+              <span class="i18n-en">Tianqing × Mujian</span>
+            </div>
+          </div>
+          <div class="mix-card style-mix-zhuhuang-hupo">
+            <div class="name">
+              <span class="i18n-zh">竹黄 × 琥珀</span>
+              <span class="i18n-en">Zhuhuang × Hupo</span>
+            </div>
+          </div>
+          <div class="mix-card style-mix-ousha-shuise">
+            <div class="name">
+              <span class="i18n-zh">藕色 × 水色</span>
+              <span class="i18n-en">Ousha × Shuise</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  // 子菜单展开/收起
+  document.querySelectorAll('.nav-item > .nav-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      const navItem = link.parentElement;
+      const submenu = navItem.querySelector('.nav-submenu');
+      if (submenu) {
+        e.preventDefault();
+        navItem.classList.toggle('expanded');
+        submenu.style.display = navItem.classList.contains('expanded') ? 'block' : 'none';
+      }
+    });
+  });
+
+  // 语言切换
+  const translations = {
+    'zh': {
+      'nav.home': '首页',
+      'nav.overview': '总览',
+      'nav.system': '系统状态',
+      'nav.dashboard': '仪表盘',
+      'nav.quick': '快速操作',
+      'nav.skills': '技能中心',
+      'nav.installed': '已安装',
+      'nav.market': '技能市场',
+      'nav.create': '我的创作',
+      'nav.plugins': '插件',
+      'nav.enabled': '已启用',
+      'nav.pluginMarket': '插件市场',
+      'nav.config': '配置',
+      'nav.agents': '智能体',
+      'nav.running': '运行中',
+      'nav.tasks': '任务',
+      'nav.logs': '日志',
+      'nav.settings': '设置',
+      'nav.basic': '基本配置',
+      'nav.ui': '界面',
+      'nav.lang': '语言',
+      'nav.status': '状态',
+      'workspace.title': '功能创作区',
+      'workspace.desc': '创建和管理你的智能体技能、插件和工作流',
+      'section.style': '主题风格 · 黄金构图',
+      'section.mix': '混搭风格',
+      'color.tianqing': '天青',
+      'color.mujian': '木簪子',
+      'color.zhuhuang': '竹黄',
+      'color.hupo': '琥珀',
+      'color.ousha': '藕色'
+    },
+    'en': {
+      'nav.home': 'Home',
+      'nav.overview': 'Overview',
+      'nav.system': 'System Status',
+      'nav.dashboard': 'Dashboard',
+      'nav.quick': 'Quick Actions',
+      'nav.skills': 'Skills',
+      'nav.installed': 'Installed',
+      'nav.market': 'Market',
+      'nav.create': 'My Creations',
+      'nav.plugins': 'Plugins',
+      'nav.enabled': 'Enabled',
+      'nav.pluginMarket': 'Plugin Market',
+      'nav.config': 'Config',
+      'nav.agents': 'Agents',
+      'nav.running': 'Running',
+      'nav.tasks': 'Tasks',
+      'nav.logs': 'Logs',
+      'nav.settings': 'Settings',
+      'nav.basic': 'Basic',
+      'nav.ui': 'Interface',
+      'nav.lang': 'Language',
+      'nav.status': 'Status',
+      'workspace.title': 'Creation Workspace',
+      'workspace.desc': 'Create and manage agent skills, plugins and workflows',
+      'section.style': 'Theme Styles · Golden Ratio',
+      'section.mix': 'Mix Styles',
+      'color.tianqing': 'Tianqing',
+      'color.mujian': 'Mujian',
+      'color.zhuhuang': 'Zhuhuang',
+      'color.hupo': 'Hupo',
+      'color.ousha': 'Ousha'
+    }
+  };
+
+  function switchLanguage(lang) {
+    document.body.classList.toggle('zh', lang === 'zh');
+    document.body.classList.toggle('en', lang === 'en');
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (translations[lang][key]) el.textContent = translations[lang][key];
+    });
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.lang === lang);
+    });
+  }
+
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchLanguage(btn.dataset.lang));
+  });
+</script>
+
+</body>
+</html>

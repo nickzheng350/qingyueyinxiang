@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package skill;
+
+import "google/protobuf/empty.proto";
+
+option python_package = "skill_pb2";
+option java_package = "com.example.skill";
+option java_outer_classname = "SkillProto";
+
+// 技能消息定义
+message Skill {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string version = 4;
+  string author = 5;
+  bool enabled = 6;
+}
+
+// 创建技能请求
+message CreateSkillRequest {
+  Skill skill = 1;
+}
+
+// 创建技能响应
+message CreateSkillResponse {
+  Skill skill = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+// 获取技能请求
+message GetSkillRequest {
+  string skill_id = 1;
+}
+
+// 获取技能响应
+message GetSkillResponse {
+  Skill skill = 1;
+  bool found = 2;
+}
+
+// 列表技能响应
+message ListSkillsResponse {
+  repeated Skill skills = 1;
+}
+
+// 安装技能请求
+message InstallSkillRequest {
+  string skill_id = 1;
+  string skill_type = 2;
+}
+
+// 安装技能响应
+message InstallSkillResponse {
+  bool success = 1;
+  string message = 2;
+  Skill skill = 3;
+}
+
+// 技能服务定义
+service SkillService {
+  rpc CreateSkill(CreateSkillRequest) returns (CreateSkillResponse);
+  rpc GetSkill(GetSkillRequest) returns (GetSkillResponse);
+  rpc ListSkills(google.protobuf.Empty) returns (ListSkillsResponse);
+  rpc InstallSkill(InstallSkillRequest) returns (InstallSkillResponse);
+}
+
+import "google/protobuf/empty.proto";

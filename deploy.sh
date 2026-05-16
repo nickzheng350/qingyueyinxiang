@@ -1,161 +1,71 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 # HydraFlow AI 部署脚本
-# 用于打包和推送项目到 GitHub
 
 set -e
 
-CYAN='\033[0;36m'
+# 颜色定义
+RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-show_logo() {
-    echo -e "${CYAN}"
-    echo "=============================================="
-    echo "      HydraFlow AI - 部署脚本"
-    echo "=============================================="
-    echo -e "${NC}"
-}
+echo -e "${GREEN}===========================================${NC}"
+echo -e "${GREEN}   HydraFlow AI 部署脚本${NC}"
+echo -e "${GREEN}===========================================${NC}"
 
-check_git() {
-    echo -e "${YELLOW}检查 Git 配置...${NC}"
-    
-    if ! command -v git &> /dev/null; then
-        echo -e "${RED}错误: 未找到 Git${NC}"
-        exit 1
-    fi
-    
-    # 检查是否在 git 仓库中
-    if [ ! -d .git ]; then
-        echo -e "${YELLOW}初始化 Git 仓库...${NC}"
-        git init
-        git config user.name "HydraFlow AI"
-        git config user.email "dev@hydraflow.ai"
-    fi
-    
-    echo -e "${GREEN}✓ Git 配置完成${NC}"
-}
+# 检查Docker是否安装
+if ! command -v docker &> /dev/null; then
+    echo -e "${RED}错误: Docker 未安装${NC}"
+    exit 1
+fi
 
-update_gitignore() {
-    echo -e "${YELLOW}更新 .gitignore...${NC}"
-    
-    cat > .gitignore << 'EOF'
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-.venv/
-.env
+if ! command -v docker-compose &> /dev/null; then
+    echo -e "${RED}错误: Docker Compose 未安装${NC}"
+    exit 1
+fi
 
-# 模型文件
-models/
-*.bin
-*.safetensors
-*.ckpt
+# 创建必要目录
+echo -e "${YELLOW}创建必要目录...${NC}"
+mkdir -p data logs config deploy/ssl
 
-# 日志
-*.log
-logs/
+# 生成SSL证书（如果不存在）
+if [ ! -f "deploy/ssl/hydraflow.crt" ]; then
+    echo -e "${YELLOW}生成SSL证书...${NC}"
+    openssl req -x509 -newkey rsa:4096 -nodes -keyout deploy/ssl/hydraflow.key -out deploy/ssl/hydraflow.crt -days 365 -subj "/CN=hydraflow.local" -quiet
+fi
 
-# 缓存
-.cache/
-*.pkl
+# 构建Docker镜像
+echo -e "${YELLOW}构建Docker镜像...${NC}"
+docker-compose build --quiet
 
-# 编辑器
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+# 启动服务
+echo -e "${YELLOW}启动服务...${NC}"
+docker-compose up -d
 
-# 系统
-.DS_Store
-Thumbs.db
+# 等待服务启动
+echo -e "${YELLOW}等待服务启动...${NC}"
+sleep 10
 
-# 构建
-dist/
-build/
-*.egg-info/
+# 检查服务状态
+echo -e "${YELLOW}检查服务状态...${NC}"
+docker-compose ps
 
-# 测试
-test_*.py
-.pytest_cache/
+# 检查健康状态
+echo -e "\n${YELLOW}检查健康状态...${NC}"
+if curl -s http://localhost/health | grep -q "healthy"; then
+    echo -e "${GREEN}✅ 所有服务已成功启动！${NC}"
+    echo -e "\n${GREEN}访问地址:${NC}"
+    echo -e "  - UI界面: http://localhost"
+    echo -e "  - API文档: http://localhost/docs"
+    echo -e "  - Grafana: http://localhost:3000 (admin/admin)"
+    echo -e "  - Prometheus: http://localhost:9090"
+else
+    echo -e "${RED}❌ 服务启动失败，请检查日志${NC}"
+    docker-compose logs hydraflow-api
+    exit 1
+fi
 
-# Node.js
-node_modules/
-package-lock.json
-EOF
-    
-    echo -e "${GREEN}✓ .gitignore 更新完成${NC}"
-}
-
-build_package() {
-    echo -e "${YELLOW}构建安装包...${NC}"
-    
-    # 创建打包目录
-    mkdir -p dist
-    
-    # 复制必要文件
-    cp -r src/ dist/
-    cp -r config/ dist/
-    cp -r prompts/ dist/
-    cp -r docs/ dist/
-    cp -r skills/ dist/
-    cp requirements.txt dist/
-    cp main.py dist/
-    cp install.sh dist/
-    cp install.bat dist/
-    cp README.md dist/
-    cp LICENSE dist/
-    cp .env.example dist/
-    
-    # 打包
-    cd dist && zip -r hydraflow-ai.zip . && cd ..
-    mv dist/hydraflow-ai.zip .
-    
-    echo -e "${GREEN}✓ 安装包构建完成${NC}"
-}
-
-push_to_github() {
-    echo -e "${YELLOW}推送到 GitHub...${NC}"
-    
-    # 添加所有文件
-    git add -A
-    
-    # 提交
-    git commit -m "Release: HydraFlow AI v1.0.0"
-    
-    # 推送到 main 分支
-    git push origin main
-    
-    echo -e "${GREEN}✓ 已推送到 GitHub${NC}"
-}
-
-main() {
-    show_logo
-    
-    check_git
-    update_gitignore
-    build_package
-    
-    echo -e "${CYAN}"
-    echo "=============================================="
-    echo "      ${GREEN}部署完成！${CYAN}"
-    echo "=============================================="
-    echo -e "${NC}"
-    echo "项目已准备就绪，包含："
-    echo "  - 一键安装脚本 (install.sh / install.bat)"
-    echo "  - 完整依赖列表 (requirements.txt)"
-    echo "  - 安装包 (hydraflow-ai.zip)"
-    echo ""
-    echo "推送到 GitHub:"
-    echo "  git remote add origin https://github.com/yourusername/hydraflow-ai.git"
-    echo "  git push -u origin main"
-    echo ""
-}
-
-main "$@"
+echo -e "\n${GREEN}===========================================${NC}"
+echo -e "${GREEN}         部署完成！${NC}"
+echo -e "${GREEN}===========================================${NC}"

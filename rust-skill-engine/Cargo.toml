@@ -1,0 +1,25 @@
+[package]
+name = "skill-engine"
+version = "0.1.0"
+edition = "2021"
+metadata.wasm-pack.profile.release.wasm-opt = false
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tar = "0.4"
+flate2 = "1.0"
+thiserror = "1.0"
+wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
+js-sys = "0.3"
+wasm-bindgen-futures = "0.4"
+web-sys = { version = "0.3", features = ["console"] }
+lazy_static = "1.4"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+path = "src/lib.rs"
+
+[[bin]]
+name = "skill-engine"
+path = "src/main.rs"

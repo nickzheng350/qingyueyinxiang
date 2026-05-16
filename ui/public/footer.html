@@ -1,0 +1,1136 @@
+        const API_BASE = '/api/v1';
+
+        // 切换标签页
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-item a').forEach(a => a.classList.remove('active'));
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            document.querySelector(`a[href="#${tabName}"]`).classList.add('active');
+            
+            // 更新页面标题
+            const titles = {
+                dashboard: { title: '仪表盘', subtitle: '实时监控系统状态和资源使用' },
+                market: { title: '技能市场', subtitle: '发现和安装新技能' },
+                skills: { title: '技能中心', subtitle: '管理已安装的技能' },
+                generative: { title: '生成式功能', subtitle: 'AI内容生成工具' },
+                workflow: { title: '工作流水线', subtitle: '创建自动化工作流程' },
+                files: { title: '文件管理', subtitle: '管理存储中的文件' },
+                hardware: { title: '硬件配置', subtitle: '企业级硬件资源管理' },
+                tasks: { title: '任务管理', subtitle: '管理系统任务' },
+                prompt: { title: '提示词管理', subtitle: '创建和管理AI提示词' },
+                system: { title: '系统设置', subtitle: '配置系统参数' },
+            };
+            const info = titles[tabName] || { title: tabName, subtitle: '' };
+            document.getElementById('page-title').textContent = info.title;
+            document.getElementById('page-subtitle').textContent = info.subtitle;
+
+            // 加载对应数据
+            if (tabName === 'market') { loadMarket(); }
+            else if (tabName === 'skills') { loadSkills(); }
+            else if (tabName === 'tasks') { loadTasks(); }
+            else if (tabName === 'hardware') { loadHardwareInfo(); }
+            else if (tabName === 'prompt') { loadPrompts(); }
+            else if (tabName === 'dashboard') { loadDashboard(); }
+            else if (tabName === 'files') { loadFiles(); }
+        }
+
+        // 模态框操作
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        // 仪表盘
+        function refreshSystemInfo() {
+            fetch('/health').then(r => r.json()).then(data => {
+                document.querySelector('.status-badge').textContent = data.status === 'healthy' ? '✓ 健康' : '✗ 异常';
+            });
+        }
+
+        // 技能市场
+        const mockCategories = [
+            { id: 'all', name: '全部', icon: '📦' },
+            { id: 'ai', name: 'AI能力', icon: '🤖' },
+            { id: 'automation', name: '自动化', icon: '⚙️' },
+            { id: 'data', name: '数据处理', icon: '📊' },
+            { id: 'web', name: 'Web工具', icon: '🌐' },
+            { id: 'media', name: '媒体处理', icon: '🎬' },
+            { id: 'dev', name: '开发工具', icon: '💻' },
+            { id: 'utility', name: '实用工具', icon: '🔧' }
+        ];
+
+        const mockMarketSkills = [
+            { id: 'skill-1', name: '智能问答助手', category: 'AI能力', description: '基于大语言模型的智能问答系统，支持多轮对话和上下文理解', version: '1.2.0', downloads: '12.5K', rating: 4.8 },
+            { id: 'skill-2', name: '文本翻译专家', category: 'AI能力', description: '支持100+语言的专业翻译工具，保持上下文一致性', version: '2.0.1', downloads: '8.3K', rating: 4.6 },
+            { id: 'skill-3', name: '代码生成器', category: '开发工具', description: '根据自然语言描述自动生成高质量代码', version: '1.5.3', downloads: '6.7K', rating: 4.7 },
+            { id: 'skill-4', name: '数据可视化', category: '数据处理', description: '将原始数据转换为精美图表和仪表盘', version: '1.8.2', downloads: '5.2K', rating: 4.5 },
+            { id: 'skill-5', name: '网页爬虫', category: 'Web工具', description: '自动化抓取网页内容，支持多种格式导出', version: '1.3.0', downloads: '4.8K', rating: 4.4 },
+            { id: 'skill-6', name: '图片优化器', category: '媒体处理', description: '智能压缩和优化图片，保持画质的同时减小体积', version: '1.6.1', downloads: '3.9K', rating: 4.5 },
+            { id: 'skill-7', name: '定时任务调度', category: '自动化', description: '灵活配置定时任务，支持复杂的调度规则', version: '2.1.0', downloads: '3.2K', rating: 4.6 },
+            { id: 'skill-8', name: '邮件自动化', category: '自动化', description: '自动发送邮件通知，支持模板和批量发送', version: '1.4.2', downloads: '2.8K', rating: 4.4 },
+            { id: 'skill-9', name: 'PDF处理工具', category: '实用工具', description: 'PDF文件的合并、拆分、加密和解密', version: '1.7.0', downloads: '5.1K', rating: 4.3 },
+            { id: 'skill-10', name: '语音转文字', category: 'AI能力', description: '高精度语音识别，支持多种语言和口音', version: '1.9.0', downloads: '7.4K', rating: 4.7 },
+            { id: 'skill-11', name: '文本摘要', category: 'AI能力', description: '智能提取文章要点，生成简明摘要', version: '1.3.5', downloads: '4.1K', rating: 4.5 },
+            { id: 'skill-12', name: 'API测试工具', category: '开发工具', description: '自动化API测试和文档生成', version: '1.2.3', downloads: '2.5K', rating: 4.2 }
+        ];
+
+        const mockInstalledSkills = [
+            { id: 'skill-1', name: '智能问答助手', category: 'AI能力', description: '基于大语言模型的智能问答系统', version: '1.2.0', enabled: true, lastUsed: '2024-01-15' },
+            { id: 'skill-3', name: '代码生成器', category: '开发工具', description: '根据自然语言描述自动生成代码', version: '1.5.3', enabled: true, lastUsed: '2024-01-14' },
+            { id: 'skill-7', name: '定时任务调度', category: '自动化', description: '灵活配置定时任务', version: '2.1.0', enabled: false, lastUsed: '2024-01-10' },
+            { id: 'skill-9', name: 'PDF处理工具', category: '实用工具', description: 'PDF文件处理工具', version: '1.7.0', enabled: true, lastUsed: '2024-01-12' },
+            { id: 'skill-10', name: '语音转文字', category: 'AI能力', description: '高精度语音识别', version: '1.9.0', enabled: false, lastUsed: '2024-01-08' }
+        ];
+
+        function loadMarket() {
+            // 渲染分类
+            const cats = mockCategories.map(c => `
+                <button class="btn btn-sm btn-secondary" onclick="filterMarket('${c.id}')">${c.icon} ${c.name}</button>
+            `).join('');
+            document.getElementById('market-categories').innerHTML = cats;
+            
+            // 渲染技能列表
+            renderMarketSkills(mockMarketSkills);
+        }
+
+        function filterMarket(categoryId) {
+            if (categoryId === 'all') {
+                renderMarketSkills(mockMarketSkills);
+            } else {
+                const filtered = mockMarketSkills.filter(s => {
+                    const categoryMap = {
+                        'ai': 'AI能力',
+                        'automation': '自动化',
+                        'data': '数据处理',
+                        'web': 'Web工具',
+                        'media': '媒体处理',
+                        'dev': '开发工具',
+                        'utility': '实用工具'
+                    };
+                    return s.category === categoryMap[categoryId];
+                });
+                renderMarketSkills(filtered);
+            }
+        }
+
+        function searchMarket() {
+            const query = document.getElementById('market-search').value.toLowerCase();
+            if (!query.trim()) {
+                renderMarketSkills(mockMarketSkills);
+                return;
+            }
+            const filtered = mockMarketSkills.filter(s => 
+                s.name.toLowerCase().includes(query) ||
+                s.description.toLowerCase().includes(query) ||
+                s.category.toLowerCase().includes(query)
+            );
+            renderMarketSkills(filtered);
+        }
+
+        function renderMarketSkills(skills) {
+            const container = document.getElementById('market-skills');
+            if (!skills || skills.length === 0) {
+                container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-secondary); padding: 3rem;">🔍 未找到匹配的技能</div>';
+                return;
+            }
+            
+            container.innerHTML = skills.map(skill => `
+                <div class="skill-card">
+                    <div class="skill-header">
+                        <div>
+                            <div class="skill-name">${skill.name}</div>
+                            <div class="skill-type">${skill.category}</div>
+                        </div>
+                        <div class="skill-rating">⭐ ${skill.rating}</div>
+                    </div>
+                    <div class="skill-desc">${skill.description}</div>
+                    <div class="skill-meta">
+                        <span>版本: ${skill.version}</span>
+                        <span>下载: ${skill.downloads}</span>
+                    </div>
+                    <div class="skill-actions">
+                        <button class="btn btn-sm btn-primary" onclick="installSkill('${skill.id}', '${skill.name}')">📥 安装</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function installSkill(skillId, skillName) {
+            const btn = event.target;
+            btn.innerHTML = '<span class="loading"></span> 安装中...';
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                btn.innerHTML = '✓ 已安装';
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-success');
+                setTimeout(() => {
+                    alert(`✅ 技能 "${skillName}" 安装成功！\n\n技能已添加到技能中心，可以在那里启用或配置。`);
+                    btn.innerHTML = '📥 安装';
+                    btn.disabled = false;
+                    btn.classList.remove('btn-success');
+                    btn.classList.add('btn-primary');
+                }, 500);
+            }, 1500);
+        }
+
+        // 技能管理
+        function loadSkills() {
+            renderInstalledSkills(mockInstalledSkills);
+            updateSkillStats();
+        }
+
+        function updateSkillStats() {
+            const total = mockInstalledSkills.length;
+            const enabled = mockInstalledSkills.filter(s => s.enabled).length;
+            const disabled = total - enabled;
+            
+            const stats = document.querySelectorAll('#skills-tab .card-header + div div');
+            if (stats.length >= 3) {
+                stats[0].querySelector('div:first-child').textContent = total;
+                stats[1].querySelector('div:first-child').textContent = enabled;
+                stats[2].querySelector('div:first-child').textContent = disabled;
+            }
+        }
+
+        function renderInstalledSkills(skills) {
+            const container = document.getElementById('installed-skills');
+            if (!skills || skills.length === 0) {
+                container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-secondary); padding: 3rem;">📦 暂无已安装的技能<br><button class="btn btn-primary" onclick="showTab(\'market\')">去技能市场安装</button></div>';
+                return;
+            }
+            
+            container.innerHTML = skills.map(skill => `
+                <div class="skill-card">
+                    <div class="skill-header">
+                        <div>
+                            <div class="skill-name">${skill.name}</div>
+                            <div class="skill-type">${skill.category} · v${skill.version}</div>
+                        </div>
+                        <span class="status-badge ${skill.enabled ? 'status-success' : 'status-error'}">
+                            ${skill.enabled ? '✓ 已启用' : '✗ 已禁用'}
+                        </span>
+                    </div>
+                    <div class="skill-desc">${skill.description}</div>
+                    <div class="skill-meta">
+                        <span>上次使用: ${skill.lastUsed}</span>
+                    </div>
+                    <div class="skill-actions">
+                        <button class="btn btn-sm ${skill.enabled ? 'btn-warning' : 'btn-success'}" onclick="toggleSkill('${skill.id}', ${!skill.enabled})">
+                            ${skill.enabled ? '🔴 禁用' : '🟢 启用'}
+                        </button>
+                        <button class="btn btn-sm btn-secondary" onclick="runSkill('${skill.id}', '${skill.name}')">▶️ 执行</button>
+                        <button class="btn btn-sm btn-danger" onclick="uninstallSkill('${skill.id}', '${skill.name}')">🗑️ 卸载</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleSkill(skillId, enable) {
+            const skill = mockInstalledSkills.find(s => s.id === skillId);
+            if (skill) {
+                skill.enabled = enable;
+                loadSkills();
+                alert(`技能 "${skill.name}" 已${enable ? '启用' : '禁用'}`);
+            }
+        }
+
+        function runSkill(skillId, skillName) {
+            const skill = mockInstalledSkills.find(s => s.id === skillId);
+            if (!skill.enabled) {
+                alert('请先启⽤技能！');
+                return;
+            }
+            alert(`▶️ 正在执行技能: ${skillName}\n\n技能正在后台运行...`);
+        }
+
+        function uninstallSkill(skillId, skillName) {
+            if (!confirm(`确定要卸载技能 "${skillName}" 吗？此操作不可撤销。`)) {
+                return;
+            }
+            const index = mockInstalledSkills.findIndex(s => s.id === skillId);
+            if (index !== -1) {
+                mockInstalledSkills.splice(index, 1);
+                loadSkills();
+                alert(`🗑️ 技能 "${skillName}" 已卸载`);
+            }
+        }
+
+        // 生成式功能
+        function showGenTab(tabName) {
+            document.querySelectorAll('.gen-panel').forEach(p => p.style.display = 'none');
+            document.querySelectorAll('.gen-panel + div button').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.gen-panel + div button').forEach(b => b.classList.add('btn-secondary'));
+            document.querySelectorAll('.gen-panel + div button').forEach(b => b.classList.remove('btn-primary'));
+            
+            document.getElementById(`gen-${tabName}`).style.display = 'block';
+            event.target.classList.add('active');
+            event.target.classList.add('btn-primary');
+            event.target.classList.remove('btn-secondary');
+        }
+
+        function generateText() {
+            const input = document.getElementById('text-input').value;
+            if (!input.trim()) {
+                alert('请输入生成内容');
+                return;
+            }
+            
+            const output = document.getElementById('text-output');
+            const type = document.getElementById('text-type').value;
+            const length = document.getElementById('text-length').value;
+            const tone = document.getElementById('text-tone').value;
+            
+            output.innerHTML = '<div style="text-align: center; padding: 2rem;"><span class="loading"></span><p style="margin-top: 1rem;">AI正在生成...</p></div>';
+            document.getElementById('copy-text-btn').disabled = true;
+            
+            setTimeout(() => {
+                const texts = {
+                    article: '这是一篇根据您的需求生成的专业文章。文章涵盖了核心要点，结构清晰，内容详实。\n\n主要内容包括：\n• 核心概念介绍\n• 详细分析与论证\n• 实践建议与案例\n• 总结与展望\n\n文章采用严谨的学术风格，适合专业领域的深度阅读。',
+                    summary: '根据您提供的内容，以下是核心要点摘要：\n\n1. 主要观点概述\n2. 关键数据与指标\n3. 核心结论\n4. 建议与行动项\n\n以上内容已浓缩为关键点，便于快速掌握核心信息。',
+                    translate: 'This is the English translation of your text. The translation maintains the original meaning while ensuring natural expression in English.\n\n翻译结果准确传达了原文的核心含义，语言流畅自然。',
+                    rewrite: '经过润色改写后的内容如下：\n\n这段文字经过精心优化，在保持原意的基础上，使表达更加流畅自然。\n\n语言更加精炼，逻辑更加清晰，可读性显著提升。',
+                    creative: '✨ 这是一段充满创意的文字！\n\n在想象的世界里，文字化作灵动的音符，跳跃在思维的琴弦上。每一个字符都蕴含着无限可能，等待着被赋予生命的律动。\n\n让创造力自由流淌，让灵感绽放光芒！',
+                    email: '尊敬的收件人：\n\n您好！\n\n关于您关注的事项，我想与您分享一些重要信息。\n\n【主要内容】\n• 事项概述\n• 详细说明\n• 后续计划\n\n如有任何疑问，请随时与我联系。\n\n此致\n敬礼',
+                    code: `// 根据您的需求生成的代码示例\n\nfunction generateContent(options) {\n    const { type, input, length, tone } = options;\n    \n    // 生成逻辑\n    const result = ai.generate({\n        prompt: input,\n        type: type,\n        parameters: {\n            length: length,\n            tone: tone\n        }\n    });\n    \n    return result;\n}\n\n// 使用示例\nconst output = generateContent({\n    type: 'article',\n    input: '您的输入内容',\n    length: 'medium',\n    tone: 'professional'\n});`
+                };
+                
+                output.innerHTML = texts[type] || texts.article;
+                document.getElementById('copy-text-btn').disabled = false;
+            }, 1500);
+        }
+
+        function copyTextResult() {
+            const output = document.getElementById('text-output');
+            navigator.clipboard.writeText(output.innerText).then(() => {
+                const btn = document.getElementById('copy-text-btn');
+                btn.textContent = '✓ 已复制';
+                setTimeout(() => {
+                    btn.textContent = '📋 复制';
+                }, 2000);
+            });
+        }
+
+        function clearTextResult() {
+            const output = document.getElementById('text-output');
+            output.innerHTML = `<div style="text-align: center; padding: 3rem;">
+                <div style="font-size: 2rem; margin-bottom: 1rem;">📄</div>
+                <p>生成的文本将显示在这里</p>
+            </div>`;
+            document.getElementById('copy-text-btn').disabled = true;
+        }
+
+        function generateImage() {
+            const prompt = document.getElementById('image-prompt').value;
+            if (!prompt.trim()) {
+                alert('请输入图像描述');
+                return;
+            }
+            
+            const output = document.getElementById('image-output');
+            const style = document.getElementById('image-style').value;
+            const count = parseInt(document.getElementById('image-count').value) || 1;
+            
+            output.innerHTML = '<div style="text-align: center; padding: 2rem;"><span class="loading"></span><p style="margin-top: 1rem;">🎨 AI 正在生成图像...</p></div>';
+            
+            // Pollinations.ai 免费 AI 图像生成
+            const stylePrompts = {
+                realistic: 'photorealistic, ' + prompt,
+                anime: 'anime style, ' + prompt,
+                abstract: 'abstract art, ' + prompt,
+                cyberpunk: 'cyberpunk style, ' + prompt,
+                watercolor: 'watercolor painting, ' + prompt,
+                oil: 'oil painting style, ' + prompt,
+                pixel: 'pixel art style, ' + prompt,
+                '3d': '3D render style, ' + prompt
+            };
+            
+            const enhancedPrompt = encodeURIComponent(stylePrompts[style] || prompt);
+            
+            let html = '';
+            for (let i = 0; i < count; i++) {
+                const imageUrl = `https://image.pollinations.ai/prompt/${enhancedPrompt}?width=512&height=512&nologo=true`;
+                html += `<div style="position: relative; display: inline-block; width: 48%; margin: 0.5%;">
+                    <img src="${imageUrl}" style="width: 100%; border-radius: 8px; transition: transform 0.2s;" 
+                         onload="this.style.opacity='1'" 
+                         onerror="this.src='https://picsum.photos/512/512?random=${Date.now()}'"
+                         loading="lazy" />
+                    <div style="position: absolute; bottom: 8px; left: 8px; right: 8px; background: rgba(0,0,0,0.7); padding: 4px 8px; border-radius: 4px; font-size: 0.75rem;">
+                        ${style} - ${prompt.substring(0, 30)}${prompt.length > 30 ? '...' : ''}
+                    </div>
+                </div>`;
+            }
+            
+            setTimeout(() => {
+                output.innerHTML = html;
+            }, 500);
+        }
+
+        function generateAudio() {
+            const style = document.getElementById('audio-style').value;
+            const duration = document.getElementById('audio-duration').value;
+            
+            alert(`🎵 正在生成${duration}秒的${style}风格音乐...\n\n此功能需要连接音频生成服务。`);
+        }
+
+        function generateVideo() {
+            const theme = document.getElementById('video-theme').value;
+            if (!theme.trim()) {
+                alert('请输入视频主题');
+                return;
+            }
+            
+            const duration = document.getElementById('video-duration').value;
+            const res = document.getElementById('video-res').value;
+            
+            alert(`🎬 正在生成${duration}秒的视频...\n主题: ${theme}\n分辨率: ${res}\n\n此功能需要连接视频生成服务。`);
+        }
+
+        // BPM滑块事件
+        document.addEventListener('DOMContentLoaded', () => {
+            const bpmSlider = document.getElementById('audio-bpm');
+            const bpmValue = document.getElementById('bpm-value');
+            if (bpmSlider) {
+                bpmSlider.addEventListener('input', () => {
+                    bpmValue.textContent = bpmSlider.value;
+                });
+            }
+        });
+
+        // 任务管理
+        let mockTasks = [
+            { task_id: 'task-001', type: 'text', status: 'COMPLETED', prompt: '写一篇关于AI的文章', progress: 100, created_at: '2024-01-15 10:30:00', completed_at: '2024-01-15 10:35:00' },
+            { task_id: 'task-002', type: 'image', status: 'RUNNING', prompt: '生成一张风景图片', progress: 65, created_at: '2024-01-15 11:00:00', completed_at: null },
+            { task_id: 'task-003', type: 'audio', status: 'PENDING', prompt: '生成背景音乐', progress: 0, created_at: '2024-01-15 11:30:00', completed_at: null },
+            { task_id: 'task-004', type: 'video', status: 'FAILED', prompt: '生成产品介绍视频', progress: 20, created_at: '2024-01-14 14:00:00', completed_at: '2024-01-14 14:15:00' },
+            { task_id: 'task-005', type: 'text', status: 'COMPLETED', prompt: '翻译文档', progress: 100, created_at: '2024-01-14 09:00:00', completed_at: '2024-01-14 09:10:00' }
+        ];
+
+        function loadTasks() {
+            const container = document.getElementById('tasks-list');
+            const html = mockTasks.map(task => `
+                <tr>
+                    <td>${task.task_id}</td>
+                    <td>${task.type === 'text' ? '✏️ 文本' : task.type === 'image' ? '🖼️ 图像' : task.type === 'audio' ? '🎵 音频' : '🎬 视频'}</td>
+                    <td>${task.prompt}</td>
+                    <td>
+                        <div style="width: 100px; height: 8px; background: var(--bg-dark); border-radius: 4px; overflow: hidden;">
+                            <div style="height: 100%; width: ${task.progress}%; background: ${task.status === 'COMPLETED' ? '#10b981' : task.status === 'RUNNING' ? '#3b82f6' : task.status === 'FAILED' ? '#ef4444' : '#6b7280'};"></div>
+                        </div>
+                        <span style="font-size: 0.85rem; color: var(--text-secondary);">${task.progress}%</span>
+                    </td>
+                    <td><span class="status-badge status-${task.status.toLowerCase()}">${task.status === 'COMPLETED' ? '完成' : task.status === 'RUNNING' ? '运行中' : task.status === 'PENDING' ? '待处理' : '失败'}</span></td>
+                    <td>${task.created_at}</td>
+                    <td>
+                        ${task.status === 'PENDING' ? 
+                            `<button class="btn btn-sm btn-danger" onclick="cancelTask('${task.task_id}')">取消</button>` : 
+                            task.status === 'RUNNING' ?
+                            `<button class="btn btn-sm btn-warning" onclick="pauseTask('${task.task_id}')">暂停</button>` :
+                            `<button class="btn btn-sm btn-secondary" onclick="viewTask('${task.task_id}')">查看</button>`}
+                    </td>
+                </tr>
+            `).join('');
+            container.innerHTML = html;
+        }
+
+        function addTask() {
+            const name = document.getElementById('new-task-name').value;
+            const type = document.getElementById('new-task-type').value;
+            if (!name.trim()) {
+                alert('请输入任务名称');
+                return;
+            }
+            
+            const newTask = {
+                task_id: `task-${String(mockTasks.length + 1).padStart(3, '0')}`,
+                type: type,
+                status: 'PENDING',
+                prompt: name,
+                progress: 0,
+                created_at: new Date().toLocaleString('zh-CN'),
+                completed_at: null
+            };
+            mockTasks.unshift(newTask);
+            loadTasks();
+            
+            document.getElementById('new-task-name').value = '';
+            closeModal('add-task-modal');
+            alert('✅ 任务已添加');
+        }
+
+        function cancelTask(taskId) {
+            const task = mockTasks.find(t => t.task_id === taskId);
+            if (task) {
+                task.status = 'CANCELLED';
+                loadTasks();
+                alert(`任务 ${taskId} 已取消`);
+            }
+        }
+
+        function pauseTask(taskId) {
+            const task = mockTasks.find(t => t.task_id === taskId);
+            if (task) {
+                task.status = 'PAUSED';
+                loadTasks();
+                alert(`任务 ${taskId} 已暂停`);
+            }
+        }
+
+        function viewTask(taskId) {
+            const task = mockTasks.find(t => t.task_id === taskId);
+            if (task) {
+                alert(`📋 任务详情\n\nID: ${task.task_id}\n类型: ${task.type}\n状态: ${task.status}\n进度: ${task.progress}%\n创建时间: ${task.created_at}`);
+            }
+        }
+
+        // 提示词管理
+        let mockPrompts = [
+            { id: 'prompt-001', name: '营销文案生成', category: '营销', content: '请为以下产品写一段吸引人的营销文案：\n\n产品名称：{product_name}\n产品特点：{features}\n目标受众：{audience}\n\n请用吸引人的语言描述产品的核心价值。' },
+            { id: 'prompt-002', name: '代码审查', category: '开发', content: '请帮我审查以下代码：\n\n{code}\n\n请指出潜在的问题、优化建议和最佳实践。' },
+            { id: 'prompt-003', name: '数据分析报告', category: '数据', content: '请分析以下数据并生成一份专业报告：\n\n数据：{data}\n\n请包括趋势分析、关键洞察和建议。' }
+        ];
+
+        function loadPrompts() {
+            const container = document.getElementById('prompts-list');
+            const html = mockPrompts.map(p => `
+                <div class="skill-card" onclick="selectPrompt('${p.id}')">
+                    <div class="skill-name">${p.name}</div>
+                    <div class="skill-desc">${p.category}</div>
+                    <div style="margin-top: 0.5rem;">
+                        <span class="btn btn-xs btn-secondary" onclick="event.stopPropagation(); editPrompt('${p.id}')">编辑</span>
+                        <span class="btn btn-xs btn-danger" onclick="event.stopPropagation(); deletePrompt('${p.id}')">删除</span>
+                    </div>
+                </div>
+            `).join('');
+            container.innerHTML = html;
+        }
+
+        function selectPrompt(promptId) {
+            const prompt = mockPrompts.find(p => p.id === promptId);
+            if (prompt) {
+                document.getElementById('prompt-name').value = prompt.name;
+                document.getElementById('prompt-category').value = prompt.category;
+                document.getElementById('prompt-content').value = prompt.content;
+                updatePreview();
+            }
+        }
+
+        function updatePreview() {
+            const content = document.getElementById('prompt-content').value;
+            const preview = document.getElementById('prompt-preview');
+            preview.textContent = content || '预览将在这里显示...';
+        }
+
+        function savePrompt() {
+            const name = document.getElementById('prompt-name').value;
+            const category = document.getElementById('prompt-category').value;
+            const content = document.getElementById('prompt-content').value;
+            
+            if (!name.trim() || !content.trim()) {
+                alert('请填写提示词名称和内容');
+                return;
+            }
+            
+            const existing = mockPrompts.find(p => p.id === 'prompt-selected');
+            if (existing) {
+                existing.name = name;
+                existing.category = category;
+                existing.content = content;
+            } else {
+                const newPrompt = {
+                    id: `prompt-${String(mockPrompts.length + 1).padStart(3, '0')}`,
+                    name: name,
+                    category: category,
+                    content: content
+                };
+                mockPrompts.push(newPrompt);
+            }
+            
+            loadPrompts();
+            alert('✅ 提示词已保存');
+        }
+
+        function editPrompt(promptId) {
+            selectPrompt(promptId);
+        }
+
+        function deletePrompt(promptId) {
+            if (!confirm('确定要删除这个提示词吗？')) return;
+            mockPrompts = mockPrompts.filter(p => p.id !== promptId);
+            loadPrompts();
+            alert('🗑️ 提示词已删除');
+        }
+
+        // 仪表盘数据
+        function loadDashboard() {
+            // 更新统计卡片
+            document.getElementById('stat-tasks').textContent = '5';
+            document.getElementById('stat-skills').textContent = '8';
+            document.getElementById('stat-models').textContent = '3';
+            document.getElementById('stat-files').textContent = '12';
+            
+            // 更新资源使用率
+            document.getElementById('cpu-usage').style.width = '45%';
+            document.getElementById('memory-usage').style.width = '62%';
+            document.getElementById('gpu-usage').style.width = '0%';
+            document.getElementById('storage-usage').style.width = '38%';
+            
+            // 更新最近任务
+            const recentTasks = mockTasks.slice(0, 3);
+            const tasksHtml = recentTasks.map(t => `
+                <div style="display: flex; justify-content: space-between; padding: 0.75rem; border-bottom: 1px solid var(--border);">
+                    <div>
+                        <div>${t.prompt}</div>
+                        <div style="font-size: 0.85rem; color: var(--text-secondary);">${t.created_at}</div>
+                    </div>
+                    <span class="status-badge status-${t.status.toLowerCase()}">${t.status === 'COMPLETED' ? '完成' : t.status === 'RUNNING' ? '运行中' : t.status === 'PENDING' ? '待处理' : '失败'}</span>
+                </div>
+            `).join('');
+            document.getElementById('recent-tasks').innerHTML = tasksHtml;
+        }
+
+        // 系统设置
+        function saveSystemSettings() {
+            alert('✅ 系统设置已保存');
+        }
+
+        // 工作流水线
+        let workflowNodes = [];
+        let nodeCounter = 0;
+
+        const nodeIcons = {
+            'input-text': '📝', 'input-file': '📁', 'input-url': '🔗',
+            'ai-text': '✏️', 'ai-image': '🖼️', 'ai-audio': '🎵', 'ai-video': '🎬',
+            'skill-code': '💻', 'skill-web': '🌐', 'skill-data': '📊',
+            'output-text': '📄', 'output-file': '💾', 'output-email': '📧'
+        };
+
+        const nodeNames = {
+            'input-text': '文本输入', 'input-file': '文件输入', 'input-url': 'URL输入',
+            'ai-text': '文本生成', 'ai-image': '图像生成', 'ai-audio': '音频生成', 'ai-video': '视频生成',
+            'skill-code': '代码执行', 'skill-web': 'Web请求', 'skill-data': '数据处理',
+            'output-text': '文本输出', 'output-file': '文件输出', 'output-email': '邮件输出'
+        };
+
+        function createWorkflow() {
+            openModal('workflow-modal');
+        }
+
+        function loadWorkflow(type) {
+            const canvas = document.getElementById('workflow-canvas');
+            workflowNodes = [];
+            nodeCounter = 0;
+            
+            const presets = {
+                content: [
+                    { type: 'input-text', label: '输入主题' },
+                    { type: 'ai-text', label: '文章生成' },
+                    { type: 'skill-data', label: '内容优化' },
+                    { type: 'output-text', label: '保存结果' }
+                ],
+                image: [
+                    { type: 'input-text', label: '提示词' },
+                    { type: 'ai-image', label: '图像生成' },
+                    { type: 'output-file', label: '保存图像' }
+                ],
+                data: [
+                    { type: 'input-url', label: '数据源' },
+                    { type: 'skill-web', label: '获取数据' },
+                    { type: 'skill-data', label: '数据清洗' },
+                    { type: 'ai-text', label: '生成报告' },
+                    { type: 'output-email', label: '发送报告' }
+                ],
+                audio: [
+                    { type: 'input-text', label: '文本内容' },
+                    { type: 'ai-audio', label: '语音合成' },
+                    { type: 'output-file', label: '保存音频' }
+                ],
+                video: [
+                    { type: 'input-text', label: '脚本' },
+                    { type: 'ai-image', label: '生成素材' },
+                    { type: 'ai-video', label: '视频合成' },
+                    { type: 'output-file', label: '保存视频' }
+                ],
+                custom: []
+            };
+
+            const preset = presets[type] || [];
+            if (preset.length > 0) {
+                let html = '';
+                preset.forEach((node, index) => {
+                    const nodeId = `node-${++nodeCounter}`;
+                    workflowNodes.push({ id: nodeId, type: node.type, label: node.label });
+                    html += renderNode(nodeId, node.type, node.label, index);
+                });
+                canvas.innerHTML = html;
+                updateNodeCount();
+            } else {
+                canvas.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 4rem;">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">👆</div>
+                    <p>拖拽左侧节点到此处构建流水线</p>
+                </div>`;
+            }
+        }
+
+        function renderNode(nodeId, type, label, index) {
+            const icon = nodeIcons[type] || '📦';
+            const name = nodeNames[type] || type;
+            const position = index * 180 + 20;
+            return `<div id="${nodeId}" class="flow-node active" style="position: absolute; left: ${position}px; top: 100px;">
+                <div class="flow-node-icon">${icon}</div>
+                <div class="flow-node-title">${name}</div>
+                <div class="flow-node-desc">${label}</div>
+                <button class="btn btn-xs btn-danger" onclick="removeNode('${nodeId}')">×</button>
+            </div>`;
+        }
+
+        function dragNode(e, type) {
+            e.dataTransfer.setData('nodeType', type);
+            e.dataTransfer.setData('nodeLabel', nodeNames[type] || type);
+        }
+
+        function allowDrop(e) {
+            e.preventDefault();
+        }
+
+        function dropNode(e) {
+            e.preventDefault();
+            const type = e.dataTransfer.getData('nodeType');
+            const label = e.dataTransfer.getData('nodeLabel');
+            const canvas = document.getElementById('workflow-canvas');
+            
+            // 清除默认提示
+            if (canvas.innerHTML.includes('拖拽左侧节点')) {
+                canvas.innerHTML = '';
+            }
+
+            const nodeId = `node-${++nodeCounter}`;
+            workflowNodes.push({ id: nodeId, type: type, label: label });
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left - 60;
+            const y = e.clientY - rect.top - 40;
+            
+            canvas.innerHTML += `<div id="${nodeId}" class="flow-node active" style="position: absolute; left: ${Math.max(0, x)}px; top: ${Math.max(0, y)}px;">
+                <div class="flow-node-icon">${nodeIcons[type] || '📦'}</div>
+                <div class="flow-node-title">${nodeNames[type] || type}</div>
+                <div class="flow-node-desc">双击编辑</div>
+                <button class="btn btn-xs btn-danger" onclick="removeNode('${nodeId}')">×</button>
+            </div>`;
+            
+            updateNodeCount();
+        }
+
+        function removeNode(nodeId) {
+            document.getElementById(nodeId).remove();
+            workflowNodes = workflowNodes.filter(n => n.id !== nodeId);
+            updateNodeCount();
+            
+            if (workflowNodes.length === 0) {
+                const canvas = document.getElementById('workflow-canvas');
+                canvas.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 4rem;">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">👆</div>
+                    <p>拖拽左侧节点到此处构建流水线</p>
+                </div>`;
+            }
+        }
+
+        function clearWorkflow() {
+            const canvas = document.getElementById('workflow-canvas');
+            canvas.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 4rem;">
+                <div style="font-size: 4rem; margin-bottom: 1rem;">👆</div>
+                <p>拖拽左侧节点到此处构建流水线</p>
+            </div>`;
+            workflowNodes = [];
+            nodeCounter = 0;
+            updateNodeCount();
+        }
+
+        function saveWorkflow() {
+            if (workflowNodes.length === 0) {
+                alert('请先添加节点');
+                return;
+            }
+            alert(`✅ 流水线已保存！\n\n节点数: ${workflowNodes.length}`);
+        }
+
+        function runWorkflow() {
+            if (workflowNodes.length === 0) {
+                alert('请先添加节点');
+                return;
+            }
+            alert(`▶️ 正在运行流水线...\n\n流程: ${workflowNodes.map(n => n.label).join(' → ')}`);
+        }
+
+        function updateNodeCount() {
+            document.getElementById('node-count').textContent = workflowNodes.length;
+            document.getElementById('edge-count').textContent = Math.max(0, workflowNodes.length - 1);
+        }
+
+        // 硬件配置
+        function loadHardwareInfo() {
+            const cpuInfo = `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                    <span style="color: var(--text-secondary);">核心数</span>
+                    <span>4 核</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                    <span style="color: var(--text-secondary);">线程数</span>
+                    <span>8 线程</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                    <span style="color: var(--text-secondary);">基础频率</span>
+                    <span>2.0 GHz</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--text-secondary);">最大频率</span>
+                    <span>3.5 GHz</span>
+                </div>
+            `;
+            document.getElementById('cpu-info').innerHTML = cpuInfo;
+
+            const memoryInfo = `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                    <span style="color: var(--text-secondary);">容量</span>
+                    <span>16 GB</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                    <span style="color: var(--text-secondary);">类型</span>
+                    <span>DDR4</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--text-secondary);">速度</span>
+                    <span>3200 MHz</span>
+                </div>
+            `;
+            document.getElementById('memory-info').innerHTML = memoryInfo;
+
+            const gpuInfo = `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                    <span style="color: var(--text-secondary);">状态</span>
+                    <span class="status-badge status-error">未启用</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                    <span style="color: var(--text-secondary);">数量</span>
+                    <span>0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--text-secondary);">VRAM</span>
+                    <span>0 GB</span>
+                </div>
+            `;
+            document.getElementById('gpu-info').innerHTML = gpuInfo;
+
+            const storageInfo = `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                    <span style="color: var(--text-secondary);">类型</span>
+                    <span>本地存储</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                    <span style="color: var(--text-secondary);">容量</span>
+                    <span>256 GB</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--text-secondary);">IOPS</span>
+                    <span>1000</span>
+                </div>
+            `;
+            document.getElementById('storage-info').innerHTML = storageInfo;
+        }
+
+        function selectTier(tier) {
+            const tierNames = {
+                development: '开发环境',
+                small: '小型部署',
+                medium: '中型部署',
+                large: '大型部署',
+                enterprise: '企业级部署',
+                cluster: '集群部署'
+            };
+            const badge = document.getElementById('hardware-tier');
+            badge.textContent = tierNames[tier];
+            badge.className = `tier-badge tier-${tier}`;
+            alert(`已选择 ${tierNames[tier]} 配置`);
+        }
+
+        // 任务管理
+        function openTaskModal() { openModal('task-modal'); }
+        
+        async function loadTasks() {
+            const res = await fetch(`${API_BASE}/tasks`);
+            const data = await res.json();
+            const container = document.getElementById('tasks-list');
+            
+            if (!data.tasks || data.tasks.length === 0) {
+                container.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 2rem;">暂无任务</td></tr>';
+                return;
+            }
+
+            container.innerHTML = data.tasks.map(t => `
+                <tr>
+                    <td>${t.task_id}</td>
+                    <td>${t.name || '-'}</td>
+                    <td><span class="status-badge status-${t.status.toLowerCase()}">${t.status}</span></td>
+                    <td>-</td>
+                    <td>${t.created_at || '-'}</td>
+                    <td><button class="btn btn-sm btn-secondary">查看</button></td>
+                </tr>
+            `).join('');
+        }
+
+        async function submitTask() {
+            const name = document.getElementById('new-task-name').value;
+            if (!name) { alert('请输入任务名称'); return; }
+            
+            const res = await fetch(`${API_BASE}/tasks`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    prompt: name,
+                    task_type: 'text',
+                    model_id: 'qwen2.5',
+                    parameters: {}
+                })
+            });
+            
+            const data = await res.json();
+            if (data.task_id) {
+                alert('✅ 任务已提交');
+                document.getElementById('new-task-name').value = '';
+                loadTasks();
+            }
+        }
+
+        // 文件管理相关函数
+        async function loadFiles() {
+            try {
+                const res = await fetch(`${API_BASE}/files/list`);
+                const data = await res.json();
+                renderFiles(data.files || []);
+                loadStorageInfo();
+            } catch (e) {
+                console.error('加载文件列表失败:', e);
+            }
+        }
+
+        async function loadStorageInfo() {
+            try {
+                const res = await fetch(`${API_BASE}/files/storage-info`);
+                const data = await res.json();
+                if (data.success) {
+                    // 更新存储统计
+                    document.querySelector('.card-header + div div:nth-child(1) div:first-child').textContent = 
+                        data.usage.files_count || '0';
+                    document.querySelector('.card-header + div div:nth-child(2) div:first-child').textContent = 
+                        `${data.usage.used_gb || '0'} GB`;
+                    document.querySelector('.card-header + div div:nth-child(3) div:first-child').textContent = 
+                        getTierLabel(data.tier);
+                    document.querySelector('.card-header + div div:nth-child(4) div:first-child').textContent = 
+                        data.backend === 'local' ? '✅' : '☁️';
+                }
+            } catch (e) {
+                console.error('加载存储信息失败:', e);
+            }
+        }
+
+        function getTierLabel(tier) {
+            const tiers = {
+                'basic': '基础',
+                'standard': '标准',
+                'advanced': '高级',
+                'enterprise': '企业级',
+                'cloud_native': '云原生'
+            };
+            return tiers[tier] || tier;
+        }
+
+        function renderFiles(files) {
+            const container = document.getElementById('files-list');
+            if (!files || files.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; color: var(--text-secondary); padding: 3rem;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">📂</div>
+                        <p>暂无文件</p>
+                        <button class="btn btn-primary" onclick="openUploadModal()" style="margin-top: 1rem;">上传文件</button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--border);">
+                            <th style="text-align: left; padding: 0.75rem; font-weight: 600;">文件名</th>
+                            <th style="text-align: right; padding: 0.75rem; font-weight: 600;">大小</th>
+                            <th style="text-align: right; padding: 0.75rem; font-weight: 600;">修改时间</th>
+                            <th style="text-align: center; padding: 0.75rem; font-weight: 600;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${files.map(f => `
+                            <tr style="border-bottom: 1px solid var(--border); transition: background 0.2s;">
+                                <td style="padding: 0.75rem;">
+                                    <span style="margin-right: 0.5rem;">${getFileIcon(f.name)}</span>
+                                    ${f.name}
+                                </td>
+                                <td style="padding: 0.75rem; text-align: right;">${formatSize(f.size)}</td>
+                                <td style="padding: 0.75rem; text-align: right;">${formatDate(f.modified_at)}</td>
+                                <td style="padding: 0.75rem;">
+                                    <div style="display: flex; justify-content: center; gap: 0.5rem;">
+                                        <button class="btn btn-sm btn-secondary" onclick="downloadFile('${f.file_id}', '${f.name}')">📥</button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteFile('${f.file_id}', '${f.name}')">🗑️</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const icons = {
+                'pdf': '📕', 'doc': '📘', 'docx': '📘', 'txt': '📝',
+                'jpg': '🖼️', 'jpeg': '🖼️', 'png': '🖼️', 'gif': '🖼️', 'svg': '🖼️',
+                'zip': '📦', 'rar': '📦', '7z': '📦',
+                'mp4': '🎬', 'avi': '🎬', 'mov': '🎬',
+                'mp3': '🎵', 'wav': '🎵', 'ogg': '🎵',
+                'json': '📋', 'xml': '📋', 'csv': '📊', 'xlsx': '📊', 'xls': '📊'
+            };
+            return icons[ext] || '📄';
+        }
+
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+            return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return date.toLocaleString('zh-CN');
+        }
+
+        function openUploadModal() {
+            document.getElementById('upload-modal').style.display = 'flex';
+            document.getElementById('selected-files').innerHTML = '';
+            document.getElementById('upload-file').value = '';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function handleFileSelect() {
+            const files = document.getElementById('upload-file').files;
+            const container = document.getElementById('selected-files');
+            
+            if (!files || files.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = '<div style="background: var(--bg-dark); border-radius: 8px; padding: 0.75rem;">';
+            let totalSize = 0;
+            for (let i = 0; i < files.length; i++) {
+                html += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; border-bottom: 1px solid var(--border);">
+                        <span>${getFileIcon(files[i].name)} ${files[i].name}</span>
+                        <span style="color: var(--text-secondary);">${formatSize(files[i].size)}</span>
+                    </div>
+                `;
+                totalSize += files[i].size;
+            }
+            html += `<div style="padding: 0.5rem; text-align: right; color: var(--text-secondary); font-size: 0.85rem;">
+                共 ${files.length} 个文件，总计 ${formatSize(totalSize)}
+            </div></div>`;
+            
+            container.innerHTML = html;
+        }
+
+        async function uploadFiles() {
+            const files = document.getElementById('upload-file').files;
+            const destination = document.getElementById('upload-destination').value;
+            
+            if (!files || files.length === 0) {
+                alert('请选择要上传的文件');
+                return;
+            }
+
+            const btn = document.querySelector('#upload-modal .btn-primary');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="loading"></span> 上传中...';
+            btn.disabled = true;
+
+            try {
+                const formData = new FormData();
+                for (let i = 0; i < files.length; i++) {
+                    formData.append('files', files[i]);
+                }
+                if (destination) {
+                    formData.append('destination', destination);
+                }
+
+                const res = await fetch(`${API_BASE}/files/upload-multiple`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    alert(`✅ 上传完成！\n成功: ${data.success_count} 个\n失败: ${data.failed_count} 个`);
+                    closeModal('upload-modal');
+                    loadFiles();
+                } else {
+                    alert(`❌ 上传失败: ${data.results?.find(r => !r.success)?.error || '未知错误'}`);
+                }
+            } catch (e) {
+                alert('❌ 上传失败: ' + e.message);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        async function downloadFile(fileId, filename) {
+            try {
+                const res = await fetch(`${API_BASE}/files/download/${encodeURIComponent(fileId)}`);
+                if (!res.ok) throw new Error('下载失败');
+
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (e) {
+                alert('❌ 下载失败: ' + e.message);
+            }
+        }
+
+        async function deleteFile(fileId, filename) {
+            if (!confirm(`确定要删除文件 "${filename}" 吗？此操作不可恢复。`)) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/files/${encodeURIComponent(fileId)}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    alert('✅ 文件已删除');
+                    loadFiles();
+                } else {
+                    alert('❌ 删除失败');
+                }
+            } catch (e) {
+                alert('❌ 删除失败: ' + e.message);
+            }
+        }

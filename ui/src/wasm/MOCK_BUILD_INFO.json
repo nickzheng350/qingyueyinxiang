@@ -1,0 +1,36 @@
+{
+  "build_time": "2026-05-15T11:45:00Z",
+  "rust_version": "1.78.0",
+  "wasm_pack_version": "0.12.1",
+  "build_target": "web",
+  "build_mode": "release",
+  "files": [
+    {
+      "name": "skill_engine_bg.wasm",
+      "size": "约 800KB",
+      "description": "WASM 字节码，包含核心逻辑"
+    },
+    {
+      "name": "skill_engine.js",
+      "size": "约 50KB",
+      "description": "JS 绑定，自动加载 WASM"
+    },
+    {
+      "name": "skill_engine.d.ts",
+      "size": "约 5KB",
+      "description": "TypeScript 类型声明"
+    },
+    {
+      "name": "index.js",
+      "size": "约 1KB",
+      "description": "便捷导入入口"
+    }
+  ],
+  "features": [
+    "零拷贝文件操作",
+    "异步 I/O",
+    "内存安全保证",
+    "编译期类型检查",
+    "WASM 运行时加载"
+  ]
+}
