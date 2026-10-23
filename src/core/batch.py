@@ -26,10 +26,10 @@ class BatchConfig:
 
 
 @dataclass
-class BatchResult(Generic[T]):
+class BatchResult(Generic[T, R]):
     """批量处理结果"""
     items: list[T]
-    successful: list[T]
+    successful: list[R]
     failed: list[tuple[T, Exception]]
     duration: float
     total: int
@@ -52,7 +52,7 @@ class BatchProcessor(ABC, Generic[T, R]):
         """处理单个项目"""
         pass
 
-    async def process_batch(self, items: list[T]) -> BatchResult[R]:
+    async def process_batch(self, items: list[T]) -> BatchResult[T, R]:
         """批量处理"""
         start_time = time.time()
         successful = []
@@ -78,7 +78,7 @@ class BatchProcessor(ABC, Generic[T, R]):
         )
 
 
-class AsyncBatcher(Generic[T]):
+class AsyncBatcher(Generic[T, R]):
     """异步批处理器 - 自动收集项目并批量处理"""
 
     def __init__(
@@ -302,6 +302,7 @@ class RetryProcessor(Generic[T, R]):
                     delay = self._initial_delay * (self._backoff_factor ** attempt)
                     await asyncio.sleep(delay)
 
+        assert last_exception is not None, "retry exhausted without an exception"
         raise last_exception
 
 
@@ -311,7 +312,7 @@ class PipelineProcessor(Generic[T]):
     def __init__(self):
         self._steps: list[Callable[[Any], Awaitable[Any]]] = []
 
-    def add_step(self, step: Callable[[Any], Awaitable[Any]]) -> "PipelineProcessor":
+    def add_step(self, step: Callable[[Any], Awaitable[Any]]) -> "PipelineProcessor[T]":
         """添加处理步骤"""
         self._steps.append(step)
         return self

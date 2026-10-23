@@ -12,13 +12,11 @@ from functools import wraps
 from typing import (
     Any,
     AsyncIterator,
+    Awaitable,
     Callable,
-    Dict,
     Generic,
     Iterator,
-    List,
     Optional,
-    Tuple,
     TypeVar,
 )
 
@@ -46,7 +44,7 @@ class TaskResult(Generic[R]):
 @dataclass
 class BatchResult(Generic[R]):
     """批量任务结果"""
-    results: List[TaskResult[R]]
+    results: list[TaskResult[R]]
     total_count: int = 0
     success_count: int = 0
     failed_count: int = 0
@@ -85,7 +83,7 @@ class SyncExecutor:
 
     @staticmethod
     def batch_execute(
-        tasks: List[Tuple[Callable[..., R], Tuple, Dict]],
+        tasks: list[tuple[Callable[..., R], tuple, dict]],
     ) -> BatchResult[R]:
         """批量同步执行"""
         start_time = time.time()
@@ -126,7 +124,7 @@ class AsyncExecutor:
 
     @staticmethod
     async def batch_execute(
-        tasks: List[Tuple[Callable[..., R], Tuple, Dict]],
+        tasks: list[tuple[Callable[..., R], tuple, dict]],
         max_concurrent: Optional[int] = None,
     ) -> BatchResult[R]:
         """批量异步执行"""
@@ -141,7 +139,7 @@ class AsyncExecutor:
 
             coroutines = [_wrapped(func, args, kwargs) for func, args, kwargs in tasks]
         else:
-            coroutines = [AsyncExecutor.execute(func, args, kwargs) for func, args, kwargs in tasks]
+            coroutines = [AsyncExecutor.execute(func, *args, **kwargs) for func, args, kwargs in tasks]
 
         results = await asyncio.gather(*coroutines, return_exceptions=False)
         total_time = time.time() - start_time
@@ -149,27 +147,17 @@ class AsyncExecutor:
 
     @staticmethod
     async def batch_execute_with_group(
-        tasks: List[Tuple[Callable[..., R], Tuple, Dict]],
+        tasks: list[tuple[Callable[..., R], tuple, dict]],
     ) -> BatchResult[R]:
-        """使用 TaskGroup 批量执行"""
-        start_time = time.time()
-        results = []
-
-        async with asyncio.TaskGroup() as tg:
-            for func, args, kwargs in tasks:
-                task = tg.create_task(AsyncExecutor.execute(func, *args, **kwargs))
-                results.append(task)
-
-        completed_results = [t.result() for t in results]
-        total_time = time.time() - start_time
-        return BatchResult(results=completed_results, total_time=total_time)
+        """批量异步执行（复用 gather 实现，兼容 Python 3.10）"""
+        return await AsyncExecutor.batch_execute(tasks)
 
 
 class ParallelExecutor:
     """并行执行器 (线程池)"""
 
     _default_executor: Optional[ThreadPoolExecutor] = None
-    _executors: Dict[str, ThreadPoolExecutor] = {}
+    _executors: dict[str, ThreadPoolExecutor] = {}
     _lock = threading.Lock()
 
     @classmethod
@@ -228,7 +216,7 @@ class ParallelExecutor:
 
     @staticmethod
     def batch_execute(
-        tasks: List[Tuple[Callable[..., R], Tuple, Dict]],
+        tasks: list[tuple[Callable[..., R], tuple, dict]],
         executor_name: str = "default",
         max_workers: int = 4,
     ) -> BatchResult[R]:
@@ -264,13 +252,13 @@ class ParallelExecutor:
                 )
 
         total_time = time.time() - start_time
-        for i, result in enumerate(results):
-            result.execution_time = total_time / len(results) if results else 0.0
+        for task_result in results:
+            task_result.execution_time = total_time / len(results) if results else 0.0
 
         return BatchResult(results=results, total_time=total_time)
 
 
-class UnifiedExecutor(Generic[R]):
+class UnifiedExecutor:
     """统一执行器 - 自动选择模式"""
 
     @staticmethod
@@ -332,12 +320,15 @@ def sync_to_async(func: Callable[..., R]) -> Callable[..., Any]:
     return wrapper
 
 
-def async_to_sync(func: Callable[..., Any]) -> Callable[..., R]:
+def async_to_sync(func: Callable[..., Awaitable[R]]) -> Callable[..., R]:
     """异步函数转同步"""
     @wraps(func)
     def wrapper(*args, **kwargs) -> R:
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(func(*args, **kwargs))
+        loop = asyncio.new_event_loop()
+        try:
+            return loop.run_until_complete(func(*args, **kwargs))
+        finally:
+            loop.close()
     return wrapper
 
 
@@ -386,13 +377,13 @@ class ConcurrencyManager:
         return ParallelExecutor.execute(func, *args, **kwargs)
 
     @staticmethod
-    def sync_batch(tasks: List[Tuple[Callable[..., R], Tuple, Dict]]) -> BatchResult[R]:
+    def sync_batch(tasks: list[tuple[Callable[..., R], tuple, dict]]) -> BatchResult[R]:
         """同步批量执行"""
         return SyncExecutor.batch_execute(tasks)
 
     @staticmethod
     async def async_batch(
-        tasks: List[Tuple[Callable[..., R], Tuple, Dict]],
+        tasks: list[tuple[Callable[..., R], tuple, dict]],
         max_concurrent: Optional[int] = None,
     ) -> BatchResult[R]:
         """异步批量执行"""
@@ -400,7 +391,7 @@ class ConcurrencyManager:
 
     @staticmethod
     def parallel_batch(
-        tasks: List[Tuple[Callable[..., R], Tuple, Dict]],
+        tasks: list[tuple[Callable[..., R], tuple, dict]],
         **kwargs,
     ) -> BatchResult[R]:
         """并行批量执行"""
