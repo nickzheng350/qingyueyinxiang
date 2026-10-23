@@ -1,6 +1,6 @@
 # HydraFlow AI
 
-**版本**: 2.0.0 | 一个强大的 AI 工作流引擎，支持多模态内容生成、意图解析和技能系统。
+**版本**: 1.1.0 | 一个强大的 AI 工作流引擎，支持多模态内容生成、意图解析和技能系统。
 
 ## 功能特性
 
@@ -10,7 +10,7 @@
 - **性能优化** - 智能缓存、复杂度分析、减少对模型的绝对依赖
 - **跨平台** - 支持 Linux、macOS 和 Windows
 
-## 新版本特性 (v2.0)
+## 核心特性
 
 | 特性 | 说明 |
 |------|------|
@@ -119,21 +119,56 @@ curl -X POST http://localhost:8000/api/v1/generate \
 
 ```
 hydraflow-ai/
-├── src/              # 核心源代码
-│   ├── api/          # API 路由
-│   ├── intent_parser/ # 意图解析模块
-│   ├── model_dispatcher/ # 模型调度器
-│   ├── prompt_engine/   # 提示词引擎
-│   ├── skills/        # 技能系统
-│   ├── cache/         # 多级缓存优先队列
-│   ├── core/          # 核心模块（并发、异常）
-│   ├── monitoring/    # 监控追踪
-│   └── rag/           # RAG 系统
-├── config/           # 配置文件
-├── docs/             # 文档
-├── prompts/          # 提示词模板
-└── skills/           # 技能插件
+├── src/                  # 核心源代码
+│   ├── api/              # FastAPI 应用与路由
+│   ├── auth/             # 认证与授权（JWT / API Key / OAuth 占位）
+│   ├── cache/            # 多级缓存与优先级队列
+│   ├── core/             # 配置、异常、限流、并发、统一引擎
+│   ├── intent_parser/    # 意图解析模块
+│   ├── model_dispatcher/ # 模型调度器与类型系统
+│   ├── monitoring/       # 监控与链路追踪
+│   ├── multimodal/       # 多模态（图像 / 音频 / 视频）
+│   ├── network/          # HTTP 客户端与模型下载
+│   ├── persistence/      # ORM 模型与文件存储
+│   ├── prompt_engine/    # 提示词引擎
+│   ├── rag/              # RAG 检索增强
+│   ├── skills/           # 技能系统
+│   ├── task_engine/      # 任务执行器
+│   └── ws/               # WebSocket
+├── config/               # 配置文件
+├── docs/                 # 文档
+├── migrations/           # Alembic 数据库迁移
+├── prompts/              # 提示词模板
+├── skills/               # 技能插件
+├── tests/                # 单元测试与 API 测试
+└── ui/                   # 前端
 ```
+
+## 开发
+
+```bash
+# 安装开发依赖（轻量集，不含 torch 等机器学习包）
+pip install -r requirements-dev.txt
+
+# 运行测试
+pytest
+
+# 带覆盖率
+pytest --cov=src --cov-report=term-missing
+
+# 数据库迁移
+alembic upgrade head
+alembic revision --autogenerate -m "说明"
+```
+
+### 依赖版本约束（不要随意放宽上限）
+
+| 依赖 | 约束 | 原因 |
+|------|------|------|
+| fastapi | `>=0.115.6,<0.160` | 0.160+ 搭配 starlette 1.x 时 `include_router` 静默失效，路由全部丢失 |
+| starlette | `>=0.41.0,<0.46` | 需与上方 fastapi 版本匹配 |
+| bcrypt | `>=4.0.0,<4.1.0` | passlib 1.7.4 不兼容 bcrypt 4.1+ |
+| sqlalchemy | 需 `[asyncio]` extra | 异步 ORM 依赖 greenlet |
 
 ## 性能优化
 
