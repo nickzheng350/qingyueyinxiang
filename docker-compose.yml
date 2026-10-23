@@ -1,0 +1,40 @@
+# HydraFlow AI 本地/自托管部署
+#
+# 环境变量命名遵循 src/core/config.py 的 env_prefix 约定：
+#   DATABASE_URL      -> database.url
+#   LOG_LEVEL/LOG_FORMAT -> monitoring.log_level / monitoring.log_format
+#   API_PORT          -> api.port
+#   ENVIRONMENT       -> environment
+
+services:
+  api:
+    build: .
+    image: hydraflow-ai:1.1.0
+    container_name: hydraflow-api
+    ports:
+      - "8000:8000"
+    environment:
+      ENVIRONMENT: production
+      LOG_LEVEL: INFO
+      LOG_FORMAT: json
+      DATABASE_URL: sqlite+aiosqlite:///./data/hydraflow.db
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # 可选：启用 Redis 作为二级缓存后端（cache/multi_level.py 的 RedisL2Cache）
+  redis:
+    image: redis:7-alpine
+    container_name: hydraflow-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    profiles:
+      - redis

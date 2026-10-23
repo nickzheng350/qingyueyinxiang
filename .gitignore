@@ -7,6 +7,11 @@ __pycache__/
 .venv/
 .env
 
+# 数据库（运行时生成，不入库）
+*.db
+*.sqlite
+*.sqlite3
+
 # 模型文件
 models/
 *.bin
@@ -37,9 +42,11 @@ dist/
 build/
 *.egg-info/
 
-# 测试
-test_*.py
+# 测试（注意：不要忽略 test_*.py / tests/，否则测试代码无法入库）
 .pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
 
 # Node.js
 node_modules/

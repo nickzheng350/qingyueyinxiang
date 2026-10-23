@@ -1,0 +1,33 @@
+# HydraFlow AI 开发与测试依赖（轻量集）
+
+# 说明：完整运行依赖见 requirements.txt。
+# 本文件只包含「跑通测试 + 启动 API」所需的最小集合，
+# 不含 torch / transformers / opencv 等数百 MB~数 GB 的机器学习包，
+# 用于 CI 与本地快速验证。版本约束需与 requirements.txt 保持一致。
+
+# Web 框架（版本上限不可去掉：fastapi 0.160+ 搭配 starlette 1.x 会静默丢失路由）
+fastapi>=0.115.6,<0.160.0
+starlette>=0.41.0,<0.46.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+python-dotenv>=1.0.0
+httpx>=0.25.0
+
+# 运行时硬依赖
+psutil>=5.9.8
+opentelemetry-api>=1.21.0
+opentelemetry-sdk>=1.21.0
+prometheus-client>=0.19.0
+
+# 持久化与认证
+sqlalchemy[asyncio]>=2.0.23
+aiosqlite>=0.19.0
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+bcrypt>=4.0.0,<4.1.0
+
+# 测试工具
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0

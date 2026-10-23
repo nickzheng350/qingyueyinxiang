@@ -23,11 +23,20 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
       - name: Lint
         run: |
           pip install ruff
           ruff check src/ main.py
+      - name: Run tests
+        run: |
+          pytest --cov=src --cov-report=term-missing --cov-report=xml
+      - name: Type check
+        # 渐进式接入：先让结果可见，暂不阻断合并
+        continue-on-error: true
+        run: |
+          pip install mypy
+          mypy src/ --config-file mypy.ini
       - name: Import check
         run: |
           python -c "from src.core import get_config; print('Core OK')"

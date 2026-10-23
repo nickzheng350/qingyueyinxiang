@@ -1,0 +1,27 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.git/
+.gitignore
+.venv/
+venv/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+data/*.db
+data/*.sqlite*
+logs/
+
+node_modules/
+ui/node_modules/
+
+# 体积大的归档/模型文件
+*.zip
+*.bin
+*.safetensors
+*.ckpt
+models/
