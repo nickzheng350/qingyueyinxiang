@@ -1,4 +1,13 @@
-"""HydraFlow AI 配置管理器 - 使用 pydantic-settings"""
+"""HydraFlow AI 配置管理器。
+
+两套配置并存，职责不同，请勿混用：
+
+* ``Settings`` / ``get_settings()`` — 运行时配置，来自环境变量与 .env，
+  涵盖服务端口、数据库连接、认证密钥、限流、缓存等。新代码一律使用这一套。
+* ``LegacyConfigManager`` / ``get_config()`` — 兼容层，读取 config/*.json
+  中的业务数据（模型注册表、风格分类、API 密钥开关等）。
+  仅用于需要读取这些 JSON 文件的既有模块。
+"""
 
 import json
 import os
@@ -261,7 +270,7 @@ class LegacyConfigManager:
                     with open(filepath, "r", encoding="utf-8") as f:
                         self._config[key] = json.load(f)
                 except (json.JSONDecodeError, OSError) as e:
-                    raise ConfigError(f"加载配置文件失败: {filename}", details={"error": str(e)})
+                    raise ConfigError(f"加载配置文件失败: {filename}: {e}")
             else:
                 self._config[key] = {}
 

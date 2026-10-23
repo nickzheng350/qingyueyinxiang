@@ -97,7 +97,7 @@ class HTTPClient:
         client = await self._get_client()
         timeout_val = httpx.Timeout(timeout) if timeout else self._timeout
 
-        last_error = None
+        last_error: Optional[Exception] = None
         for attempt in range(max_retries):
             try:
                 response = await client.request(
@@ -254,12 +254,17 @@ class AnthropicClient(APIClient):
 
     def __init__(self, api_key: str, base_url: str = "https://api.anthropic.com/v1"):
         super().__init__(base_url, api_key)
-        self._get_headers = lambda additional=None: {
-            "x-api-key": api_key,
+
+    def _get_headers(self, additional_headers: Optional[dict] = None) -> dict:
+        """Anthropic 使用 x-api-key 而非 Bearer 认证"""
+        headers = {
+            "x-api-key": self.api_key or "",
             "anthropic-version": "2023-06-01",
             "content-type": "application/json",
-            **(additional or {}),
         }
+        if additional_headers:
+            headers.update(additional_headers)
+        return headers
 
 
 class StabilityAIClient(APIClient):

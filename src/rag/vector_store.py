@@ -210,7 +210,7 @@ class BM25VectorStore(VectorStore):
         threshold: float = 0.0,
     ) -> list[SearchResult]:
         """BM25 搜索（忽略 query_embedding）"""
-        query_tokens = self._tokenize(" ".join(query_embedding) if isinstance(query_embedding[0], (int, float)) else str(query_embedding))
+        query_tokens = self._tokenize(" ".join(str(x) for x in query_embedding))
 
         async with self._lock:
             if not self._initialized:

@@ -330,9 +330,8 @@ class TaskExecutor:
 
         tasks = self._storage.list_tasks(status_enum, type_enum, limit, offset)
         return [
-            self.get_task_info(t.id)
-            for t in tasks
-            if self.get_task_info(t.id)
+            info for t in tasks
+            if (info := self.get_task_info(t.id)) is not None
         ]
 
     def get_task_statistics(self) -> Dict[str, Any]:

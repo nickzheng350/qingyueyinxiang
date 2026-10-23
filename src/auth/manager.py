@@ -2,6 +2,8 @@
 
 import secrets
 import hashlib
+import threading
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Optional
 from functools import lru_cache
@@ -208,17 +210,163 @@ def get_api_key_manager() -> ApiKeyManager:
 
 
 class OAuthService:
-    """OAuth 服务"""
+    """OAuth 服务。
+
+    Google / GitHub 登录尚未实现。这里不抛 NotImplementedError，
+    而是抛出业务异常 AuthenticationError：调用方拿到的是标准化的错误响应，
+    而不是会让接口返回 500 的编程错误。
+    """
+
+    def _require_credentials(self, provider: str, client_id: str | None, client_secret: str | None) -> None:
+        if not client_id or not client_secret:
+            raise AuthenticationError(
+                f"{provider} OAuth 未配置：缺少 client_id / client_secret"
+            )
 
     async def authenticate_google(self, code: str) -> tuple[str, str]:
-        """Google OAuth 认证 - 占位实现"""
-        raise NotImplementedError("Google OAuth 未实现")
+        """Google OAuth 认证 - 尚未实现"""
+        auth_settings = get_settings().auth
+        self._require_credentials(
+            "Google",
+            auth_settings.oauth_google_client_id,
+            auth_settings.oauth_google_client_secret,
+        )
+        raise AuthenticationError("Google OAuth 尚未实现")
 
     async def authenticate_github(self, code: str) -> tuple[str, str]:
-        """GitHub OAuth 认证 - 占位实现"""
-        raise NotImplementedError("GitHub OAuth 未实现")
+        """GitHub OAuth 认证 - 尚未实现"""
+        auth_settings = get_settings().auth
+        self._require_credentials(
+            "GitHub",
+            auth_settings.oauth_github_client_id,
+            auth_settings.oauth_github_client_secret,
+        )
+        raise AuthenticationError("GitHub OAuth 尚未实现")
 
 
 def get_oauth_service() -> OAuthService:
     """获取 OAuth 服务"""
     return OAuthService()
+
+
+@dataclass
+class AuthUser:
+    """API 层使用的用户对象。
+
+    ORM 的 User 模型依赖数据库初始化，且缺少 role / last_login 字段，
+    而 API 路由依赖这些属性，因此定义这个与持久化解耦的用户对象。
+    """
+
+    id: int
+    username: str
+    email: str
+    role: str = "user"
+    hashed_password: Optional[str] = None
+    is_active: bool = True
+    created_at: datetime = field(default_factory=datetime.utcnow)
+    last_login: Optional[datetime] = None
+
+    @property
+    def enabled(self) -> bool:
+        """is_active 的别名，与 API 路由中的字段命名保持一致"""
+        return self.is_active
+
+
+class AuthManager:
+    """用户管理器（内存存储）。
+
+    API 路由在 async 处理函数中以同步方式调用本类，无法 await 异步 ORM 会话，
+    因此这里使用内存存储；令牌签发与校验复用本模块的 JWT 工具函数。
+    接入数据库时只需替换 _users 的读写实现，保持对外方法签名不变。
+    """
+
+    def __init__(self) -> None:
+        self._users: dict[str, AuthUser] = {}
+        self._revoked_tokens: set[str] = set()
+        self._next_id = 1
+        self._lock = threading.Lock()
+
+    # ---------- 用户管理 ----------
+
+    def create_user(
+        self,
+        username: str,
+        password: str,
+        email: Optional[str] = None,
+        role: str = "user",
+    ) -> Optional[AuthUser]:
+        """创建用户，用户名已存在时返回 None"""
+        with self._lock:
+            if username in self._users:
+                return None
+            user = AuthUser(
+                id=self._next_id,
+                username=username,
+                email=email or f"{username}@example.com",
+                role=role or "user",
+                hashed_password=get_password_hash(password) if password else None,
+            )
+            self._next_id += 1
+            self._users[username] = user
+            return user
+
+    def get_user(self, username: str) -> Optional[AuthUser]:
+        """按用户名获取用户"""
+        return self._users.get(username)
+
+    def list_users(self) -> list[AuthUser]:
+        """列出全部用户"""
+        return list(self._users.values())
+
+    def update_user(self, username: str, **kwargs: object) -> bool:
+        """更新用户字段，支持 email / role / enabled"""
+        user = self._users.get(username)
+        if user is None:
+            return False
+        if kwargs.get("email") is not None:
+            user.email = str(kwargs["email"])
+        if kwargs.get("role") is not None:
+            user.role = str(kwargs["role"])
+        if kwargs.get("enabled") is not None:
+            user.is_active = bool(kwargs["enabled"])
+        return True
+
+    def delete_user(self, username: str) -> bool:
+        """删除用户"""
+        with self._lock:
+            return self._users.pop(username, None) is not None
+
+    # ---------- 认证 ----------
+
+    def authenticate(self, username: str, password: str) -> Optional[str]:
+        """校验凭据并返回访问令牌，失败返回 None"""
+        user = self._users.get(username)
+        if user is None or not user.is_active:
+            return None
+        if not user.hashed_password or not verify_password(password, user.hashed_password):
+            return None
+        user.last_login = datetime.utcnow()
+        return create_access_token({"sub": user.username, "role": user.role})
+
+    def verify_token(self, token: str) -> Optional[str]:
+        """校验令牌并返回用户名，失败返回 None"""
+        if token in self._revoked_tokens:
+            return None
+        try:
+            payload = decode_token(token)
+        except (JWTError, AuthenticationError):
+            return None
+        return payload.get("sub")
+
+    def logout(self, token: str) -> bool:
+        """吊销令牌，令牌无效返回 False"""
+        if self.verify_token(token) is None:
+            return False
+        self._revoked_tokens.add(token)
+        return True
+
+
+@lru_cache()
+def get_auth_manager() -> AuthManager:
+    """获取用户管理器单例"""
+    return AuthManager()

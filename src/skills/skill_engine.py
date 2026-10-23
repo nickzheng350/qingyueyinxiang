@@ -7,9 +7,14 @@ from pathlib import Path
 from typing import Any, Dict, Optional, List, Callable
 from dataclasses import dataclass, field
 import asyncio
+import os
 import traceback
 
 logger = logging.getLogger("hydraflow.skill_engine")
+
+# 危险能力总开关：Shell 命令动作等同任意代码执行，默认禁用，
+# 仅可在完全可信的技能来源下通过环境变量显式开启。
+_ALLOW_SHELL_COMMANDS = os.getenv("HYDRAFLOW_ALLOW_SKILL_SHELL", "0") == "1"
 
 
 @dataclass
@@ -55,7 +60,7 @@ class DynamicSkillExecutor(SkillExecutor):
     def __init__(self, context: SkillContext, module_path: str):
         super().__init__(context)
         self.module_path = module_path
-        self._executor_class = None
+        self._executor_class: Optional[type[SkillExecutor]] = None
         self._load_executor()
     
     def _load_executor(self) -> None:
@@ -251,8 +256,14 @@ class ConfigBasedSkillExecutor(SkillExecutor):
         """HTTP 请求动作"""
         import httpx
         url = params.get('url')
+        if not isinstance(url, str):
+            raise ValueError("HTTP 请求动作缺少 'url' 参数")
         method = params.get('method', 'GET')
+        if not isinstance(method, str):
+            raise ValueError("HTTP 请求动作的 'method' 必须为字符串")
         headers = params.get('headers', {})
+        if not isinstance(headers, dict):
+            headers = {}
         body = params.get('body')
 
         try:
@@ -278,12 +289,16 @@ class ConfigBasedSkillExecutor(SkillExecutor):
         """文件操作动作"""
         operation = params.get('operation')
         path = params.get('path')
+        if not isinstance(path, str):
+            raise ValueError("文件操作动作缺少 'path' 参数")
         
         if operation == 'read':
             with open(path, 'r', encoding='utf-8') as f:
                 return f.read()
         elif operation == 'write':
             content = params.get('content')
+            if not isinstance(content, str):
+                raise ValueError("文件写入操作缺少 'content' 参数")
             with open(path, 'w', encoding='utf-8') as f:
                 f.write(content)
             return True
@@ -294,32 +309,57 @@ class ConfigBasedSkillExecutor(SkillExecutor):
             raise ValueError(f"未知的文件操作：{operation}")
     
     def _data_transform(self, params: Dict[str, Any]) -> Any:
-        """数据转换动作"""
+        """数据转换动作。
+
+        表达式通过 eval 执行，但显式传入 ``{"__builtins__": {}}`` 作为 globals，
+        彻底禁用 open / __import__ / exec 等内置对象，配置文件中的表达式
+        只能对 item / result 做纯数据运算，无法调用任意代码。
+        """
         transform_type = params.get('type')
-        data = params.get('data')
-        
+        data = params.get('data') or []
+
+        safe_globals: Dict[str, Any] = {"__builtins__": {}}
+
         if transform_type == 'filter':
             condition = params.get('condition')
-            return [item for item in data if eval(condition, {}, {'item': item})]
+            if not isinstance(condition, str):
+                raise ValueError("filter 条件必须是字符串表达式")
+            return [item for item in data if eval(condition, safe_globals, {'item': item})]
         elif transform_type == 'map':
             expression = params.get('expression')
-            return [eval(expression, {}, {'item': item}) for item in data]
+            if not isinstance(expression, str):
+                raise ValueError("map 表达式必须是字符串")
+            return [eval(expression, safe_globals, {'item': item}) for item in data]
         elif transform_type == 'reduce':
             initial = params.get('initial')
             expression = params.get('expression')
+            if not isinstance(expression, str):
+                raise ValueError("reduce 表达式必须是字符串")
             result = initial
             for item in data:
-                result = eval(expression, {}, {'result': result, 'item': item})
+                result = eval(expression, safe_globals, {'result': result, 'item': item})
             return result
         else:
             raise ValueError(f"未知的转换类型：{transform_type}")
-    
+
     async def _shell_command(self, params: Dict[str, Any]) -> Any:
-        """Shell 命令动作"""
-        import subprocess
+        """Shell 命令动作。
+
+        ⚠️ 安全：此动作等同任意代码执行。默认禁用，需通过环境变量
+        ``HYDRAFLOW_ALLOW_SKILL_SHELL=1`` 显式开启，仅应在完全可信的
+        技能来源下使用。
+        """
+        if not _ALLOW_SHELL_COMMANDS:
+            raise PermissionError(
+                "Shell 命令技能已禁用；如需启用，请设置环境变量 "
+                "HYDRAFLOW_ALLOW_SKILL_SHELL=1（仅在可信环境下）"
+            )
+
         command = params.get('command')
+        if not isinstance(command, str):
+            raise ValueError("command 必须是字符串")
         timeout = params.get('timeout', 30)
-        
+
         try:
             process = await asyncio.create_subprocess_shell(
                 command,
@@ -330,7 +370,7 @@ class ConfigBasedSkillExecutor(SkillExecutor):
                 process.communicate(),
                 timeout=timeout
             )
-            
+
             return {
                 'returncode': process.returncode,
                 'stdout': stdout.decode('utf-8'),
@@ -372,7 +412,7 @@ class SkillEngine:
             module_path = kwargs.get('module_path')
             if not module_path:
                 raise ValueError("动态执行器需要 module_path 参数")
-            executor = DynamicSkillExecutor(context, module_path)
+            executor: SkillExecutor = DynamicSkillExecutor(context, module_path)
         elif executor_type == "config_based":
             config_path = kwargs.get('config_path')
             if not config_path:
@@ -445,7 +485,10 @@ class SkillEngine:
     
     def list_skills(self) -> List[Dict[str, Any]]:
         """列出所有技能"""
-        return [self.get_skill_info(skill_id) for skill_id in self._executors]
+        return [
+            info for skill_id in self._executors
+            if (info := self.get_skill_info(skill_id)) is not None
+        ]
     
     def get_shared_state(self, key: Optional[str] = None) -> Any:
         """获取共享状态"""

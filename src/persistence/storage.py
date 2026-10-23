@@ -252,6 +252,7 @@ class S3StorageBackend(StorageBackend):
     async def save(self, file_data: bytes | BinaryIO, file_path: str) -> str:
         from botocore.exceptions import ClientError
 
+        body: bytes | BinaryIO = file_data
         if isinstance(file_data, bytes):
             body = file_data
         else:

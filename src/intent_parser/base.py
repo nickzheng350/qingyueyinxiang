@@ -186,6 +186,14 @@ class IntentParserBase(ABC):
 
         return True, f"high_complexity_{level}"
 
+    def _clean_prompt(self, text: str, style: str) -> str:
+        """清理并规范化提示词（子类可覆盖）"""
+        return text
+
+    def _suggest_models(self, intent: IntentType) -> list[str]:
+        """根据意图推荐模型（子类可覆盖）"""
+        return []
+
     def _keyword_based_parse(self, text: str) -> ParseResult:
         """基于关键词的解析方法（无需LLM）"""
         intent = self._detect_intent(text)

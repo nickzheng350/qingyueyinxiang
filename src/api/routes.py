@@ -1,7 +1,8 @@
 """API 路由定义"""
 
-from typing import Optional
+from typing import Any, Optional
 
+import httpx
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel, Field
 
@@ -9,11 +10,14 @@ from src.intent_parser.factory import IntentParserFactory
 from src.prompt_engine.engine import PromptEngine
 from src.model_dispatcher.dispatcher import ModelDispatcher
 from src.skills.skill_manager import SkillManager
-from src.core.config import get_config
+from src.core.config import get_config, get_settings
+from src.core.exceptions import ModelNotFoundError, NetworkError
 from src.core.stability import get_stability_manager
 from src.task_engine import get_task_executor, TaskType
 from src.persistence import get_storage
-from src.auth import get_auth_manager
+from src.auth import AuthUser, get_auth_manager
+from src.rag import get_default_rag_engine
+from src.network import get_http_client
 
 api_router = APIRouter()
 
@@ -126,6 +130,24 @@ async def validate_all_models():
     """验证所有模型配置完整性"""
     dispatcher = ModelDispatcher()
     return dispatcher.validate_models()
+
+
+@api_router.get("/models/stats")
+async def get_model_statistics(model_id: str = ""):
+    """获取模型统计信息。
+
+    必须注册在 /models/{model_id} 之前，否则 "stats" 会被当成 model_id 吞掉。
+    model_id 为空返回整体统计，否则返回该模型详情。
+    """
+    dispatcher = ModelDispatcher()
+    if model_id:
+        try:
+            model = dispatcher.get_model(model_id)
+        except ModelNotFoundError:
+            raise HTTPException(status_code=404, detail="模型未找到")
+        return {"stats": model, "total": 1}
+    stats = dispatcher.get_statistics()
+    return {"stats": stats, "total": stats.get("total_models", 0)}
 
 
 @api_router.get("/models/{model_id}")
@@ -330,16 +352,6 @@ async def cancel_task(task_id: str):
     return {"success": True, "cancelled": cancelled, "deleted": deleted}
 
 
-# ============ 模型统计端点 ============
-
-@api_router.get("/models/stats")
-async def get_model_statistics(model_id: str = ""):
-    """获取模型使用统计"""
-    storage = get_storage()
-    stats = storage.get_model_stats(model_id if model_id else None)
-    return {"stats": stats, "total": len(stats)}
-
-
 # ============ 技能执行端点 ============
 
 class SkillExecuteRequest(BaseModel):
@@ -356,17 +368,6 @@ async def execute_skill(request: SkillExecuteRequest):
         **request.parameters
     )
     return result
-
-
-@api_router.get("/skills")
-async def list_skills(skill_type: str = ""):
-    """列出所有技能"""
-    skill_manager = SkillManager()
-    if skill_type:
-        skills = skill_manager.list_skills_by_type(skill_type)
-    else:
-        skills = skill_manager.list_skills()
-    return {"skills": skills, "total": len(skills)}
 
 
 @api_router.get("/skills/{skill_id}")
@@ -394,6 +395,37 @@ class RegisterRequest(BaseModel):
     role: str = Field(default="user", description="角色")
 
 
+def resolve_token(header: Optional[str]) -> str:
+    """校验 Authorization 头并返回令牌，缺失或格式错误抛 401"""
+    if not header or not header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="未提供认证令牌")
+    return header[7:]
+
+
+def current_user(token: str) -> AuthUser:
+    """由令牌解析用户。
+
+    令牌无效或用户已被删除时抛 401——这里必须判空，
+    否则会出现「令牌有效但用户不存在」导致的 500。
+    """
+    auth_manager = get_auth_manager()
+    username = auth_manager.verify_token(token)
+    if not username:
+        raise HTTPException(status_code=401, detail="无效的令牌")
+    user = auth_manager.get_user(username)
+    if user is None:
+        raise HTTPException(status_code=401, detail="用户不存在")
+    return user
+
+
+def require_admin(token: str) -> AuthUser:
+    """校验令牌并要求管理员角色"""
+    user = current_user(token)
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="权限不足")
+    return user
+
+
 class UpdateUserRequest(BaseModel):
     email: Optional[str] = Field(None, description="邮箱")
     role: Optional[str] = Field(None, description="角色")
@@ -410,6 +442,8 @@ async def login(request: LoginRequest):
         raise HTTPException(status_code=401, detail="用户名或密码错误")
     
     user = auth_manager.get_user(request.username)
+    if user is None:
+        raise HTTPException(status_code=401, detail="用户不存在")
     return {
         "access_token": token,
         "token_type": "bearer",
@@ -473,17 +507,7 @@ async def register(request: RegisterRequest):
 @api_router.get("/auth/me")
 async def get_current_user(token: str = Header(None, alias="Authorization")):
     """获取当前用户信息"""
-    if not token or not token.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="未提供认证令牌")
-    
-    token = token[7:]
-    auth_manager = get_auth_manager()
-    username = auth_manager.verify_token(token)
-    
-    if not username:
-        raise HTTPException(status_code=401, detail="无效的令牌")
-    
-    user = auth_manager.get_user(username)
+    user = current_user(resolve_token(token))
     return {
         "id": user.id,
         "username": user.username,
@@ -498,21 +522,8 @@ async def get_current_user(token: str = Header(None, alias="Authorization")):
 @api_router.get("/auth/users")
 async def list_users(token: str = Header(None, alias="Authorization")):
     """列出所有用户（管理员）"""
-    if not token or not token.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="未提供认证令牌")
-    
-    token = token[7:]
-    auth_manager = get_auth_manager()
-    username = auth_manager.verify_token(token)
-    
-    if not username:
-        raise HTTPException(status_code=401, detail="无效的令牌")
-    
-    user = auth_manager.get_user(username)
-    if user.role != "admin":
-        raise HTTPException(status_code=403, detail="权限不足")
-    
-    users = auth_manager.list_users()
+    require_admin(resolve_token(token))
+    users = get_auth_manager().list_users()
     return {
         "users": [{
             "id": u.id,
@@ -534,21 +545,10 @@ async def update_user(
     token: str = Header(None, alias="Authorization")
 ):
     """更新用户信息（管理员）"""
-    if not token or not token.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="未提供认证令牌")
-    
-    token = token[7:]
+    require_admin(resolve_token(token))
     auth_manager = get_auth_manager()
-    current_username = auth_manager.verify_token(token)
-    
-    if not current_username:
-        raise HTTPException(status_code=401, detail="无效的令牌")
-    
-    current_user = auth_manager.get_user(current_username)
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="权限不足")
-    
-    update_data = {}
+
+    update_data: dict[str, Any] = {}
     if request.email is not None:
         update_data["email"] = request.email
     if request.role is not None:
@@ -568,21 +568,83 @@ async def delete_user(
     token: str = Header(None, alias="Authorization")
 ):
     """删除用户（管理员）"""
-    if not token or not token.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="未提供认证令牌")
-    
-    token = token[7:]
+    require_admin(resolve_token(token))
     auth_manager = get_auth_manager()
-    current_username = auth_manager.verify_token(token)
-    
-    if not current_username:
-        raise HTTPException(status_code=401, detail="无效的令牌")
-    
-    current_user = auth_manager.get_user(current_username)
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="权限不足")
-    
+
     if auth_manager.delete_user(username):
         return {"success": True, "message": "用户已删除"}
     else:
         raise HTTPException(status_code=404, detail="用户未找到")
+
+
+# ==================== RAG 知识库 ====================
+
+
+class RagDocumentsRequest(BaseModel):
+    documents: list[str] = Field(..., description="文档内容列表")
+    metadata: Optional[dict] = Field(None, description="共享元数据")
+
+
+class RagQueryRequest(BaseModel):
+    question: str = Field(..., description="查询问题")
+    top_k: int = Field(5, ge=1, le=50, description="返回条数")
+
+
+@api_router.post("/rag/documents")
+async def add_rag_documents(request: RagDocumentsRequest):
+    """向知识库添加文档"""
+    engine = get_default_rag_engine()
+    added = await engine.add_documents(request.documents, metadata=request.metadata)
+    return {"success": True, "added": added, "total": await engine.document_count()}
+
+
+@api_router.get("/rag/documents/count")
+async def rag_document_count():
+    """知识库文档数量"""
+    engine = get_default_rag_engine()
+    return {"count": await engine.document_count()}
+
+
+@api_router.post("/rag/query")
+async def query_rag(request: RagQueryRequest):
+    """检索知识库，返回来源与拼接好的上下文"""
+    engine = get_default_rag_engine()
+    result = await engine.query(request.question, top_k=request.top_k)
+    return result
+
+
+@api_router.delete("/rag/documents/{doc_id}")
+async def delete_rag_document(doc_id: str):
+    """删除知识库文档"""
+    engine = get_default_rag_engine()
+    if not await engine.delete_document(doc_id):
+        raise HTTPException(status_code=404, detail="文档未找到")
+    return {"success": True, "message": "文档已删除"}
+
+
+# ==================== 本地推理服务探测 ====================
+
+
+@api_router.get("/system/providers")
+async def list_providers():
+    """探测本地推理服务（LM Studio / Ollama）是否可用"""
+    settings = get_settings()
+    targets = {
+        "lm_studio": f"{settings.lm_studio_api_base}/models",
+        "ollama": f"{settings.ollama_api_base}/models",
+    }
+
+    client = get_http_client()
+    providers = []
+    for name, url in targets.items():
+        try:
+            response = await client.get(url)
+            providers.append({"name": name, "url": url, "available": response.ok})
+        except (NetworkError, OSError, httpx.HTTPError) as exc:
+            providers.append({
+                "name": name,
+                "url": url,
+                "available": False,
+                "error": str(exc),
+            })
+    return {"providers": providers}

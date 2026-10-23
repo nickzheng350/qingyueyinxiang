@@ -40,7 +40,7 @@ def set_intent_cache(text: str, parser_name: str, result: dict, ttl: int = _cach
 def clear_intent_cache() -> None:
     """清除意图解析缓存"""
     cache = get_cache_manager()
-    cache.clear(namespace=_intent_cache_namespace)
+    cache.clear_namespace(_intent_cache_namespace)
     logger.info("意图解析缓存已清除")
 
 

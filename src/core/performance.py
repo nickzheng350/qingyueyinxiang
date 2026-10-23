@@ -247,7 +247,7 @@ class CostTracker:
     def get_cost_summary(self) -> Dict[str, Any]:
         """获取成本摘要"""
         with self.lock:
-            summary = {
+            summary: Dict[str, Any] = {
                 "total_cost": self.total_cost,
                 "estimated_savings": self.savings,
                 "by_type": {},

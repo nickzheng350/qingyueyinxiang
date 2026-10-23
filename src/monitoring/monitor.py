@@ -82,7 +82,7 @@ class StructuredLogger:
     
     def _format_log(self, entry: LogEntry) -> str:
         """格式化日志条目"""
-        log_data = {
+        log_data: Dict[str, Any] = {
             "service": self._service_name,
             "level": entry.level.value,
             "message": entry.message,
@@ -233,7 +233,7 @@ class MetricsCollector:
     
     def get_summary(self) -> Dict[str, Any]:
         """获取指标摘要"""
-        summary = {
+        summary: Dict[str, Any] = {
             "counters": [],
             "gauges": [],
             "histograms": [],

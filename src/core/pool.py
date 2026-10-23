@@ -1,6 +1,7 @@
 """HydraFlow AI 连接池管理器 - 数据库和 HTTP 连接复用"""
 
 import asyncio
+import logging
 import weakref
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
@@ -9,8 +10,11 @@ from collections.abc import AsyncIterator
 from abc import ABC, abstractmethod
 
 import httpx
+from sqlalchemy.exc import SQLAlchemyError
 
 from src.core.config import get_settings
+
+logger = logging.getLogger("hydraflow.core.pool")
 
 settings = get_settings()
 
@@ -103,8 +107,8 @@ class DatabaseConnectionPool(ConnectionPool):
     def __init__(self, database_url: str, config: Optional[PoolConfig] = None):
         self.database_url = database_url
         self.config = config or PoolConfig()
-        self._engine = None
-        self._session_factory = None
+        self._engine: Any = None
+        self._session_factory: Any = None
         self._lock = asyncio.Lock()
         self._initialized = False
 
@@ -137,11 +141,11 @@ class DatabaseConnectionPool(ConnectionPool):
         return self._session_factory()
 
     async def release(self, connection: Any) -> None:
-        """释放会话"""
+        """释放会话。关闭失败只记录日志，不向上传播"""
         try:
             await connection.close()
-        except Exception:
-            pass
+        except (SQLAlchemyError, RuntimeError) as exc:
+            logger.warning(f"释放会话失败: {exc}")
 
     async def close(self) -> None:
         """关闭连接池"""
@@ -215,10 +219,10 @@ class PoolManager:
 
     async def close_all(self) -> None:
         """关闭所有连接池"""
-        for pool in self._http_pools.values():
-            await pool.close()
-        for pool in self._db_pools.values():
-            await pool.close()
+        for http_pool in self._http_pools.values():
+            await http_pool.close()
+        for db_pool in self._db_pools.values():
+            await db_pool.close()
         self._http_pools.clear()
         self._db_pools.clear()
 

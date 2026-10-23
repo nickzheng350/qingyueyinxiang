@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import BinaryIO, Callable, Optional
+from typing import Any, BinaryIO, Callable, Optional
 import ssl
 import certifi
 
@@ -140,6 +140,7 @@ class DownloadManager:
         progress_callback: Optional[Callable[[DownloadProgress], None]] = None,
     ) -> Path:
         """执行下载"""
+        assert task.filename is not None, "filename 必须在进入下载前解析"
         task_id = hashlib.md5(task.url.encode()).hexdigest()
         lock = self._get_lock(task_id)
 
@@ -182,7 +183,8 @@ class DownloadManager:
                     with open(file_path, "ab" if task.resume else "wb") as f:
                         downloaded = task.progress.downloaded_size
                         last_update = datetime.now()
-                        bytes_per_second = 0
+                        last_downloaded = downloaded
+                        bytes_per_second = 0.0
 
                         async for chunk in response.aiter_bytes(task.chunk_size):
                             await task._pause_event.wait()
@@ -199,9 +201,11 @@ class DownloadManager:
                             now = datetime.now()
                             time_diff = (now - last_update).total_seconds()
                             if time_diff >= 1.0:
-                                bytes_per_second = (downloaded - task.progress.downloaded_size) / time_diff
+                                # 用区间增量而非与已更新的字段相减，否则速度恒为 0
+                                bytes_per_second = (downloaded - last_downloaded) / time_diff
                                 task.progress.speed = bytes_per_second
                                 last_update = now
+                                last_downloaded = downloaded
 
                             if progress_callback:
                                 progress_callback(task.progress)
@@ -291,6 +295,8 @@ class DownloadManager:
         finally:
             if task_id in self._tasks:
                 del self._tasks[task_id]
+
+        raise DownloadError("下载未能在重试窗口内完成")
 
     def _extract_filename(self, url: str, headers: Optional[dict] = None) -> str:
         """提取文件名"""
@@ -463,7 +469,7 @@ class SkillDownloader:
     ) -> dict:
         """列出市场技能"""
         url = f"{self.SKILL_MARKET_URL}/skills"
-        params = {"page": page, "page_size": page_size}
+        params: dict[str, Any] = {"page": page, "page_size": page_size}
         if category:
             params["category"] = category
 

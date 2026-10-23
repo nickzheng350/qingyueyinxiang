@@ -3,7 +3,7 @@ import logging
 import time
 import threading
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any, List, Callable, Union
+from typing import Optional, Dict, Any, List, Callable, Union, Tuple
 from enum import Enum
 from collections import deque
 import uuid
@@ -88,6 +88,7 @@ class WorkflowExecution:
     end_time: Optional[float] = None
     final_output: Optional[Any] = None
     total_duration: Optional[float] = None
+    context: Dict[str, Any] = field(default_factory=dict)
     warnings: List[str] = field(default_factory=list)
     errors: List[str] = field(default_factory=list)
 

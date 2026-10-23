@@ -37,7 +37,7 @@ class TokenBucket:
 
     def __init__(self, capacity: int, refill_rate: float):
         self.capacity = capacity
-        self.tokens = capacity
+        self.tokens: float = float(capacity)
         self.refill_rate = refill_rate
         self.last_refill = datetime.utcnow()
         self.lock = asyncio.Lock()

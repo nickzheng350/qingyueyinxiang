@@ -6,14 +6,7 @@ import sys
 import logging
 
 from src.api.app import create_app
-
-
-def setup_logging(level: str = "INFO") -> None:
-    logging.basicConfig(
-        level=getattr(logging, level.upper(), logging.INFO),
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
+from src.core.logging import setup_logging
 
 
 def main() -> None:
@@ -36,7 +29,7 @@ def main() -> None:
         return
 
     if args.command == "api":
-        setup_logging(args.log_level)
+        setup_logging(args.log_level, json_format=False)
         logger = logging.getLogger("hydraflow")
         logger.info(f"启动 HydraFlow AI API 服务: {args.host}:{args.port}")
 
@@ -55,7 +48,7 @@ def main() -> None:
             uvicorn.run(app, host=args.host, port=args.port)
 
     elif args.command == "diagnose":
-        setup_logging("DEBUG")
+        setup_logging("DEBUG", json_format=False)
         print("=== HydraFlow AI 系统诊断 ===")
         print()
 
@@ -126,7 +119,7 @@ def main() -> None:
         print("=== 诊断完成 ===")
 
     elif args.command == "repair":
-        setup_logging("INFO")
+        setup_logging("INFO", json_format=False)
         print("=== HydraFlow AI 自我修复 ===")
         print()
 

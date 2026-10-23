@@ -19,7 +19,7 @@ class WebSocketManager:
 
     async def connect(self) -> asyncio.Queue:
         """建立新连接"""
-        queue = asyncio.Queue(maxsize=100)
+        queue: asyncio.Queue[Any] = asyncio.Queue(maxsize=100)
         async with self._lock:
             self._active_connections.add(queue)
         logger.debug(

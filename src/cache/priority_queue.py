@@ -71,6 +71,11 @@ class LRUCache(Generic[T]):
             self._cache.clear()
             return count
 
+    def __len__(self) -> int:
+        """当前缓存项数"""
+        with self._lock:
+            return len(self._cache)
+
 
 class PriorityQueueCache(Generic[T]):
     """优先级队列缓存"""
@@ -463,8 +468,10 @@ class AsyncMultiLevelCache(Generic[T]):
     async def clear(self) -> int:
         """清空所有缓存"""
         async with self._lock:
-            l1_count = self.l1.clear()
-            l2_count = self.l2._heap.clear()
+            l1_count = len(self.l1)
+            self.l1.clear()
+            l2_count = len(self.l2._heap)
+            self.l2._heap.clear()
             self.l2._index.clear()
             return l1_count + l2_count
 

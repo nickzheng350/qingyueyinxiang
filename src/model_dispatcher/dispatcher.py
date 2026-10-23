@@ -73,7 +73,7 @@ class ModelDispatcher:
 
     def _model_info_to_dict(self, model_info: ModelInfo) -> Dict[str, Any]:
         """将标准化的 ModelInfo 转换为字典格式（向后兼容）"""
-        result = {
+        result: Dict[str, Any] = {
             "id": model_info.id,
             "name": model_info.name,
             "category": model_info.category.value,
@@ -214,7 +214,7 @@ class ModelDispatcher:
 
     def validate_models(self) -> Dict[str, Any]:
         """验证所有模型的配置完整性"""
-        results = {
+        results: Dict[str, Any] = {
             "valid": [],
             "invalid": [],
             "warnings": [],

@@ -10,8 +10,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from pydantic import ValidationError
+from sqlalchemy.exc import SQLAlchemyError
 
-from src.core.config import get_config
+from src.core.config import get_settings
+from src.core.logging import bind_request_id, setup_logging
 from src.core.stability import get_stability_manager
 from src.core.exceptions import HydraFlowError, ErrorResponse
 from src.api.routes import api_router
@@ -23,38 +25,65 @@ logger = logging.getLogger("hydraflow.api")
 _start_time = time.time()
 
 
+async def initialize_database() -> bool:
+    """初始化数据库表结构，返回是否成功。
+
+    失败时不阻断启动：意图解析、提示词、模型查询等只读能力不依赖数据库，
+    不应因为数据库不可用就让整个服务起不来。
+    """
+    try:
+        from src.persistence.database import init_db
+
+        await init_db()
+        logger.info("数据库初始化完成")
+        return True
+    except (SQLAlchemyError, OSError, ImportError) as exc:
+        logger.error(f"数据库初始化失败，依赖数据库的功能将不可用: {exc}")
+        return False
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    settings = get_settings()
+    setup_logging(
+        settings.monitoring.log_level,
+        json_format=settings.monitoring.log_format == "json",
+    )
     logger.info("HydraFlow AI API 服务启动")
+    app.state.database_ready = await initialize_database()
     yield
     logger.info("HydraFlow AI API 服务关闭")
 
 
 def create_app() -> FastAPI:
-    config = get_config()
-    api_config = config.global_config.get("api", {})
+    settings = get_settings()
 
     app = FastAPI(
         title="HydraFlow AI",
         description="九头蛇生成式工作流平台 API",
         version="1.1.0",
         lifespan=lifespan,
-        docs_url="/docs" if api_config.get("docs_enabled", True) else None,
+        docs_url="/docs" if settings.api.docs_enabled else None,
     )
 
     @app.middleware("http")
     async def add_request_id(request: Request, call_next):
-        request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
+        request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
         request.state.request_id = request_id
-        response = await call_next(request)
+        # 绑定到上下文，使该请求链路内的每条日志都带上 request_id
+        bind_request_id(request_id)
+        try:
+            response = await call_next(request)
+        finally:
+            bind_request_id(None)
         response.headers["X-Request-ID"] = request_id
         return response
 
-    app.add_exception_handler(HydraFlowError, hydraflow_exception_handler)
-    app.add_exception_handler(RequestValidationError, validation_exception_handler)
-    app.add_exception_handler(ValidationError, pydantic_validation_exception_handler)
+    app.add_exception_handler(HydraFlowError, hydraflow_exception_handler)  # type: ignore[arg-type]
+    app.add_exception_handler(RequestValidationError, validation_exception_handler)  # type: ignore[arg-type]
+    app.add_exception_handler(ValidationError, pydantic_validation_exception_handler)  # type: ignore[arg-type]
 
-    cors_origins = api_config.get("cors_origins", ["http://localhost:3000"])
+    cors_origins = settings.auth.cors_origins or ["http://localhost:3000"]
     app.add_middleware(
         CORSMiddleware,
         allow_origins=cors_origins,
@@ -77,6 +106,7 @@ def create_app() -> FastAPI:
             "version": "1.1.0",
             "uptime": time.time() - _start_time,
             "health_score": stability.get_health_score(),
+            "database_ready": getattr(app.state, "database_ready", False),
         }
 
     return app

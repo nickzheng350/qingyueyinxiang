@@ -1,6 +1,6 @@
 """RAG 引擎 - 检索增强生成核心引擎"""
 
-from typing import Any, Optional
+from typing import Any, List, Optional
 import asyncio
 import logging
 
@@ -222,9 +222,10 @@ class RAGEngine:
     async def clear(self) -> int:
         """清空知识库"""
         count = await self._vector_store.count()
-        docs = []
+        docs: List[str] = []
         async with asyncio.Lock():
-            for doc_id in []:
+            doc_ids: List[str] = []
+            for doc_id in doc_ids:
                 doc = await self._vector_store.get(doc_id)
                 if doc:
                     docs.append(doc_id)

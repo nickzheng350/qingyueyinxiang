@@ -40,7 +40,7 @@ class LocalEmbedding(EmbeddingModel):
         self._model_name = model_name
         self._device = device
         self._normalize = normalize
-        self._model = None
+        self._model: Optional[Any] = None
         self._dimension = 384
 
     async def _load_model(self) -> Any:
@@ -116,7 +116,7 @@ class RemoteEmbedding(EmbeddingModel):
         self._model = model
         self._base_url = base_url or "https://api.openai.com/v1"
         self._dimension = dimension
-        self._client = None
+        self._client: Optional[Any] = None
 
     async def _get_client(self) -> Any:
         """获取 HTTP 客户端"""
@@ -171,7 +171,7 @@ class HuggingFaceEmbedding(EmbeddingModel):
         self._api_key = api_key
         self._model = model
         self._dimension = dimension
-        self._client = None
+        self._client: Optional[Any] = None
 
     async def _get_client(self) -> Any:
         if self._client is None:

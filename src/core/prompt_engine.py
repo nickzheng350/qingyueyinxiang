@@ -252,7 +252,7 @@ class CrossTypeComplementEngine:
     
     def suggest_complementary_tasks(self, prompt: RichPrompt) -> List[Dict[str, Any]]:
         """建议互补任务"""
-        suggestions = []
+        suggestions: List[Dict[str, Any]] = []
         for target in prompt.target_types:
             compliments = self.get_compliments(target)
             for comp in compliments:

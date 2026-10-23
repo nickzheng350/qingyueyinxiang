@@ -535,6 +535,8 @@ class UnifiedIntelligentEngine:
     def get_engine_for_type(self, task_type: ModelFunctionType) -> Optional[BaseSubEngine]:
         """获取对应类型的引擎"""
         engine_name = self.type_to_engine.get(task_type)
+        if engine_name is None:
+            return None
         return self.sub_engines.get(engine_name)
     
     def create_prompt(

@@ -247,7 +247,7 @@ class AudioPromptEngine:
             brightness=0.35,
             warmth=0.65,
             harmonic_richness=0.5,
-            emotional_tone=EmotionalTone.CALM,
+            emotional_tone=EmotionalTone.NEUTRAL,
             energy_level=EnergyLevel.CALM,
             valence=0.55,
             arousal=0.25,
