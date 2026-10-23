@@ -2,7 +2,6 @@
 """HydraFlow AI - 主入口文件"""
 
 import argparse
-import sys
 import logging
 
 from src.api.app import create_app
@@ -91,7 +90,7 @@ def main() -> None:
         from src.task_engine import get_task_executor
         executor = get_task_executor()
         task_stats = executor.get_task_statistics()
-        print(f"任务执行器: 运行中")
+        print("任务执行器: 运行中")
         print(f"  - 任务总数: {task_stats['total']}")
         print(f"  - 运行中: {task_stats['running']}")
         print(f"  - 已完成: {task_stats['completed']}")
@@ -100,7 +99,7 @@ def main() -> None:
         from src.cache import get_cache_manager
         cache_mgr = get_cache_manager()
         cache_stats = cache_mgr.get_all_stats()
-        print(f"缓存管理器: 运行中")
+        print("缓存管理器: 运行中")
         print(f"  - 命名空间数: {len(cache_stats)}")
         print()
 
@@ -123,7 +122,6 @@ def main() -> None:
         print("=== HydraFlow AI 自我修复 ===")
         print()
 
-        import os
         import shutil
         from pathlib import Path
 
@@ -168,13 +166,13 @@ def main() -> None:
         env_example = project_root / ".env.example"
         if not env_file.exists() and env_example.exists():
             shutil.copy2(env_example, env_file)
-            print(f"  ✓ 从 .env.example 创建 .env")
+            print("  ✓ 从 .env.example 创建 .env")
             repaired += 1
 
         try:
             from src.core.config import get_config
             config = get_config()
-            print(f"  ✓ 配置加载正常")
+            print("  ✓ 配置加载正常")
         except Exception as e:
             print(f"  ✗ 配置加载异常: {e}")
             repaired += 1

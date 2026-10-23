@@ -31,3 +31,6 @@ bcrypt>=4.0.0,<4.1.0
 pytest>=7.4.0
 pytest-asyncio>=0.21.0
 pytest-cov>=4.1.0
+
+# 静态检查（零技术债门禁，规则见仓库根 ruff.toml）
+ruff>=0.6.0
