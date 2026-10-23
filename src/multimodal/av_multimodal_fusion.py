@@ -526,14 +526,15 @@ class AVMultimodalFusionEngine:
             track_type="music"
         )
         
-        return self.add_asset(project, asset)
+        self.add_asset(project, asset)
+        return asset
     
     def generate_independent_video(
         self,
         project: Project,
         image_path: str,
         config: Any
-    ) -> VideoAsset:
+    ) -> Optional[VideoAsset]:
         """独立生成视频"""
         result = self.video_component.image_to_video.generate(image_path, config)
         
@@ -545,7 +546,8 @@ class AVMultimodalFusionEngine:
                 duration=result.duration or 0,
                 fps=result.fps or 24
             )
-            return self.add_asset(project, asset)
+            self.add_asset(project, asset)
+            return asset
         
         return None
     

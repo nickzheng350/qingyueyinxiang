@@ -13,6 +13,7 @@ from src.model_dispatcher.type_system import (
 from src.multimodal.audio_prompt_engine import (
     AudioStyleParams,
     AudioPromptEngine,
+    EnergyLevel,
     MusicalGenre,
 )
 
@@ -231,6 +232,7 @@ class ScriptParser:
         if not style_guide:
             style_guide = ProjectStyleGuide(
                 project_id="default",
+                dialogue_style="natural",
                 genre=MusicalGenre.CINEMATIC,
                 overall_mood="neutral",
                 target_era="contemporary",
@@ -315,7 +317,9 @@ class StyleConsistencyEngine:
             base_params = AudioStyleParams()
         
         base_params.tempo = style_data["tempo"]
-        base_params.energy_level = style_data["energy"]
+        base_params.energy_level = min(
+            EnergyLevel, key=lambda e: abs(e.value - style_data["energy"])
+        )
         base_params.brightness = style_data["brightness"]
         base_params.reverb_level = 0.4
         

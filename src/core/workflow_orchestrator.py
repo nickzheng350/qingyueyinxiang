@@ -255,9 +255,12 @@ class WorkflowStageProcessor:
         start_time = time.time()
         
         try:
+            submitted_prompt = self.unified_engine.create_prompt(
+                primary=prompt.get_primary_content() or ""
+            )
             task_id = self.unified_engine.submit_task(
                 engine_type,
-                prompt,
+                submitted_prompt,
                 priority=priority,
             )
             
@@ -316,19 +319,16 @@ class WorkflowStageProcessor:
                 TouchPoint.PRE_PROCESSING,
             )
             
-            if isinstance(is_valid, tuple):
-                is_valid = is_valid[0]
-            
             end_time = time.time()
             stage_metrics = StageMetrics(
                 stage=WorkflowStage.VALIDATION,
                 start_time=start_time,
                 end_time=end_time,
                 duration=end_time - start_time,
-                success=is_valid,
+                success=is_valid.overall_passed,
             )
             
-            return is_valid, stage_metrics
+            return is_valid.overall_passed, stage_metrics
         except Exception as e:
             end_time = time.time()
             stage_metrics = StageMetrics(
