@@ -45,6 +45,29 @@ _MOOD_LIGHTING: Dict[str, LightingSetup] = {
     "tense": LightingSetup.LOW_KEY,
 }
 
+# 情绪 -> 拍摄角度（英雄感低角度、脆弱 / 紧张高角度、史诗鸟瞰）。
+_MOOD_ANGLE: Dict[str, CameraAngle] = {
+    "heroic": CameraAngle.LOW,
+    "tense": CameraAngle.HIGH,
+    "vulnerable": CameraAngle.HIGH,
+    "epic": CameraAngle.BIRD,
+}
+
+# 运镜 -> 默认运动提示词。
+_MOTION_PROMPT: Dict[str, str] = {
+    "static": "固定机位，构图稳定",
+    "pan": "水平摇摄",
+    "tilt": "垂直摇摄",
+    "dolly": "缓慢推拉，改变透视",
+    "zoom": "变焦推近/拉远",
+    "truck": "横移跟拍",
+    "crane": "升降运动，展现场面",
+    "steadicam": "斯坦尼康平滑跟随",
+    "handheld": "手持呼吸感，增强临场",
+    "aerial": "航拍俯瞰",
+    "follow": "跟拍人物移动",
+}
+
 
 @dataclass
 class ContinuitySheet:
@@ -61,10 +84,16 @@ class ContinuitySheet:
 
 
 class Director:
-    """导演：剧本 -> 镜头表，并维护视觉连续性。"""
+    """导演：剧本 -> 镜头表，并维护视觉连续性。
 
-    def __init__(self, default_shot_duration: float = 4.0):
+    调度遵循专业影视的镜头覆盖（coverage）原则：每场先拍建立镜头，
+    双人戏采用"正反打 + 双人镜 + 反应特写"的经典调度，单人戏补充中景 / 近景，
+    并按情绪选择角度与运镜、在镜头出点标注转场。
+    """
+
+    def __init__(self, default_shot_duration: float = 4.0, max_dialogue_beats: int = 3):
         self.default_shot_duration = default_shot_duration
+        self.max_dialogue_beats = max_dialogue_beats
 
     def plan(self, screenplay: Screenplay) -> "Storyboard":
         continuity = self._build_continuity(screenplay)
@@ -96,49 +125,121 @@ class Director:
     ) -> List[Shot]:
         shots: List[Shot] = []
         mood = scene.mood.lower()
-        establishing = Shot(
-            shot_id=f"{scene.scene_id}_s{start_index:03d}",
+        base = self.default_shot_duration
+        idx = start_index
+
+        # 1) 建立镜头：宽景交代时间 / 地点 / 环境
+        shots.append(
+            self._make_shot(
+                scene, continuity, idx, ShotSize.WIDE, CameraMovement.STATIC,
+                LensType.ANAMORPHIC, CameraAngle.EYE, base * 1.5,
+                "建立镜头：交代环境", "宽景展现环境全貌",
+                list(scene.characters), "dissolve",
+            )
+        )
+        idx += 1
+
+        # 2) 双人戏：双人镜 + 正反打 + 反应特写
+        if len(scene.characters) >= 2 and scene.lines:
+            lead, support = scene.characters[0], scene.characters[1]
+            shots.append(
+                self._make_shot(
+                    scene, continuity, idx, ShotSize.FULL, CameraMovement.STATIC,
+                    LensType.STANDARD, CameraAngle.EYE, base,
+                    "双人镜头：确立人物关系", "全景收两人同框",
+                    [lead, support], "cut",
+                )
+            )
+            idx += 1
+            for beat in scene.lines[: self.max_dialogue_beats]:
+                speaker_id = beat["speaker_id"]
+                speaker = lead if speaker_id == lead else support
+                listener = support if speaker_id == lead else lead
+                # 过肩：拍说话者，听者入前景
+                shots.append(
+                    self._make_shot(
+                        scene, continuity, idx, ShotSize.OVER_SHOULDER, CameraMovement.STATIC,
+                        LensType.TELEPHOTO, CameraAngle.EYE, base,
+                        f"过肩：{speaker} 台词", "过肩构图突出说话者、听者前景",
+                        [speaker, listener], "cut",
+                    )
+                )
+                idx += 1
+                # 听者反应近景（推近强调情绪）
+                shots.append(
+                    self._make_shot(
+                        scene, continuity, idx, ShotSize.CLOSEUP, CameraMovement.DOLLY,
+                        LensType.TELEPHOTO, self._angle_for(mood), base,
+                        f"反应：{listener} 倾听", "近景推近反应",
+                        [listener], "cut",
+                    )
+                )
+                idx += 1
+
+        # 3) 单人戏：中景 + 近景覆盖
+        elif len(scene.characters) == 1:
+            char_id = scene.characters[0]
+            shots.append(
+                self._make_shot(
+                    scene, continuity, idx, ShotSize.MEDIUM, self._camera_for(mood),
+                    LensType.STANDARD, CameraAngle.EYE, base,
+                    f"{char_id} 中景", "中景人物",
+                    [char_id], "cut",
+                )
+            )
+            idx += 1
+            shots.append(
+                self._make_shot(
+                    scene, continuity, idx, ShotSize.CLOSEUP, CameraMovement.DOLLY,
+                    LensType.TELEPHOTO, self._angle_for(mood), base,
+                    f"{char_id} 近景", "近景强调",
+                    [char_id], "cut",
+                )
+            )
+            idx += 1
+
+        return shots
+
+    def _make_shot(
+        self,
+        scene: FilmScene,
+        continuity: ContinuitySheet,
+        idx: int,
+        size: ShotSize,
+        move: CameraMovement,
+        lens: LensType,
+        angle: CameraAngle,
+        dur: float,
+        desc: str,
+        framing: str,
+        chars: List[str],
+        trans: str,
+    ) -> Shot:
+        anchor_char = chars[0] if chars else None
+        if anchor_char:
+            continuity_anchor = continuity.character_anchor(anchor_char)
+        else:
+            continuity_anchor = continuity.locations.get(scene.scene_id, "")
+        return Shot(
+            shot_id=f"{scene.scene_id}_s{idx:03d}",
             scene_id=scene.scene_id,
-            shot_number=start_index,
-            shot_size=ShotSize.WIDE,
-            camera_movement=CameraMovement.STATIC,
-            lens=LensType.ANAMORPHIC,
-            angle=CameraAngle.EYE,
-            lighting=self._lighting_for(mood),
-            duration_sec=self.default_shot_duration * 1.5,
-            description=f"建立镜头：{scene.description}",
-            image_prompt=self._image_prompt(scene, None, continuity, "宽景展现环境全貌"),
-            motion_prompt="缓慢推进，建立场景空间关系",
-            characters=list(scene.characters),
+            shot_number=idx,
+            shot_size=size,
+            camera_movement=move,
+            lens=lens,
+            angle=angle,
+            lighting=self._lighting_for(scene.mood.lower()),
+            duration_sec=dur,
+            description=desc,
+            image_prompt=self._image_prompt(scene, anchor_char, continuity, framing),
+            motion_prompt=self._default_motion(move),
+            characters=list(chars),
             location=scene.location,
             time_of_day=scene.time_of_day,
             mood=scene.mood,
-            continuity_anchor=continuity.locations.get(scene.scene_id, ""),
+            continuity_anchor=continuity_anchor,
+            transition=trans,
         )
-        shots.append(establishing)
-
-        for offset, char_id in enumerate(scene.characters, start=1):
-            shot = Shot(
-                shot_id=f"{scene.scene_id}_s{start_index + offset:03d}",
-                scene_id=scene.scene_id,
-                shot_number=start_index + offset,
-                shot_size=ShotSize.MEDIUM,
-                camera_movement=self._camera_for(mood),
-                lens=LensType.STANDARD,
-                angle=CameraAngle.EYE,
-                lighting=self._lighting_for(mood),
-                duration_sec=self.default_shot_duration,
-                description=f"{char_id} 的对话 / 反应镜头",
-                image_prompt=self._image_prompt(scene, char_id, continuity, "中景人物"),
-                motion_prompt="轻微运镜保持人物主体稳定",
-                characters=[char_id],
-                location=scene.location,
-                time_of_day=scene.time_of_day,
-                mood=scene.mood,
-                continuity_anchor=continuity.character_anchor(char_id),
-            )
-            shots.append(shot)
-        return shots
 
     def _image_prompt(
         self,
@@ -165,6 +266,14 @@ class Director:
     @staticmethod
     def _lighting_for(mood: str) -> LightingSetup:
         return _MOOD_LIGHTING.get(mood, LightingSetup.THREE_POINT)
+
+    @staticmethod
+    def _angle_for(mood: str) -> CameraAngle:
+        return _MOOD_ANGLE.get(mood, CameraAngle.EYE)
+
+    @staticmethod
+    def _default_motion(move: CameraMovement) -> str:
+        return _MOTION_PROMPT.get(move.value, "固定机位")
 
 
 @dataclass
@@ -194,6 +303,7 @@ class Storyboard:
                     "image_prompt": shot.image_prompt,
                     "motion_prompt": shot.motion_prompt,
                     "continuity_anchor": shot.continuity_anchor,
+                    "transition": shot.transition,
                     "characters": shot.characters,
                 }
                 for shot in self.shots

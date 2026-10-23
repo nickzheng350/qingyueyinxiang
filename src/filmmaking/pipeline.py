@@ -116,6 +116,7 @@ class ProductionResult:
     timeline: Any
     edl: str
     project: Project
+    edl_xml: str = ""
     errors: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
     duration_sec: float = 0.0
@@ -143,10 +144,14 @@ class FilmProductionPipeline:
         style_guide = self.style_guide or self._default_style_guide(screenplay.title)
         project = self.av_engine.create_project(screenplay.title, style_guide, self.settings)
 
-        video_assets = self._produce_shots(storyboard, project)
-        audio_assets = self._produce_audio(script_text, style_guide, project)
+        shot_start, scene_start, total = self._schedule(storyboard)
+        project.timeline.duration = total
+
+        video_assets = self._produce_shots(storyboard, project, shot_start)
+        audio_assets = self._produce_audio(script_text, style_guide, project, storyboard, scene_start, total)
         self._assemble_timeline(project, storyboard, video_assets, audio_assets)
-        edl = self._build_edl(storyboard)
+        edl = self._build_edl(storyboard, shot_start)
+        edl_xml = self._build_xml(storyboard, shot_start, scene_start, total)
         manifest = self._build_manifest(
             screenplay, storyboard, video_assets, audio_assets, style_guide
         )
@@ -161,16 +166,32 @@ class FilmProductionPipeline:
             manifest=manifest,
             timeline=project.timeline,
             edl=edl,
+            edl_xml=edl_xml,
             project=project,
             errors=[],
             warnings=warnings,
-            duration_sec=project.timeline.duration,
+            duration_sec=total,
             stats=stats,
         )
 
+    # -- 时间线调度 ------------------------------------------------------
+
+    def _schedule(self, storyboard: Storyboard) -> "tuple[Dict[str, float], Dict[str, float], float]":
+        shot_start: Dict[str, float] = {}
+        scene_start: Dict[str, float] = {}
+        cursor = 0.0
+        for shot in storyboard.shots:
+            shot_start[shot.shot_id] = cursor
+            if shot.scene_id not in scene_start:
+                scene_start[shot.scene_id] = cursor
+            cursor += shot.duration_sec
+        return shot_start, scene_start, cursor
+
     # -- 镜头资产规划 ----------------------------------------------------
 
-    def _produce_shots(self, storyboard: Storyboard, project: Project) -> List[VideoAsset]:
+    def _produce_shots(
+        self, storyboard: Storyboard, project: Project, shot_start: Dict[str, float]
+    ) -> List[VideoAsset]:
         assets: List[VideoAsset] = []
         fps = int(self.settings.fps)
         width, height = self.settings.resolution
@@ -208,11 +229,13 @@ class FilmProductionPipeline:
                 duration=shot.duration_sec,
                 fps=fps,
                 resolution=self.settings.resolution,
+                start_time=shot_start[shot.shot_id],
                 metadata={
                     "image_prompt": shot.image_prompt,
                     "motion_prompt": shot.motion_prompt,
                     "continuity_anchor": shot.continuity_anchor,
                     "shot_size": shot.shot_size.value,
+                    "transition": shot.transition,
                     "style_preset": self._art_style(shot.style_preset).value,
                 },
             )
@@ -221,20 +244,28 @@ class FilmProductionPipeline:
         return assets
 
     def _produce_audio(
-        self, script_text: str, style_guide: ProjectStyleGuide, project: Project
+        self,
+        script_text: str,
+        style_guide: ProjectStyleGuide,
+        project: Project,
+        storyboard: Storyboard,
+        scene_start: Dict[str, float],
+        total: float,
     ) -> List[AudioAsset]:
         assets: List[AudioAsset] = []
         if script_text:
             parse_result, _plans = self.audio_engine.process_script(script_text, style_guide)
             for scene in parse_result.scenes:
+                scene_id = scene.scene_id
                 duration = max(1.0, sum(line.end_time for line in scene.dialogue_lines))
                 asset = AudioAsset(
-                    asset_id=f"aud_{scene.scene_id}",
+                    asset_id=f"aud_{scene_id}",
                     asset_type="voice",
-                    path=f"plan://{scene.scene_id}_voice.wav",
+                    path=f"plan://{scene_id}_voice.wav",
                     track_type="voice",
                     duration=duration,
-                    metadata={"scene_id": scene.scene_id, "lines": len(scene.dialogue_lines)},
+                    start_time=scene_start.get(scene_id, 0.0),
+                    metadata={"scene_id": scene_id, "lines": len(scene.dialogue_lines)},
                 )
                 self.av_engine.add_asset(project, asset)
                 assets.append(asset)
@@ -244,11 +275,28 @@ class FilmProductionPipeline:
             asset_type="music",
             path=f"plan://{project.project_id}_score.wav",
             track_type="music",
-            duration=project.timeline.duration or 30.0,
+            duration=total,
+            start_time=0.0,
             metadata={"genre": style_guide.genre.value},
         )
         self.av_engine.add_asset(project, music)
         assets.append(music)
+
+        # 每个场景的环境音效轨（sfxs），便于后期精修。
+        for fscene in storyboard.screenplay.scenes:
+            scene_id = fscene.scene_id
+            duration = sum(s.duration_sec for s in fscene.shots)
+            sfx = AudioAsset(
+                asset_id=f"sfx_{scene_id}",
+                asset_type="sfxs",
+                path=f"plan://{scene_id}_amb.wav",
+                track_type="sfxs",
+                duration=duration,
+                start_time=scene_start.get(scene_id, 0.0),
+                metadata={"scene_id": scene_id, "kind": "ambience"},
+            )
+            self.av_engine.add_asset(project, sfx)
+            assets.append(sfx)
         return assets
 
     def _assemble_timeline(
@@ -258,7 +306,6 @@ class FilmProductionPipeline:
         video_assets: List[VideoAsset],
         audio_assets: List[AudioAsset],
     ) -> None:
-        project.timeline.duration = storyboard.screenplay.total_duration_sec
         project.timeline.metadata = {
             "title": project.project_name,
             "shot_count": len(video_assets),
@@ -267,15 +314,15 @@ class FilmProductionPipeline:
 
     # -- 交付物 ----------------------------------------------------------
 
-    def _build_edl(self, storyboard: Storyboard) -> str:
+    def _build_edl(self, storyboard: Storyboard, shot_start: Dict[str, float]) -> str:
         fps = int(self.settings.fps)
         lines = [
             f"TITLE: {storyboard.screenplay.title}",
             "FCM: NON-DROP FRAME",
             "",
         ]
-        record_in = 0.0
         for index, shot in enumerate(storyboard.shots, start=1):
+            record_in = shot_start[shot.shot_id]
             record_out = record_in + shot.duration_sec
             event = (
                 f"{index:03d}  {shot.shot_id.upper()}    V     C        "
@@ -283,8 +330,103 @@ class FilmProductionPipeline:
                 f"{_sec_to_tc(record_in, fps)} {_sec_to_tc(record_out, fps)}"
             )
             lines.append(event)
-            record_in = record_out
+
+        # 音频事件（对白 / 音乐 / 音效）作为 A 轨事件写入 EDL。
+        lines.append("")
+        lines.append("* AUDIO EVENTS")
+        audio_index = 1
+        for asset in self._audio_event_list(storyboard, shot_start):
+            start = asset["start"]
+            end = start + asset["duration"]
+            event = (
+                f"{audio_index:03d}  {asset['id'].upper()}    A     C        "
+                f"{_sec_to_tc(0.0, fps)} {_sec_to_tc(asset['duration'], fps)} "
+                f"{_sec_to_tc(start, fps)} {_sec_to_tc(end, fps)}"
+            )
+            lines.append(event)
+            audio_index += 1
         return "\n".join(lines)
+
+    def _audio_event_list(
+        self, storyboard: Storyboard, shot_start: Dict[str, float]
+    ) -> List[Dict[str, Any]]:
+        events: List[Dict[str, Any]] = []
+        for scene in storyboard.screenplay.scenes:
+            if not scene.shots:
+                continue
+            start = shot_start.get(scene.shots[0].shot_id, 0.0)
+            duration = sum(s.duration_sec for s in scene.shots)
+            if scene.lines:
+                events.append({"id": f"aud_{scene.scene_id}", "start": start, "duration": duration})
+            events.append({"id": f"sfx_{scene.scene_id}", "start": start, "duration": duration})
+        total = storyboard.screenplay.total_duration_sec
+        events.append({"id": f"mus_{storyboard.screenplay.title}", "start": 0.0, "duration": total})
+        return events
+
+    def _build_xml(
+        self, storyboard: Storyboard, shot_start: Dict[str, float],
+        scene_start: Dict[str, float], total: float,
+    ) -> str:
+        """生成 NLE 可交换 XML（视频轨 + 音频轨：对白 / 音乐 / 音效）。"""
+        import xml.etree.ElementTree as ET
+
+        root = ET.Element(
+            "hydraflow_interchange",
+            {"version": "1.0", "title": storyboard.screenplay.title, "fps": str(int(self.settings.fps))},
+        )
+        sequence = ET.SubElement(root, "sequence", {"duration": f"{total:.3f}"})
+
+        video_track = ET.SubElement(sequence, "track", {"type": "video"})
+        for index, shot in enumerate(storyboard.shots, start=1):
+            start = shot_start[shot.shot_id]
+            clip = ET.SubElement(
+                video_track, "clip",
+                {
+                    "index": str(index),
+                    "id": shot.shot_id,
+                    "name": shot.description,
+                    "start": f"{start:.3f}",
+                    "duration": f"{shot.duration_sec:.3f}",
+                    "in": "0.000",
+                    "out": f"{shot.duration_sec:.3f}",
+                    "shot_size": shot.shot_size.value,
+                    "camera_movement": shot.camera_movement.value,
+                    "transition": shot.transition,
+                },
+            )
+            clip.text = shot.image_prompt
+
+        for role, asset_type in (("voice", "voice"), ("music", "music"), ("sfxs", "sfxs")):
+            track = ET.SubElement(sequence, "track", {"type": "audio", "role": role})
+            for scene in storyboard.screenplay.scenes:
+                if not scene.shots:
+                    continue
+                start = shot_start[scene.shots[0].shot_id]
+                duration = sum(s.duration_sec for s in scene.shots)
+                if role == "voice" and not scene.lines:
+                    continue
+                clip = ET.SubElement(
+                    track, "clip",
+                    {
+                        "id": f"{asset_type}_{scene.scene_id}",
+                        "name": f"{role}:{scene.scene_id}",
+                        "start": f"{start:.3f}",
+                        "duration": f"{duration:.3f}",
+                    },
+                )
+                clip.text = scene.location
+            if role == "music":
+                clip = ET.SubElement(
+                    track, "clip",
+                    {
+                        "id": f"music_{storyboard.screenplay.title}",
+                        "name": "score",
+                        "start": "0.000",
+                        "duration": f"{total:.3f}",
+                    },
+                )
+                clip.text = "original score"
+        return ET.tostring(root, encoding="unicode")
 
     def _build_manifest(
         self,
@@ -312,6 +454,7 @@ class FilmProductionPipeline:
                             "camera_movement": shot.camera_movement.value,
                             "lighting": shot.lighting.value,
                             "duration_sec": shot.duration_sec,
+                            "transition": shot.transition,
                             "continuity_anchor": shot.continuity_anchor,
                         }
                         for shot in scene.shots
@@ -323,6 +466,7 @@ class FilmProductionPipeline:
                 "asset_id": asset.asset_id,
                 "track_type": asset.track_type,
                 "duration": asset.duration,
+                "start": asset.start_time,
             }
             for asset in audio_assets
         ]

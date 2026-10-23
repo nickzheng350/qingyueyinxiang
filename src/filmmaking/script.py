@@ -103,6 +103,7 @@ class Shot:
     mood: str = "neutral"
     continuity_anchor: str = ""
     style_preset: str = "cinematic"
+    transition: str = "cut"
     keyframe_path: Optional[str] = None
     video_path: Optional[str] = None
 
@@ -119,6 +120,7 @@ class FilmScene:
     interior: bool = True
     description: str = ""
     characters: List[str] = field(default_factory=list)
+    lines: List[Dict[str, str]] = field(default_factory=list)
     shots: List[Shot] = field(default_factory=list)
 
 
@@ -224,6 +226,7 @@ class ScreenplayParser:
             match = self._char_re.match(line)
             if match and current_scene is not None:
                 char_name = match.group(1).strip()
+                dialogue_text = match.group(2).strip()
                 char_id = char_id_map.get(char_name)
                 if char_id is None:
                     char_id = f"char_{len(char_id_map) + 1}"
@@ -231,6 +234,9 @@ class ScreenplayParser:
                     screenplay.characters[char_id] = self._default_profile(char_id, char_name)
                 if char_id not in current_scene.characters:
                     current_scene.characters.append(char_id)
+                current_scene.lines.append(
+                    {"speaker_id": char_id, "speaker": char_name, "text": dialogue_text}
+                )
                 continue
 
         if current_scene is not None:

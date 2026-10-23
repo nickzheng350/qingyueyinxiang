@@ -56,15 +56,29 @@ def test_screenplay_parser_scene_heading():
 def test_director_plans_shots_and_continuity():
     screenplay = ScreenplayParser().parse(SAMPLE_SCRIPT)
     storyboard: Storyboard = Director().plan(screenplay)
-    # 每个场景：1 个建立镜头 + 角色数（scene1 有 2 角色 -> 3 镜头）
-    assert storyboard.screenplay.total_shots == 5
-    assert len(storyboard.shots) == 5
+    # 双人戏：建立 + 双人镜 + 正反打/反应覆盖，镜头数应多于简单 1+角色数。
+    assert storyboard.screenplay.total_shots >= 6
+    assert len(storyboard.shots) == storyboard.screenplay.total_shots
+    # 景别应具专业多样性：建立用宽景，对话戏含过肩/近景/全景。
+    sizes = {s.shot_size.value for s in storyboard.shots}
+    assert "ws" in sizes
+    assert "cu" in sizes
+    assert "ots" in sizes
+    assert "fs" in sizes
     char_id = next(k for k, v in screenplay.characters.items() if v.character_name == "林夜")
     assert storyboard.continuity.character_anchor(char_id)
     # 含角色的镜头必须把连续性锚点注入图像提示词
     char_shot = next(s for s in storyboard.shots if s.characters == [char_id])
     assert "林夜" in char_shot.image_prompt
     assert char_shot.continuity_anchor == storyboard.continuity.character_anchor(char_id)
+
+
+def test_director_establishing_uses_dissolve_then_cuts():
+    screenplay = ScreenplayParser().parse(SAMPLE_SCRIPT)
+    storyboard = Director().plan(screenplay)
+    assert storyboard.shots[0].shot_size.value == "ws"
+    assert storyboard.shots[0].transition == "dissolve"
+    assert all(s.transition in {"cut", "dissolve"} for s in storyboard.shots)
 
 
 def test_director_establishing_shot_is_wide():
@@ -77,14 +91,49 @@ def test_director_establishing_shot_is_wide():
 def test_pipeline_end_to_end_produce():
     result = produce_from_script(SAMPLE_SCRIPT)
     assert result.success is True
-    assert result.shots_total == 5
-    assert result.shots_completed == 5
+    assert result.shots_total >= 6
+    assert result.shots_completed == result.shots_total
     assert result.duration_sec > 0
     # 时间线应挂载视频与音频资产
-    assert len(result.project.timeline.tracks["video"].assets) == 5
-    assert result.project.timeline.tracks["voice"].assets
+    assert len(result.project.timeline.tracks["video"].assets) == result.shots_total
+    assert len(result.project.timeline.tracks["voice"].assets) == 2  # 两个含对白场景
     assert result.project.timeline.tracks["music"].assets
+    assert result.project.timeline.tracks["sfxs"].assets
     assert result.stats["total_assets"] >= 6
+
+
+def test_pipeline_xml_interchange_valid():
+    import xml.etree.ElementTree as ET
+
+    result = produce_from_script(SAMPLE_SCRIPT)
+    root = ET.fromstring(result.edl_xml)
+    assert root.tag == "hydraflow_interchange"
+    video_track = root.find(".//track[@type='video']")
+    assert video_track is not None
+    assert len(video_track.findall("clip")) == result.shots_total
+    audio_tracks = root.findall(".//track[@type='audio']")
+    assert len(audio_tracks) == 3  # voice / music / sfxs
+
+
+def test_pipeline_timeline_start_times_are_sequential():
+    result = produce_from_script(SAMPLE_SCRIPT)
+    starts = [a.start_time for a in result.project.timeline.tracks["video"].assets]
+    assert starts == sorted(starts)
+    assert starts[0] == 0.0
+    # 音乐从 0 开始并覆盖整片
+    music = result.project.timeline.tracks["music"].assets[0]
+    assert music.start_time == 0.0
+    assert music.duration == result.duration_sec
+
+
+def test_pipeline_edl_includes_audio_events():
+    result = produce_from_script(SAMPLE_SCRIPT)
+    edl = result.edl
+    assert "* AUDIO EVENTS" in edl
+    assert "A     C" in edl
+    # 视频事件与音频事件都应存在
+    assert "001  " in edl
+    assert "MUS_" in edl.upper() or "MUS_" in edl
 
 
 def test_pipeline_manifest_is_serializable():
@@ -92,7 +141,7 @@ def test_pipeline_manifest_is_serializable():
     manifest: ProductionManifest = result.manifest
     payload = json.loads(manifest.to_json())
     assert payload["title"] == "星海回忆"
-    assert payload["shot_count"] == 5
+    assert payload["shot_count"] >= 6
     assert len(payload["scenes"]) == 2
     # 连续性表必须进入清单，供后端保证跨镜头一致
     assert len(payload["continuity_sheet"]["characters"]) == 2
