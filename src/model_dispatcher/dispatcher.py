@@ -5,7 +5,7 @@ from typing import Any, List, Dict, Optional
 
 from src.core.config import get_config
 from src.core.exceptions import ModelNotFoundError
-from .type_system import get_type_manager, ModelInfo, ModelCategory, ModelFunctionType, ModelSourceType
+from .type_system import get_type_manager, ModelInfo, ModelCategory, ModelSourceType
 
 logger = logging.getLogger("hydraflow.model_dispatcher")
 
@@ -107,7 +107,7 @@ class ModelDispatcher:
             by_intent: 按意图筛选，会自动验证模型兼容性（如 image_generation, code_generation）
         """
         result = []
-        for model_id, model_info in self._loaded_models.items():
+        for _model_id, model_info in self._loaded_models.items():
             # 按分类筛选
             if category and model_info.category.value != category:
                 continue

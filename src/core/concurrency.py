@@ -1,12 +1,11 @@
 """同步/异步/并行结构机制 - 统一并发框架"""
 
 import asyncio
-import concurrent.futures
 import threading
 import time
-from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager, contextmanager
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from functools import wraps
 from typing import (

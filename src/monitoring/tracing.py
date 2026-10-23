@@ -29,8 +29,6 @@ try:
     from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
     from opentelemetry.context import Context
     from opentelemetry.propagate import set_global_textmap
-    from opentelemetry.sdk.extension.aws.resource.eks import AwsEksResourceDetector
-    from opentelemetry.sdk.extension.aws.resource.ec2 import AwsEc2ResourceDetector
 
     OTEL_AVAILABLE = True
 except ImportError:

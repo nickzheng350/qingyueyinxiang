@@ -3,7 +3,6 @@ import logging
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Any, List, Set, Union
 from enum import Enum
-from collections import defaultdict
 import json
 
 logger = logging.getLogger("hydraflow.core.prompt_library")

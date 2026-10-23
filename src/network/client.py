@@ -2,7 +2,7 @@
 
 import asyncio
 from contextlib import asynccontextmanager
-from typing import Any, Optional, AsyncIterator
+from typing import Optional, AsyncIterator
 import httpx
 from dataclasses import dataclass
 
@@ -138,10 +138,10 @@ class HTTPClient:
                     last_error = e
                     await asyncio.sleep(retry_delay * (attempt + 1))
                     continue
-                raise NetworkError(f"HTTP {e.response.status_code}: {str(e)}")
+                raise NetworkError(f"HTTP {e.response.status_code}: {str(e)}") from e
 
             except Exception as e:
-                raise NetworkError(f"HTTP 请求失败: {str(e)}")
+                raise NetworkError(f"HTTP 请求失败: {str(e)}") from e
 
         raise NetworkError(f"HTTP 请求失败（已重试 {max_retries} 次）: {last_error}")
 

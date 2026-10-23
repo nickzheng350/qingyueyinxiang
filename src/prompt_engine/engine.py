@@ -2,7 +2,6 @@
 
 import re
 import logging
-from pathlib import Path
 from typing import Any
 
 from src.core.config import get_config

@@ -1,11 +1,11 @@
 """工作流整合模块 - 同类型项目的整合性组合统一"""
 import logging
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any, List, Callable
+from typing import Optional, Dict, Any, List
 from enum import Enum
 import copy
 
-from src.model_dispatcher.type_system import ModelFunctionType, get_consistency_validator
+from src.model_dispatcher.type_system import get_consistency_validator
 from src.multimodal.audio_prompt_engine import MusicalGenre
 from src.multimodal.enhanced_audio_engine import (
     ProjectStyleGuide,

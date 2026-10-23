@@ -144,7 +144,7 @@ async def get_model_statistics(model_id: str = ""):
         try:
             model = dispatcher.get_model(model_id)
         except ModelNotFoundError:
-            raise HTTPException(status_code=404, detail="模型未找到")
+            raise HTTPException(status_code=404, detail="模型未找到") from None
         return {"stats": model, "total": 1}
     stats = dispatcher.get_statistics()
     return {"stats": stats, "total": stats.get("total_models", 0)}
@@ -157,7 +157,7 @@ async def get_model(model_id: str):
         model = dispatcher.get_model(model_id)
         return {"id": model_id, **model}
     except (ValueError, KeyError) as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
 
 @api_router.get("/styles")
@@ -200,12 +200,12 @@ async def uninstall_skill(skill_id: str):
         result = manager.uninstall_skill(skill_id)
         return result
     except (ValueError, FileNotFoundError) as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
 
 @api_router.get("/system/info")
 async def system_info():
-    config = get_config()
+    get_config()
     stability = get_stability_manager()
     dispatcher = ModelDispatcher()
     skill_manager = SkillManager()
@@ -278,7 +278,7 @@ async def submit_task(request: TaskSubmitRequest):
     try:
         task_type = TaskType(request.task_type)
     except ValueError:
-        raise HTTPException(status_code=400, detail=f"无效的任务类型: {request.task_type}")
+        raise HTTPException(status_code=400, detail=f"无效的任务类型: {request.task_type}") from None
     
     executor = get_task_executor()
     task_id = await executor.submit_task(
@@ -377,8 +377,8 @@ async def get_skill(skill_id: str):
     try:
         skill = skill_manager.get_skill(skill_id)
         return skill
-    except (ValueError, FileNotFoundError, KeyError) as e:
-        raise HTTPException(status_code=404, detail=f"技能未找到：{skill_id}")
+    except (ValueError, FileNotFoundError, KeyError):
+        raise HTTPException(status_code=404, detail=f"技能未找到：{skill_id}") from None
 
 
 # ============ 用户认证端点 ============

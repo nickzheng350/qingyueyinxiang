@@ -2,20 +2,17 @@
 
 import asyncio
 import hashlib
-import os
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, BinaryIO, Callable, Optional
+from typing import Any, Callable, Optional
 import ssl
 import certifi
 
 import httpx
 
 from src.core.config import get_settings
-from src.core.exceptions import StorageError
 
 settings = get_settings()
 
@@ -291,7 +288,7 @@ class DownloadManager:
                         task.status = DownloadStatus.FAILED
                         task.progress.status = DownloadStatus.FAILED
                         task.progress.error = str(e)
-                        raise DownloadError(f"下载失败（已重试 {attempt + 1} 次）: {e}")
+                        raise DownloadError(f"下载失败（已重试 {attempt + 1} 次）: {e}") from e
         finally:
             if task_id in self._tasks:
                 del self._tasks[task_id]

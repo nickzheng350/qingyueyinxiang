@@ -7,7 +7,7 @@ import time
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from enum import IntEnum
-from typing import Any, AsyncIterator, Dict, Generic, Iterator, List, Optional, Tuple, TypeVar
+from typing import Any, Dict, Generic, List, Optional, Tuple, TypeVar
 
 T = TypeVar("T")
 

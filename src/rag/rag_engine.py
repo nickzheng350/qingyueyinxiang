@@ -4,13 +4,11 @@ from typing import Any, List, Optional
 import asyncio
 import logging
 
-from src.rag.embeddings import EmbeddingModel, LocalEmbedding, create_embedding_model
+from src.rag.embeddings import EmbeddingModel, LocalEmbedding
 from src.rag.vector_store import (
     Document,
-    SearchResult,
     VectorStore,
     InMemoryVectorStore,
-    VectorStoreFactory,
 )
 
 logger = logging.getLogger("hydraflow.rag")
@@ -73,7 +71,7 @@ class RAGEngine:
 
             embeddings = await self._embedding_model.embed_batch(contents)
 
-            for doc, embedding in zip(batch, embeddings):
+            for doc, embedding in zip(batch, embeddings, strict=False):
                 doc.embedding = embedding
 
             await self._vector_store.add_documents(batch)
@@ -300,7 +298,7 @@ class RAGEngineManager:
         if name in self._engines:
             del self._engines[name]
             if self._default_engine is not None:
-                for engine_name, engine in self._engines.items():
+                for _engine_name, engine in self._engines.items():
                     if engine is self._default_engine:
                         break
                 else:

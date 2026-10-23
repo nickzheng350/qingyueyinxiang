@@ -2,10 +2,9 @@
 
 import asyncio
 import logging
-import weakref
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
-from typing import Any, Optional, Callable, Awaitable
+from typing import Any, Optional
 from collections.abc import AsyncIterator
 from abc import ABC, abstractmethod
 

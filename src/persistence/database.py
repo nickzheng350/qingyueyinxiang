@@ -6,7 +6,6 @@ from typing import Any, AsyncGenerator, Optional
 from enum import Enum as PyEnum
 
 from sqlalchemy import (
-    Column,
     String,
     Integer,
     Float,

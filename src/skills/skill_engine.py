@@ -378,7 +378,7 @@ class ConfigBasedSkillExecutor(SkillExecutor):
             }
         except asyncio.TimeoutError:
             process.kill()
-            raise TimeoutError(f"命令执行超时：{command}")
+            raise TimeoutError(f"命令执行超时：{command}") from None
 
 
 class SkillEngine:

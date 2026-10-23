@@ -1,7 +1,7 @@
 """音频提示词数字公式化引擎 - 风格特性参数化、优化组合"""
 import logging
 from dataclasses import dataclass, field
-from typing import Optional, Dict, Any, List, Tuple
+from typing import Optional, Dict, Any, List
 from enum import Enum
 import math
 
@@ -426,7 +426,7 @@ class AudioPromptEngine:
         
         blended_vector = [
             a * blend_ratio + b * (1 - blend_ratio)
-            for a, b in zip(vector_a, vector_b)
+            for a, b in zip(vector_a, vector_b, strict=False)
         ]
         
         blended = AudioStyleParams.from_numeric_vector(blended_vector)

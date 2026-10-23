@@ -209,7 +209,7 @@ class MetricsCollector:
         """获取所有指标"""
         with self._lock:
             result = []
-            for key, metric in self._metrics.items():
+            for _key, metric in self._metrics.items():
                 result.append({
                     "name": metric.name,
                     "type": metric.type.value,

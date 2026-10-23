@@ -9,8 +9,6 @@ import httpx
 
 from src.intent_parser.base import IntentParserBase, ParseResult, IntentType
 from src.intent_parser.parsers.api_parser import INTENT_SYSTEM_PROMPT, _parse_llm_response
-from src.core.config import get_config
-from src.core.stability import get_stability_manager, ErrorSeverity
 
 logger = logging.getLogger("hydraflow.intent_parser.local")
 

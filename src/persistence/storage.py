@@ -118,9 +118,8 @@ class MinIOStorageBackend(StorageBackend):
     def __init__(self):
         try:
             from minio import Minio
-            from minio.error import S3Error
         except ImportError:
-            raise ImportError("请安装 minio: pip install minio")
+            raise ImportError("请安装 minio: pip install minio") from None
 
         if not settings.storage.minio_endpoint:
             raise ValueError("MinIO 端点未配置")
@@ -145,7 +144,6 @@ class MinIOStorageBackend(StorageBackend):
             self.client.make_bucket(self.bucket)
 
     async def save(self, file_data: bytes | BinaryIO, file_path: str) -> str:
-        from minio.error import S3Error
 
         if isinstance(file_data, bytes):
             file_data = io.BytesIO(file_data)
@@ -232,9 +230,8 @@ class S3StorageBackend(StorageBackend):
     def __init__(self):
         try:
             import boto3
-            from botocore.exceptions import ClientError
         except ImportError:
-            raise ImportError("请安装 boto3: pip install boto3")
+            raise ImportError("请安装 boto3: pip install boto3") from None
 
         if not settings.storage.s3_access_key_id:
             raise ValueError("S3 访问密钥 ID 未配置")
@@ -250,7 +247,6 @@ class S3StorageBackend(StorageBackend):
         self.bucket = settings.storage.s3_bucket
 
     async def save(self, file_data: bytes | BinaryIO, file_path: str) -> str:
-        from botocore.exceptions import ClientError
 
         body: bytes | BinaryIO = file_data
         if isinstance(file_data, bytes):
@@ -304,7 +300,6 @@ class S3StorageBackend(StorageBackend):
             raise
 
     async def get_url(self, file_path: str, expires_in: int = 3600) -> str:
-        from botocore.exceptions import ClientError
 
         return self.client.generate_presigned_url(
             "get_object",

@@ -14,7 +14,7 @@ from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.config import get_settings
-from src.persistence.database import User, get_db_session
+from src.persistence.database import User
 from src.core.exceptions import AuthenticationError, AuthorizationError
 
 settings = get_settings()
@@ -78,7 +78,7 @@ def decode_token(token: str) -> dict:
         )
         return payload
     except JWTError:
-        raise AuthenticationError("无效的令牌")
+        raise AuthenticationError("无效的令牌") from None
 
 
 async def get_user(db: AsyncSession, user_id: int) -> Optional[User]:

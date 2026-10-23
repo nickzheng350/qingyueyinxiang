@@ -15,7 +15,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from src.core.config import get_settings
 from src.core.logging import bind_request_id, setup_logging
 from src.core.stability import get_stability_manager
-from src.core.exceptions import HydraFlowError, ErrorResponse
+from src.core.exceptions import HydraFlowError
 from src.api.routes import api_router
 from src.ws.manager import get_ws_manager
 from src.ws.routes import WebSocketRoutes

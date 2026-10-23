@@ -135,7 +135,7 @@ class InMemoryVectorStore(VectorStore):
         if len(a) != len(b):
             raise ValueError("Vectors must have same dimension")
 
-        dot_product = sum(x * y for x, y in zip(a, b))
+        dot_product = sum(x * y for x, y in zip(a, b, strict=False))
         norm_a = math.sqrt(sum(x * x for x in a))
         norm_b = math.sqrt(sum(x * x for x in b))
 

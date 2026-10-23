@@ -3,8 +3,7 @@
 import asyncio
 import logging
 import time
-from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Callable, Awaitable, Generic, TypeVar, Optional
 from contextlib import asynccontextmanager
 from abc import ABC, abstractmethod
@@ -128,7 +127,7 @@ class AsyncBatcher(Generic[T, R]):
 
                     try:
                         results = await self._processor(items)
-                        for future, result in zip(futures, results):
+                        for future, result in zip(futures, results, strict=False):
                             future.set_result(result)
                     except Exception as e:
                         for future in futures:

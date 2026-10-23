@@ -270,7 +270,7 @@ class LegacyConfigManager:
                     with open(filepath, "r", encoding="utf-8") as f:
                         self._config[key] = json.load(f)
                 except (json.JSONDecodeError, OSError) as e:
-                    raise ConfigError(f"加载配置文件失败: {filename}: {e}")
+                    raise ConfigError(f"加载配置文件失败: {filename}: {e}") from e
             else:
                 self._config[key] = {}
 
