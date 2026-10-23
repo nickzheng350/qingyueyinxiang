@@ -14,12 +14,14 @@ try:
         BatchSpanProcessor,
         ConsoleSpanExporter,
         SimpleSpanProcessor,
+        SpanProcessor,
     )
     from opentelemetry.sdk.resources import Resource
     from opentelemetry.semconv.resource import ResourceAttributes
     from opentelemetry.trace import (
         Tracer,
         Span,
+        SpanKind,
         Status,
         StatusCode,
         Link,
@@ -77,7 +79,7 @@ class TracingManager:
 
             if exporter == "console":
                 span_exporter = ConsoleSpanExporter()
-                processor = SimpleSpanProcessor(span_exporter)
+                processor: SpanProcessor = SimpleSpanProcessor(span_exporter)
             elif exporter == "otlp" and endpoint:
                 try:
                     from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
@@ -123,7 +125,7 @@ class TracingManager:
         self,
         name: str,
         *,
-        kind: Optional[Any] = None,
+        kind: Optional[SpanKind] = None,
         attributes: Optional[dict[str, Any]] = None,
         links: Optional[list[Link]] = None,
     ) -> Optional[Span]:
@@ -133,7 +135,7 @@ class TracingManager:
 
         span = self._tracer.start_span(
             name=name,
-            kind=kind,
+            kind=kind or SpanKind.INTERNAL,
             links=links,
         )
 
@@ -148,7 +150,7 @@ class TracingManager:
         self,
         name: str,
         *,
-        kind: Optional[Any] = None,
+        kind: Optional[SpanKind] = None,
         attributes: Optional[dict[str, Any]] = None,
         record_exception: bool = True,
         set_status_on_exception: bool = True,
@@ -158,9 +160,9 @@ class TracingManager:
             yield None
             return
 
-        async with self._tracer.start_as_current_span(
+        with self._tracer.start_as_current_span(
             name=name,
-            kind=kind,
+            kind=kind or SpanKind.INTERNAL,
             record_exception=record_exception,
             set_status_on_exception=set_status_on_exception,
         ) as span:
@@ -284,7 +286,7 @@ def traced(
 
             span_name = operation_name or f"{func.__module__}.{func.__name__}"
 
-            async with tracer.start_as_current_span(
+            with tracer.start_as_current_span(
                 span_name,
                 record_exception=record_exception,
             ) as span:
